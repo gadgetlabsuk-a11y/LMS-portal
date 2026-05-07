@@ -10,6 +10,7 @@ from jose import JWTError, jwt
 from pydantic import BaseModel
 import asyncio
 import functools
+import uuid
 import pyotp
 import qrcode
 from io import BytesIO
@@ -154,6 +155,10 @@ class AuthService:
             "role": role,
             "exp": expire,
             "type": "access",
+            # jti (JWT ID) guarantees uniqueness even when multiple tokens are
+            # issued for the same user within the same second — preventing
+            # UNIQUE constraint violations on the sessions.token column.
+            "jti": str(uuid.uuid4()),
         }
 
         encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
@@ -177,6 +182,7 @@ class AuthService:
             "user_id": user_id,
             "exp": expire,
             "type": "refresh",
+            "jti": str(uuid.uuid4()),
         }
 
         encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
