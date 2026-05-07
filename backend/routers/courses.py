@@ -107,7 +107,7 @@ class CourseListResponse(BaseModel):
 
 
 @router.get("", response_model=CourseListResponse)
-async def list_courses(
+def list_courses(
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=100),
     status: Optional[CourseStatus] = None,
@@ -172,7 +172,7 @@ async def list_courses(
 
 
 @router.post("", response_model=CourseResponse, status_code=status.HTTP_201_CREATED)
-async def create_course(
+def create_course(
     request: Request,
     course_data: CourseCreate,
     db: Session = Depends(get_db),
@@ -220,7 +220,7 @@ async def create_course(
 
 
 @router.get("/{course_id}", response_model=CourseDetailResponse)
-async def get_course(
+def get_course(
     course_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_creator),
@@ -259,7 +259,7 @@ async def get_course(
 
 
 @router.put("/{course_id}", response_model=CourseResponse)
-async def update_course(
+def update_course(
     request: Request,
     course_id: int,
     course_data: CourseUpdate,
@@ -333,7 +333,7 @@ async def update_course(
 
 
 @router.delete("/{course_id}")
-async def delete_course(
+def delete_course(
     request: Request,
     course_id: int,
     db: Session = Depends(get_db),
@@ -593,7 +593,7 @@ async def generate_course(
 
 
 @router.post("/{course_id}/enroll", response_model=EnrollmentResponse, status_code=status.HTTP_201_CREATED)
-async def enroll_in_course(
+def enroll_in_course(
     course_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
@@ -647,7 +647,7 @@ async def enroll_in_course(
 
 
 @router.put("/{course_id}/progress")
-async def update_progress(
+def update_progress(
     course_id: int,
     progress: float = Query(..., ge=0, le=100),
     db: Session = Depends(get_db),
@@ -742,7 +742,7 @@ async def generate_script(
 
 
 @router.post("/{course_id}/generate-slides")
-async def generate_slides(
+def generate_slides(
     course_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_creator),
@@ -1014,7 +1014,7 @@ async def upload_video_clip(
 
 
 @router.get("/{course_id}/player", response_class=HTMLResponse)
-async def get_player(
+def get_player(
     course_id: int,
     db: Session = Depends(get_db),
 ) -> str:

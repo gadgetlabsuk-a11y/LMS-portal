@@ -73,7 +73,7 @@ class UserListResponse(BaseModel):
 
 
 @router.get("", response_model=UserListResponse)
-async def list_users(
+def list_users(
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=100),
     search: Optional[str] = None,
@@ -124,7 +124,7 @@ async def list_users(
 
 
 @router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def create_user(
+def create_user(
     user_data: UserCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
@@ -194,7 +194,7 @@ async def create_user(
 
 
 @router.get("/{user_id}", response_model=UserDetailResponse)
-async def get_user(
+def get_user(
     user_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
@@ -225,7 +225,7 @@ async def get_user(
 
 
 @router.put("/{user_id}", response_model=UserResponse)
-async def update_user(
+def update_user(
     user_id: int,
     user_data: UserUpdate,
     db: Session = Depends(get_db),
@@ -296,7 +296,7 @@ async def update_user(
 
 
 @router.delete("/{user_id}")
-async def delete_user(
+def delete_user(
     user_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
@@ -353,7 +353,7 @@ async def delete_user(
 
 
 @router.post("/{user_id}/reset-password")
-async def reset_password(
+def reset_password(
     user_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
@@ -416,7 +416,7 @@ async def reset_password(
 
 
 @router.post("/{user_id}/toggle-mfa")
-async def toggle_mfa(
+def toggle_mfa(
     user_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
@@ -596,7 +596,7 @@ async def bulk_import_users(
 
 
 @router.get("/{user_id}/activity")
-async def get_user_activity(
+def get_user_activity(
     user_id: int,
     limit: int = Query(50, ge=1, le=1000),
     db: Session = Depends(get_db),
@@ -650,7 +650,7 @@ async def get_user_activity(
 
 
 @router.post("/{user_id}/unlock", status_code=status.HTTP_200_OK)
-async def unlock_user(
+def unlock_user(
     user_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
