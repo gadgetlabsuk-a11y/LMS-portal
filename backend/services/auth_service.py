@@ -304,4 +304,8 @@ class AuthService:
         if locked_until is None:
             return False
 
+        # SQLite stores DateTime without timezone info; treat naive datetimes as UTC
+        # so the comparison doesn't raise TypeError.
+        if locked_until.tzinfo is None:
+            locked_until = locked_until.replace(tzinfo=timezone.utc)
         return datetime.now(timezone.utc) < locked_until
