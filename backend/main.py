@@ -10,6 +10,8 @@ from fastapi.responses import JSONResponse, FileResponse
 from sqlalchemy.orm import Session
 from pathlib import Path
 from contextlib import asynccontextmanager
+from concurrent.futures import ThreadPoolExecutor
+import asyncio
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -35,6 +37,15 @@ async def lifespan(app: FastAPI):
     """Application lifespan: startup then shutdown."""
     # --- STARTUP ---
     logger.info("Starting LMS Course Builder API")
+
+    # Increase the default thread pool so sync `def` route handlers can serve
+    # many concurrent requests without queuing behind each other.
+    # FastAPI dispatches every sync handler via run_in_executor(None, …) which
+    # uses this pool.  Default is min(32, cpu_count+4) — too small for load
+    # tests.  20 threads pairs well with pool_size=10/max_overflow=10 on the DB.
+    _executor = ThreadPoolExecutor(max_workers=20, thread_name_prefix="lms")
+    asyncio.get_event_loop().set_default_executor(_executor)
+    logger.info("Default thread-pool executor set to 20 workers")
 
     try:
         init_db()
@@ -97,6 +108,7 @@ async def lifespan(app: FastAPI):
     yield  # App is running
 
     # --- SHUTDOWN ---
+    _executor.shutdown(wait=False)
     logger.info("Shutting down LMS Course Builder API")
 
 
