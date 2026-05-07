@@ -42,7 +42,10 @@ def get_db() -> Session:
         yield db
     except Exception as e:
         db.rollback()
-        logger.error(f"Database session error: {str(e)}")
+        # Don't log HTTPException as a DB error — it's a normal app-level 4xx/5xx
+        from starlette.exceptions import HTTPException as StarletteHTTPException
+        if not isinstance(e, StarletteHTTPException):
+            logger.error(f"Database session error: {str(e)}")
         raise
     finally:
         db.close()

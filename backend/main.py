@@ -44,7 +44,7 @@ async def lifespan(app: FastAPI):
     # uses this pool.  Default is min(32, cpu_count+4) — too small for load
     # tests.  20 threads pairs well with pool_size=10/max_overflow=10 on the DB.
     _executor = ThreadPoolExecutor(max_workers=20, thread_name_prefix="lms")
-    asyncio.get_event_loop().set_default_executor(_executor)
+    asyncio.get_running_loop().set_default_executor(_executor)
     logger.info("Default thread-pool executor set to 20 workers")
 
     try:

@@ -22,7 +22,7 @@ security = HTTPBearer()
 rate_limit_store = {}
 
 
-async def get_current_user(
+def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
 ) -> User:
@@ -69,7 +69,7 @@ async def get_current_user(
     return user
 
 
-async def get_current_active_user(
+def get_current_active_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
     """
@@ -100,7 +100,7 @@ def require_role(*allowed_roles: UserRole):
         Dependency function
     """
 
-    async def role_checker(current_user: User = Depends(get_current_active_user)) -> User:
+    def role_checker(current_user: User = Depends(get_current_active_user)) -> User:
         """Check if user has required role."""
         if current_user.role not in allowed_roles:
             logger.warning(
@@ -233,7 +233,7 @@ async def rate_limit(
     return True
 
 
-async def optional_user(
+def optional_user(
     request: Request,
     db: Session = Depends(get_db),
 ) -> Optional[User]:
