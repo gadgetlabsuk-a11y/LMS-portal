@@ -153,9 +153,10 @@ def require_creator(current_user: User = Depends(get_current_active_user)) -> Us
     return current_user
 
 
-async def get_client_ip(request: Request) -> str:
+def get_client_ip(request: Request) -> str:
     """
     Extract client IP address from request.
+    Sync — header reads don't require async.
 
     Args:
         request: FastAPI request object
@@ -171,9 +172,10 @@ async def get_client_ip(request: Request) -> str:
     return request.client.host if request.client else "0.0.0.0"
 
 
-async def get_user_agent(request: Request) -> Optional[str]:
+def get_user_agent(request: Request) -> Optional[str]:
     """
     Extract user agent from request.
+    Sync — header reads don't require async.
 
     Args:
         request: FastAPI request object
@@ -204,7 +206,7 @@ async def rate_limit(
     Raises:
         HTTPException: If rate limit exceeded
     """
-    client_ip = await get_client_ip(request)
+    client_ip = get_client_ip(request)
     now = datetime.now(timezone.utc)
 
     # Initialize or get client's request history

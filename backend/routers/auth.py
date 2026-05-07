@@ -66,7 +66,7 @@ class CurrentUserResponse(BaseModel):
 
 
 @router.post("/login", response_model=LoginResponse)
-async def login(
+def login(
     request: Request,
     login_data: LoginRequest,
     db: Session = Depends(get_db),
@@ -85,8 +85,8 @@ async def login(
     Raises:
         HTTPException: If credentials invalid or account locked
     """
-    client_ip = await get_client_ip(request)
-    user_agent = await get_user_agent(request)
+    client_ip = get_client_ip(request)
+    user_agent = get_user_agent(request)
 
     # Find user
     user = db.query(User).filter(User.username == login_data.username).first()
@@ -111,7 +111,7 @@ async def login(
         )
 
     # Verify user exists and password is correct
-    if not user or not await AuthService.verify_password_async(login_data.password, user.hashed_password):
+    if not user or not AuthService.verify_password(login_data.password, user.hashed_password):
         if user:
             user.failed_login_attempts += 1
 

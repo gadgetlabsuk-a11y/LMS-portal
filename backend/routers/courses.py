@@ -209,7 +209,7 @@ async def create_course(
         action="CREATE",
         resource_type="Course",
         resource_id=course.id,
-        ip_address=await get_client_ip(request),
+        ip_address=get_client_ip(request),
     )
     db.add(audit_log)
     db.commit()
@@ -322,7 +322,7 @@ async def update_course(
         action="UPDATE",
         resource_type="Course",
         resource_id=course.id,
-        ip_address=await get_client_ip(request),
+        ip_address=get_client_ip(request),
     )
     db.add(audit_log)
     db.commit()
@@ -378,7 +378,7 @@ async def delete_course(
         action="DELETE",
         resource_type="Course",
         resource_id=course.id,
-        ip_address=await get_client_ip(request),
+        ip_address=get_client_ip(request),
     )
     db.add(audit_log)
     db.commit()
