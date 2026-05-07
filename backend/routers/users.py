@@ -647,3 +647,35 @@ async def get_user_activity(
         "login_attempts": login_attempts,
         "audit_logs": audit_logs,
     }
+
+
+@router.post("/{user_id}/unlock", status_code=status.HTTP_200_OK)
+async def unlock_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+) -> dict:
+    """
+    Reset a locked account — clears failed_login_attempts and is_locked.
+
+    Args:
+        user_id: User ID to unlock
+        db: Database session
+        current_user: Current admin user (admin-only)
+
+    Returns:
+        Confirmation message
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        )
+
+    user.failed_login_attempts = 0
+    if hasattr(user, "is_locked"):
+        user.is_locked = False
+    db.commit()
+    logger.info(f"Account unlocked: user_id={user_id} by admin {current_user.id}")
+    return {"message": f"Account for user {user_id} has been unlocked."}

@@ -8,6 +8,8 @@ from typing import Optional, Tuple
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from pydantic import BaseModel
+import asyncio
+import functools
 import pyotp
 import qrcode
 from io import BytesIO
@@ -54,6 +56,7 @@ class AuthService:
     def verify_password(plain_password: str, hashed_password: str) -> bool:
         """
         Verify a plain password against a hashed password.
+        Synchronous version — use verify_password_async from async contexts.
 
         Args:
             plain_password: Plain text password
@@ -63,6 +66,28 @@ class AuthService:
             True if password matches, False otherwise
         """
         return pwd_context.verify(plain_password, hashed_password)
+
+    @staticmethod
+    async def verify_password_async(plain_password: str, hashed_password: str) -> bool:
+        """
+        Async-safe bcrypt verification.
+        Runs the CPU-bound bcrypt work in the default thread-pool executor so it
+        doesn't block the event loop while other requests are being served.
+        """
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            None,
+            functools.partial(pwd_context.verify, plain_password, hashed_password),
+        )
+
+    @staticmethod
+    async def hash_password_async(password: str) -> str:
+        """Async-safe bcrypt hashing — offloads CPU work to a thread pool."""
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            None,
+            functools.partial(pwd_context.hash, password),
+        )
 
     @staticmethod
     def enforce_password_policy(password: str) -> Tuple[bool, Optional[str]]:

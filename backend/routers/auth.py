@@ -111,7 +111,7 @@ async def login(
         )
 
     # Verify user exists and password is correct
-    if not user or not AuthService.verify_password(login_data.password, user.hashed_password):
+    if not user or not await AuthService.verify_password_async(login_data.password, user.hashed_password):
         if user:
             user.failed_login_attempts += 1
 
