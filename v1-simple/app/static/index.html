@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMS Course Builder</title>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<link rel="stylesheet" href="/static/css/editor.css">
+<link rel="stylesheet" href="/static/css/player.css">
+<style>
+/* ===================== WHITE-LABEL CSS VARIABLES ===================== */
+:root {
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-light: #dbeafe;
+  --color-success: #16a34a;
+  --color-success-light: #dcfce7;
+  --color-danger: #dc2626;
+  --color-danger-light: #fee2e2;
+  --color-warning: #f59e0b;
+  --color-warning-light: #fef3c7;
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-text: #1e293b;
+  --color-text-secondary: #64748b;
+  --color-text-light: #94a3b8;
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
+  --transition: 0.2s ease;
+}
+
+/* ===================== RESET & BASE ===================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-family);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===================== LAYOUT ===================== */
+.app-container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  min-height: 100vh;
+}
+
+.app-header {
+  text-align: center;
+  padding: 32px 0 24px;
+}
+
+.app-header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.app-header p {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+/* ===================== CARDS ===================== */
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  padding: 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+  transition: box-shadow var(--transition);
+}
+
+.card:hover { box-shadow: var(--shadow-lg); }
+.card h2 { font-size: 1.15rem; font-weight: 600; margin-bottom: 8px; }
+.card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
+.card p { color: var(--color-text-secondary); font-size: 0.9rem; }
+
+/* ===================== BUTTONS ===================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-decoration: none;
+  width: 100%;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+}
+.btn-primary:hover { background: var(--color-primary-hover); transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.btn-secondary {
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+.btn-secondary:hover { background: var(--color-border); }
+
+.btn-danger {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+.btn-danger:hover { background: var(--color-danger); color: white; }
+
+.btn-success {
+  background: var(--color-success);
+  color: white;
+}
+.btn-success:hover { background: #15803d; }
+
+.btn-sm { padding: 8px 16px; font-size: 0.85rem; width: auto; }
+
+.btn-row { display: flex; gap: 8px; margin-top: 12px; }
+.btn-row .btn { flex: 1; }
+
+/* ===================== UPLOAD ZONE ===================== */
+.upload-zone {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius);
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  background: var(--color-surface);
+}
+
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.upload-zone .icon { font-size: 2.5rem; margin-bottom: 12px; }
+.upload-zone .label { font-weight: 600; font-size: 1rem; }
+.upload-zone .hint { color: var(--color-text-light); font-size: 0.85rem; margin-top: 4px; }
+
+/* ===================== PROGRESS ===================== */
+.progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background: var(--color-surface-alt);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 12px 0;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.progress-text {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  text-align: right;
+}
+
+/* ===================== PROCESSING SPINNER ===================== */
+.spinner-overlay {
+  text-align: center;
+  padding: 64px 24px;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.spinner-overlay p {
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+}
+
+/* ===================== MODULE / LESSON LIST ===================== */
+.module-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.module-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.module-header:hover { background: var(--color-surface-alt); }
+.module-header h3 { font-size: 0.95rem; flex: 1; }
+.module-actions { display: flex; gap: 6px; }
+
+.lesson-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px 12px 36px;
+  border-top: 1px solid var(--color-border);
+  gap: 10px;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.lesson-item:hover { background: var(--color-surface-alt); }
+.lesson-item .status-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.lesson-item .status-dot.complete { background: var(--color-success); }
+.lesson-item .status-dot.current { background: var(--color-primary); }
+.lesson-item .status-dot.locked { background: var(--color-border); }
+
+.lesson-item .lesson-title { flex: 1; font-size: 0.9rem; }
+.lesson-item .lesson-title.locked { color: var(--color-text-light); }
+
+/* ===================== QUIZ ===================== */
+.quiz-question {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.quiz-question h4 {
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.quiz-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all var(--transition);
+  font-size: 0.9rem;
+}
+
+.quiz-option:hover { background: var(--color-surface-alt); }
+.quiz-option.selected { border-color: var(--color-primary); background: var(--color-primary-light); }
+.quiz-option.correct { border-color: var(--color-success); background: var(--color-success-light); }
+.quiz-option.incorrect { border-color: var(--color-danger); background: var(--color-danger-light); }
+
+.quiz-radio {
+  width: 18px; height: 18px;
+  border: 2px solid var(--color-border);
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+}
+.quiz-option.selected .quiz-radio {
+  border-color: var(--color-primary);
+}
+.quiz-option.selected .quiz-radio::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 8px; height: 8px;
+  background: var(--color-primary);
+  border-radius: 50%;
+}
+
+.score-banner {
+  text-align: center;
+  padding: 24px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+}
+.score-banner.pass { background: var(--color-success-light); color: var(--color-success); }
+.score-banner.fail { background: var(--color-warning-light); color: #92400e; }
+.score-banner h3 { font-size: 1.3rem; }
+
+/* ===================== INPUT ===================== */
+.input-group { margin-bottom: 16px; }
+.input-group label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--color-text-secondary);
+}
+.input-field {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-family: var(--font-family);
+  transition: border-color var(--transition);
+}
+.input-field:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+/* ===================== BACK LINK ===================== */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  margin-bottom: 16px;
+  padding: 4px 0;
+}
+.back-link:hover { color: var(--color-primary); }
+
+/* ===================== BADGE ===================== */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.badge-published { background: var(--color-success-light); color: var(--color-success); }
+.badge-draft { background: var(--color-warning-light); color: #92400e; }
+
+/* ===================== CONTENT SECTION ===================== */
+.content-section {
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  margin-bottom: 16px;
+  white-space: pre-wrap;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.section-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-light);
+  margin-bottom: 8px;
+}
+
+/* ===================== EMPTY STATE ===================== */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--color-text-secondary);
+}
+.empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 480px) {
+  .app-container { padding: 16px 12px; }
+  .card { padding: 16px; }
+  .btn { padding: 14px 20px; }
+}
+</style>
+</head>
+<body>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useMemo } = React;
+
+// ============================================================
+// API helper
+// ============================================================
+const api = async (path, opts = {}) => {
+  const res = await fetch(path, opts);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || body.error || `Request failed (${res.status})`);
+  }
+  return res.json();
+};
+
+// ============================================================
+// ROLE SELECTION
+// ============================================================
+function RoleSelection({ onSelect }) {
+  return (
+    <div className="app-container">
+      <div className="app-header">
+        <h1>LMS Course Builder</h1>
+        <p>AI-powered learning from your documents</p>
+      </div>
+      <div className="card" onClick={() => onSelect('creator')} style={{ cursor: 'pointer' }}>
+        <h2>&#128221; Creator</h2>
+        <p>Upload documents and generate interactive courses with AI</p>
+      </div>
+      <div className="card" onClick={() => onSelect('trainee')} style={{ cursor: 'pointer' }}>
+        <h2>&#127891; Trainee</h2>
+        <p>Take published courses and track your progress</p>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// CREATOR FLOW
+// ============================================================
+function CreatorDashboard({ onBack }) {
+  const [courses, setCourses] = useState([]);
+  const [view, setView] = useState('list');        // list | upload | processing | review
+  const [activeCourse, setActiveCourse] = useState(null);
+  const [error, setError] = useState(null);
+
+  const loadCourses = useCallback(async () => {
+    try { setCourses(await api('/api/courses')); } catch (e) { setError(e.message); }
+  }, []);
+
+  useEffect(() => { loadCourses(); }, [loadCourses]);
+
+  const handleUpload = async (file) => {
+    setView('processing');
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const course = await api('/api/courses/generate', { method: 'POST', body: fd });
+      setActiveCourse(course);
+      setView('review');
+      loadCourses();
+    } catch (e) {
+      setError(e.message);
+      setView('upload');
+    }
+  };
+
+  const handleRegenerate = async (courseId, file) => {
+    setView('processing');
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const course = await api(`/api/courses/${courseId}/regenerate`, { method: 'POST', body: fd });
+      setActiveCourse(course);
+      setView('review');
+      loadCourses();
+    } catch (e) {
+      setError(e.message);
+      setView('review');
+    }
+  };
+
+  const handlePublish = async (courseId) => {
+    await api(`/api/courses/${courseId}/publish`, { method: 'POST' });
+    setActiveCourse(prev => ({ ...prev, published: 1 }));
+    loadCourses();
+  };
+
+  const handleUnpublish = async (courseId) => {
+    await api(`/api/courses/${courseId}/unpublish`, { method: 'POST' });
+    setActiveCourse(prev => ({ ...prev, published: 0 }));
+    loadCourses();
+  };
+
+  const handleDeleteCourse = async (courseId) => {
+    await api(`/api/courses/${courseId}`, { method: 'DELETE' });
+    setActiveCourse(null);
+    setView('list');
+    loadCourses();
+  };
+
+  const openCourse = async (courseId) => {
+    const course = await api(`/api/courses/${courseId}`);
+    setActiveCourse(course);
+    setView('review');
+  };
+
+  if (view === 'upload') {
+    return (
+      <div className="app-container">
+        <div className="back-link" onClick={() => setView('list')}>&larr; Back to courses</div>
+        <UploadZone onUpload={handleUpload} error={error} />
+      </div>
+    );
+  }
+
+  if (view === 'processing') {
+    return (
+      <div className="app-container">
+        <div className="spinner-overlay">
+          <div className="spinner"></div>
+          <p>Analysing your document and generating course structure...</p>
+          <p style={{ marginTop: 8, fontSize: '0.85rem', color: 'var(--color-text-light)' }}>This typically takes 30-60 seconds</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'review' && activeCourse) {
+    return (
+      <CourseReview
+        course={activeCourse}
+        onBack={() => { setActiveCourse(null); setView('list'); }}
+        onPublish={handlePublish}
+        onUnpublish={handleUnpublish}
+        onDelete={handleDeleteCourse}
+        onRegenerate={handleRegenerate}
+        onRefresh={() => openCourse(activeCourse.id)}
+      />
+    );
+  }
+
+  // Default: course list
+  return (
+    <div className="app-container">
+      <div className="back-link" onClick={onBack}>&larr; Change role</div>
+      <div className="app-header" style={{ paddingTop: 0 }}>
+        <h1>Your Courses</h1>
+      </div>
+      {error && <div className="card" style={{ borderColor: 'var(--color-danger)' }}><p style={{ color: 'var(--color-danger)' }}>{error}</p></div>}
+      <button className="btn btn-primary" style={{ marginBottom: 20 }} onClick={() => setView('upload')}>+ New Course</button>
+      {courses.length === 0 ? (
+        <div className="empty-state">
+          <div className="icon">&#128218;</div>
+          <p>No courses yet. Upload a document to get started.</p>
+        </div>
+      ) : courses.map(c => (
+        <div key={c.id} className="card" onClick={() => openCourse(c.id)} style={{ cursor: 'pointer' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3>{c.title}</h3>
+            <span className={`badge ${c.published ? 'badge-published' : 'badge-draft'}`}>
+              {c.published ? 'Published' : 'Draft'}
+            </span>
+          </div>
+          <p style={{ fontSize: '0.85rem', marginTop: 4 }}>{c.source_filename}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ============================================================
+// UPLOAD ZONE
+// ============================================================
+function UploadZone({ onUpload, error }) {
+  const [dragover, setDragover] = useState(false);
+  const fileInput = React.useRef(null);
+
+  const handleFile = (file) => {
+    if (file && (file.name.endsWith('.pdf') || file.name.endsWith('.docx'))) {
+      onUpload(file);
+    } else {
+      alert('Please upload a PDF or DOCX file.');
+    }
+  };
+
+  return (
+    <div>
+      {error && <div className="card" style={{ borderColor: 'var(--color-danger)', marginBottom: 16 }}><p style={{ color: 'var(--color-danger)' }}>{error}</p></div>}
+      <div
+        className={`upload-zone ${dragover ? 'dragover' : ''}`}
+        onClick={() => fileInput.current.click()}
+        onDragOver={(e) => { e.preventDefault(); setDragover(true); }}
+        onDragLeave={() => setDragover(false)}
+        onDrop={(e) => { e.preventDefault(); setDragover(false); handleFile(e.dataTransfer.files[0]); }}
+      >
+        <div className="icon">&#128196;</div>
+        <div className="label">Drop your document here</div>
+        <div className="hint">or click to browse &middot; PDF, DOCX up to 50MB</div>
+        <input ref={fileInput} type="file" accept=".pdf,.docx" hidden onChange={(e) => handleFile(e.target.files[0])} />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// COURSE REVIEW (Creator)
+// ============================================================
+function CourseReview({ course, onBack, onPublish, onUnpublish, onDelete, onRegenerate, onRefresh }) {
+  const [editingModule, setEditingModule] = useState(null);
+  const [editingLesson, setEditingLesson] = useState(null);
+  const [moduleTitle, setModuleTitle] = useState('');
+  const [lessonTitle, setLessonTitle] = useState('');
+
+  const handleRenameModule = async (moduleId) => {
+    await api(`/api/modules/${moduleId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: moduleTitle }),
+    });
+    setEditingModule(null);
+    onRefresh();
+  };
+
+  const handleDeleteModule = async (moduleId) => {
+    if (confirm('Delete this module and all its lessons?')) {
+      await api(`/api/modules/${moduleId}`, { method: 'DELETE' });
+      onRefresh();
+    }
+  };
+
+  const handleRenameLesson = async (lessonId) => {
+    await api(`/api/lessons/${lessonId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: lessonTitle }),
+    });
+    setEditingLesson(null);
+    onRefresh();
+  };
+
+  const handleDeleteLesson = async (lessonId) => {
+    if (confirm('Delete this lesson?')) {
+      await api(`/api/lessons/${lessonId}`, { method: 'DELETE' });
+      onRefresh();
+    }
+  };
+
+  const totalLessons = (course.modules || []).reduce((sum, m) => sum + (m.lessons || []).length, 0);
+
+  return (
+    <div className="app-container">
+      <div className="back-link" onClick={onBack}>&larr; Back to courses</div>
+
+      <div className="card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h2>{course.title}</h2>
+            <p>{course.description}</p>
+          </div>
+          <span className={`badge ${course.published ? 'badge-published' : 'badge-draft'}`}>
+            {course.published ? 'Published' : 'Draft'}
+          </span>
+        </div>
+        <p style={{ marginTop: 8, fontSize: '0.8rem' }}>
+          {(course.modules || []).length} modules &middot; {totalLessons} lessons &middot; {course.source_filename}
+        </p>
+        <div className="btn-row">
+          {course.published
+            ? <button className="btn btn-secondary btn-sm" onClick={() => onUnpublish(course.id)}>Unpublish</button>
+            : <button className="btn btn-success btn-sm" onClick={() => onPublish(course.id)}>Publish</button>
+          }
+          <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer' }}>
+            Regenerate
+            <input type="file" accept=".pdf,.docx" hidden onChange={(e) => { if (e.target.files[0]) onRegenerate(course.id, e.target.files[0]); }} />
+          </label>
+          <button className="btn btn-danger btn-sm" onClick={() => onDelete(course.id)}>Delete</button>
+        </div>
+      </div>
+
+      {(course.modules || []).map((mod, mi) => (
+        <div key={mod.id} className="module-card">
+          <div className="module-header">
+            {editingModule === mod.id ? (
+              <div style={{ display: 'flex', gap: 8, flex: 1 }}>
+                <input className="input-field" value={moduleTitle} onChange={(e) => setModuleTitle(e.target.value)} autoFocus onKeyDown={(e) => e.key === 'Enter' && handleRenameModule(mod.id)} />
+                <button className="btn btn-primary btn-sm" onClick={() => handleRenameModule(mod.id)}>Save</button>
+                <button className="btn btn-secondary btn-sm" onClick={() => setEditingModule(null)}>Cancel</button>
+              </div>
+            ) : (
+              <>
+                <h3>Module {mi + 1}: {mod.title}</h3>
+                <div className="module-actions">
+                  <button className="btn btn-secondary btn-sm" onClick={(e) => { e.stopPropagation(); setEditingModule(mod.id); setModuleTitle(mod.title); }}>Rename</button>
+                  <button className="btn btn-danger btn-sm" onClick={(e) => { e.stopPropagation(); handleDeleteModule(mod.id); }}>Delete</button>
+                </div>
+              </>
+            )}
+          </div>
+          {(mod.lessons || []).map((les, li) => (
+            <div key={les.id} className="lesson-item">
+              {editingLesson === les.id ? (
+                <div style={{ display: 'flex', gap: 8, flex: 1 }}>
+                  <input className="input-field" value={lessonTitle} onChange={(e) => setLessonTitle(e.target.value)} autoFocus onKeyDown={(e) => e.key === 'Enter' && handleRenameLesson(les.id)} />
+                  <button className="btn btn-primary btn-sm" onClick={() => handleRenameLesson(les.id)}>Save</button>
+                  <button className="btn btn-secondary btn-sm" onClick={() => setEditingLesson(null)}>Cancel</button>
+                </div>
+              ) : (
+                <>
+                  <span className="lesson-title">{li + 1}. {les.title}</span>
+                  <button className="btn btn-secondary btn-sm" onClick={() => { setEditingLesson(les.id); setLessonTitle(les.title); }}>Rename</button>
+                  <button className="btn btn-danger btn-sm" onClick={() => handleDeleteLesson(les.id)}>Delete</button>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ============================================================
+// TRAINEE FLOW
+// ============================================================
+function TraineeDashboard({ onBack }) {
+  const [courses, setCourses] = useState([]);
+  const [activeCourse, setActiveCourse] = useState(null);
+  const [activeLesson, setActiveLesson] = useState(null);
+  const [progress, setProgress] = useState(null);
+  const [traineeId] = useState(() => localStorage.getItem('traineeId') || (() => { const id = 'trainee_' + Math.random().toString(36).slice(2, 10); localStorage.setItem('traineeId', id); return id; })());
+
+  const loadCourses = useCallback(async () => {
+    try { setCourses(await api('/api/courses?published_only=true')); } catch (e) { console.error(e); }
+  }, []);
+
+  useEffect(() => { loadCourses(); }, [loadCourses]);
+
+  const openCourse = async (courseId) => {
+    const [course, prog] = await Promise.all([
+      api(`/api/courses/${courseId}`),
+      api(`/api/courses/${courseId}/progress/${traineeId}`),
+    ]);
+    setActiveCourse(course);
+    setProgress(prog);
+    setActiveLesson(null);
+  };
+
+  const refreshProgress = async () => {
+    if (activeCourse) {
+      const prog = await api(`/api/courses/${activeCourse.id}/progress/${traineeId}`);
+      setProgress(prog);
+    }
+  };
+
+  const handleResetProgress = async () => {
+    if (activeCourse && confirm('Reset all progress for this course?')) {
+      await api(`/api/courses/${activeCourse.id}/reset/${traineeId}`, { method: 'POST' });
+      await refreshProgress();
+      setActiveLesson(null);
+    }
+  };
+
+  // Flatten lessons for gating logic
+  const allLessons = useMemo(() => {
+    if (!activeCourse) return [];
+    const flat = [];
+    (activeCourse.modules || []).forEach(m => (m.lessons || []).forEach(l => flat.push({ ...l, moduleTitle: m.title })));
+    return flat;
+  }, [activeCourse]);
+
+  const isLessonAccessible = (lessonId) => {
+    if (!progress) return false;
+    const idx = allLessons.findIndex(l => l.id === lessonId);
+    if (idx === 0) return true;
+    const prevLesson = allLessons[idx - 1];
+    return progress.lessons[prevLesson.id]?.completed === 1;
+  };
+
+  const isLessonCompleted = (lessonId) => progress?.lessons[lessonId]?.completed === 1;
+
+  // Lesson detail view
+  if (activeLesson && activeCourse) {
+    return (
+      <LessonView
+        lesson={activeLesson}
+        traineeId={traineeId}
+        isCompleted={isLessonCompleted(activeLesson.id)}
+        onBack={() => { setActiveLesson(null); refreshProgress(); }}
+        onComplete={refreshProgress}
+      />
+    );
+  }
+
+  // Course view with modules/lessons
+  if (activeCourse) {
+    const pct = progress?.progress_pct || 0;
+    return (
+      <div className="app-container">
+        <div className="back-link" onClick={() => { setActiveCourse(null); setProgress(null); }}>&larr; Back to courses</div>
+        <div className="card">
+          <h2>{activeCourse.title}</h2>
+          <p>{activeCourse.description}</p>
+          <div className="progress-bar-container">
+            <div className="progress-bar-fill" style={{ width: `${pct}%` }}></div>
+          </div>
+          <div className="progress-text">{pct}% complete</div>
+          <button className="btn btn-secondary btn-sm" style={{ marginTop: 12 }} onClick={handleResetProgress}>Reset Progress</button>
+        </div>
+        {(activeCourse.modules || []).map((mod, mi) => (
+          <div key={mod.id} className="module-card">
+            <div className="module-header">
+              <h3>Module {mi + 1}: {mod.title}</h3>
+            </div>
+            {(mod.lessons || []).map((les, li) => {
+              const accessible = isLessonAccessible(les.id);
+              const completed = isLessonCompleted(les.id);
+              return (
+                <div
+                  key={les.id}
+                  className="lesson-item"
+                  onClick={() => accessible && setActiveLesson(les)}
+                  style={!accessible ? { cursor: 'not-allowed', opacity: 0.6 } : {}}
+                >
+                  <span className={`status-dot ${completed ? 'complete' : accessible ? 'current' : 'locked'}`}></span>
+                  <span className={`lesson-title ${!accessible ? 'locked' : ''}`}>{li + 1}. {les.title}</span>
+                  {completed && <span style={{ fontSize: '0.8rem', color: 'var(--color-success)' }}>&#10003;</span>}
+                  {!accessible && <span style={{ fontSize: '0.8rem' }}>&#128274;</span>}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Course list
+  return (
+    <div className="app-container">
+      <div className="back-link" onClick={onBack}>&larr; Change role</div>
+      <div className="app-header" style={{ paddingTop: 0 }}>
+        <h1>Available Courses</h1>
+      </div>
+      {courses.length === 0 ? (
+        <div className="empty-state">
+          <div className="icon">&#127891;</div>
+          <p>No published courses available yet.</p>
+        </div>
+      ) : courses.map(c => (
+        <div key={c.id} className="card" onClick={() => openCourse(c.id)} style={{ cursor: 'pointer' }}>
+          <h3>{c.title}</h3>
+          <p>{c.description}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ============================================================
+// LESSON VIEW (Trainee)
+// ============================================================
+function LessonView({ lesson, traineeId, isCompleted, onBack, onComplete }) {
+  const [step, setStep] = useState('summary'); // summary | script | quiz | result
+  const [answers, setAnswers] = useState({});
+  const [result, setResult] = useState(null);
+
+  const quiz = lesson.quiz || [];
+
+  const handleSelectAnswer = (qIdx, optIdx) => {
+    if (result) return; // locked after submission
+    setAnswers(prev => ({ ...prev, [qIdx]: optIdx }));
+  };
+
+  const handleSubmitQuiz = async () => {
+    const answerList = quiz.map((_, i) => answers[i] ?? -1);
+    try {
+      const res = await api(`/api/lessons/${lesson.id}/complete?trainee_id=${traineeId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers: answerList }),
+      });
+      setResult(res);
+      setStep('result');
+      onComplete();
+    } catch (e) {
+      alert(e.message);
+    }
+  };
+
+  if (isCompleted && step === 'summary') {
+    return (
+      <div className="app-container">
+        <div className="back-link" onClick={onBack}>&larr; Back to course</div>
+        <div className="card">
+          <h2>{lesson.title}</h2>
+          <span className="badge badge-published">Completed</span>
+        </div>
+        <div className="section-label">Summary</div>
+        <div className="content-section">{lesson.summary}</div>
+        <div className="section-label">Video Script</div>
+        <div className="content-section">{lesson.video_script}</div>
+        <button className="btn btn-secondary" onClick={onBack}>Back to Course</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="app-container">
+      <div className="back-link" onClick={onBack}>&larr; Back to course</div>
+      <div className="card">
+        <h2>{lesson.title}</h2>
+        <div className="progress-bar-container">
+          <div className="progress-bar-fill" style={{ width: step === 'summary' ? '25%' : step === 'script' ? '50%' : step === 'quiz' ? '75%' : '100%' }}></div>
+        </div>
+        <div className="progress-text">
+          {step === 'summary' ? 'Step 1: Summary' : step === 'script' ? 'Step 2: Video Script' : step === 'quiz' ? 'Step 3: Quiz' : 'Complete'}
+        </div>
+      </div>
+
+      {step === 'summary' && (
+        <>
+          <div className="section-label">Summary</div>
+          <div className="content-section">{lesson.summary}</div>
+          <button className="btn btn-primary" onClick={() => setStep('script')}>Continue to Video Script &rarr;</button>
+        </>
+      )}
+
+      {step === 'script' && (
+        <>
+          <div className="section-label">Video Script</div>
+          <div className="content-section">{lesson.video_script}</div>
+          <div className="btn-row">
+            <button className="btn btn-secondary" onClick={() => setStep('summary')}>&larr; Back</button>
+            <button className="btn btn-primary" onClick={() => setStep('quiz')}>Take Quiz &rarr;</button>
+          </div>
+        </>
+      )}
+
+      {step === 'quiz' && (
+        <>
+          <div className="section-label">Quiz</div>
+          {quiz.map((q, qi) => (
+            <div key={qi} className="quiz-question">
+              <h4>{qi + 1}. {q.question}</h4>
+              {(q.options || []).map((opt, oi) => (
+                <div
+                  key={oi}
+                  className={`quiz-option ${answers[qi] === oi ? 'selected' : ''}`}
+                  onClick={() => handleSelectAnswer(qi, oi)}
+                >
+                  <div className="quiz-radio"></div>
+                  <span>{opt}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+          <div className="btn-row">
+            <button className="btn btn-secondary" onClick={() => setStep('script')}>&larr; Back</button>
+            <button
+              className="btn btn-primary"
+              disabled={Object.keys(answers).length < quiz.length}
+              onClick={handleSubmitQuiz}
+            >
+              Submit Quiz
+            </button>
+          </div>
+        </>
+      )}
+
+      {step === 'result' && result && (
+        <>
+          <div className={`score-banner ${result.score >= 60 ? 'pass' : 'fail'}`}>
+            <h3>{result.score}%</h3>
+            <p>{result.correct} of {result.total} correct</p>
+          </div>
+          {quiz.map((q, qi) => (
+            <div key={qi} className="quiz-question">
+              <h4>{qi + 1}. {q.question}</h4>
+              {(q.options || []).map((opt, oi) => {
+                let cls = 'quiz-option';
+                if (oi === q.correct) cls += ' correct';
+                else if (answers[qi] === oi && oi !== q.correct) cls += ' incorrect';
+                return (
+                  <div key={oi} className={cls}>
+                    <div className="quiz-radio"></div>
+                    <span>{opt}</span>
+                    {oi === q.correct && <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--color-success)' }}>&#10003; Correct</span>}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+          <button className="btn btn-primary" onClick={onBack}>Continue &rarr;</button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// APP ROOT
+// ============================================================
+function App() {
+  const [role, setRole] = useState(null);
+
+  if (!role) return <RoleSelection onSelect={setRole} />;
+  if (role === 'creator') return <CreatorDashboard onBack={() => setRole(null)} />;
+  if (role === 'trainee') return <TraineeDashboard onBack={() => setRole(null)} />;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+<script src="/static/js/shared/api.js"></script>
+<script src="/static/js/shared/tokens.js"></script>
+<script src="/static/js/editor/SlideTree.js"></script>
+<script src="/static/js/editor/BlockEditor.js"></script>
+<script src="/static/js/editor/ThemePanel.js"></script>
+<script src="/static/js/editor/MediaPicker.js"></script>
+<script src="/static/js/editor/EditorPage.js"></script>
+<script src="/static/js/catalog/CatalogPage.js"></script>
+<script src="/static/js/player/BlockViewer.js"></script>
+<script src="/static/js/player/PlayerShell.js"></script>
+<script src="/static/js/reports/ReportTable.js"></script>
+</body>
+</html>

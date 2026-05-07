@@ -1,0 +1,2652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LMS Course Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/static/js/react.js"></script>
+    <script src="/static/js/react-dom.js"></script>
+    <script src="/static/js/babel.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #7c3aed;
+            --accent: #f59e0b;
+            --bg: #f8fafc;
+            --text: #1e293b;
+            --font-family: 'Inter', sans-serif;
+            --heading-font: 'Inter', sans-serif;
+            --border-radius: 8px;
+        }
+
+        * {
+            font-family: var(--font-family);
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--heading-font);
+        }
+
+        .primary-bg {
+            background-color: var(--primary);
+        }
+
+        .primary-text {
+            color: var(--primary);
+        }
+
+        .secondary-bg {
+            background-color: var(--secondary);
+        }
+
+        .accent-bg {
+            background-color: var(--accent);
+        }
+
+        .custom-border-radius {
+            border-radius: var(--border-radius);
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+        }
+
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: var(--border-radius);
+            color: white;
+            z-index: 9999;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .toast.success {
+            background-color: #10b981;
+        }
+
+        .toast.error {
+            background-color: #ef4444;
+        }
+
+        .toast.info {
+            background-color: var(--primary);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge.success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge.warning {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge.danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge.info {
+            background-color: #dbeafe;
+            color: #0c4a6e;
+        }
+
+        .chart-bar {
+            display: inline-block;
+            background-color: var(--primary);
+            border-radius: 4px;
+            margin: 0 4px;
+        }
+
+        textarea.custom-textarea {
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <script>
+        // Show errors in a fixed overlay so we don't fight React's DOM
+        window.__firstError = null;
+        window.onerror = function(msg, src, line, col, err) {
+            if (window.__firstError) return; // only capture first error
+            window.__firstError = {msg, src, line, col, stack: err ? err.stack : ''};
+            var d = document.createElement('div');
+            d.style = 'position:fixed;top:0;left:0;right:0;z-index:99999;padding:16px;background:#fef2f2;border-bottom:2px solid red;font-family:monospace;font-size:12px;white-space:pre-wrap;max-height:50vh;overflow:auto';
+            d.innerHTML = '<strong style="color:red">JS Error:</strong> ' + msg + '\n' + src + ':' + line + '\n\n' + (err ? err.stack : '');
+            document.body.appendChild(d);
+        };
+    </script>
+    <script type="text/babel">
+        const { useState, useEffect, useContext, createContext, useCallback, useRef } = React;
+        const { createRoot } = ReactDOM;
+
+        // ============= CUSTOM ROUTER (no external dep) =============
+
+        const RouterCtx = createContext({ path: '/', navigate: () => {} });
+
+        const BrowserRouter = ({ children }) => {
+            const [path, setPath] = useState(window.location.pathname);
+            useEffect(() => {
+                const handler = () => setPath(window.location.pathname);
+                window.addEventListener('popstate', handler);
+                return () => window.removeEventListener('popstate', handler);
+            }, []);
+            const navigate = useCallback((to) => {
+                window.history.pushState(null, '', to);
+                setPath(to);
+            }, []);
+            return React.createElement(RouterCtx.Provider, { value: { path, navigate } }, children);
+        };
+
+        const useNavigate = () => useContext(RouterCtx).navigate;
+        const useLocation = () => ({ pathname: useContext(RouterCtx).path });
+
+        // Match a route pattern against a path (supports :param wildcards)
+        const matchRoute = (pattern, path) => {
+            if (pattern === '*') return true;
+            const pp = pattern.split('/'), lp = path.split('/');
+            if (pp.length !== lp.length) return false;
+            return pp.every((p, i) => p.startsWith(':') || p === lp[i]);
+        };
+
+        const Routes = ({ children }) => {
+            const { path } = useContext(RouterCtx);
+            const kids = React.Children.toArray(children);
+            for (const kid of kids) {
+                if (matchRoute(kid.props.path, path)) return kid.props.element;
+            }
+            return null;
+        };
+
+        const Route = () => null; // declarative only — Routes handles rendering
+
+        const Navigate = ({ to }) => {
+            const nav = useNavigate();
+            useEffect(() => { nav(to); }, []);
+            return null;
+        };
+
+        // ============= HELPERS =============
+
+        // Strip markdown code fences / raw JSON from descriptions before display
+        const safeDesc = (text, maxLen = 160) => {
+            if (!text) return '';
+            let t = text.trim();
+            // Strip ```json ... ``` or ``` ... ``` blocks
+            t = t.replace(/^```(?:json)?\s*/i, '').replace(/```[\s\S]*$/, '').trim();
+            // If what remains looks like raw JSON, don't show it
+            if (t.startsWith('{') || t.startsWith('[')) return 'Course content generated.';
+            return t.length > maxLen ? t.slice(0, maxLen) + '…' : t;
+        };
+
+        // ============= CONTEXT & AUTH =============
+
+        const AuthContext = createContext();
+
+        const AuthProvider = ({ children }) => {
+            const [auth, setAuth] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [user, setUser] = useState(null);
+
+            useEffect(() => {
+                const token = localStorage.getItem('token');
+                if (token) {
+                    setAuth(token);
+                    fetchUserProfile(token);
+                }
+                setLoading(false);
+            }, []);
+
+            const fetchUserProfile = async (token) => {
+                try {
+                    const res = await fetch('/api/auth/me', {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        setUser(data);
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch user profile:', err);
+                }
+            };
+
+            const login = async (username, password, mfaCode = null) => {
+                try {
+                    const body = { username, password };
+                    if (mfaCode) body.mfa_code = mfaCode;
+
+                    const res = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body),
+                    });
+
+                    const data = await res.json();
+
+                    if (res.ok) {
+                        localStorage.setItem('token', data.access_token);
+                        setAuth(data.access_token);
+                        await fetchUserProfile(data.access_token);
+                        return { success: true };
+                    } else if (res.status === 403 && data.detail?.includes('MFA')) {
+                        return { success: false, requiresMfa: true, error: data.detail };
+                    } else {
+                        return { success: false, error: data.detail || 'Login failed' };
+                    }
+                } catch (err) {
+                    return { success: false, error: err.message };
+                }
+            };
+
+            const logout = () => {
+                localStorage.removeItem('token');
+                setAuth(null);
+                setUser(null);
+            };
+
+            return (
+                <AuthContext.Provider value={{ auth, loading, user, login, logout }}>
+                    {children}
+                </AuthContext.Provider>
+            );
+        };
+
+        const useAuth = () => {
+            const context = useContext(AuthContext);
+            if (!context) throw new Error('useAuth must be used within AuthProvider');
+            return context;
+        };
+
+        // ============= API SERVICE =============
+
+        const api = {
+            get: async (path, options = {}) => {
+                const { auth } = { auth: localStorage.getItem('token') };
+                const res = await fetch(`/api${path}`, {
+                    ...options,
+                    headers: {
+                        'Authorization': auth ? `Bearer ${auth}` : '',
+                        'Content-Type': 'application/json',
+                        ...options.headers,
+                    },
+                });
+                if (res.status === 401) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                }
+                return res;
+            },
+            post: async (path, body, options = {}) => {
+                const { auth } = { auth: localStorage.getItem('token') };
+                const res = await fetch(`/api${path}`, {
+                    method: 'POST',
+                    ...options,
+                    headers: {
+                        'Authorization': auth ? `Bearer ${auth}` : '',
+                        'Content-Type': 'application/json',
+                        ...options.headers,
+                    },
+                    body: JSON.stringify(body),
+                });
+                if (res.status === 401) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                }
+                return res;
+            },
+            put: async (path, body, options = {}) => {
+                const { auth } = { auth: localStorage.getItem('token') };
+                const res = await fetch(`/api${path}`, {
+                    method: 'PUT',
+                    ...options,
+                    headers: {
+                        'Authorization': auth ? `Bearer ${auth}` : '',
+                        'Content-Type': 'application/json',
+                        ...options.headers,
+                    },
+                    body: JSON.stringify(body),
+                });
+                if (res.status === 401) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                }
+                return res;
+            },
+            delete: async (path, options = {}) => {
+                const { auth } = { auth: localStorage.getItem('token') };
+                const res = await fetch(`/api${path}`, {
+                    method: 'DELETE',
+                    ...options,
+                    headers: {
+                        'Authorization': auth ? `Bearer ${auth}` : '',
+                        'Content-Type': 'application/json',
+                        ...options.headers,
+                    },
+                });
+                if (res.status === 401) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                }
+                return res;
+            },
+        };
+
+        // ============= TOAST NOTIFICATION =============
+
+        const ToastContext = createContext();
+
+        const ToastProvider = ({ children }) => {
+            const [toasts, setToasts] = useState([]);
+
+            const showToast = useCallback((message, type = 'info', duration = 3000) => {
+                const id = Date.now();
+                setToasts(prev => [...prev, { id, message, type }]);
+                setTimeout(() => {
+                    setToasts(prev => prev.filter(t => t.id !== id));
+                }, duration);
+            }, []);
+
+            return (
+                <ToastContext.Provider value={{ showToast }}>
+                    {children}
+                    <div>
+                        {toasts.map(toast => (
+                            <div key={toast.id} className={`toast ${toast.type}`}>
+                                {toast.message}
+                            </div>
+                        ))}
+                    </div>
+                </ToastContext.Provider>
+            );
+        };
+
+        const useToast = () => {
+            const context = useContext(ToastContext);
+            if (!context) throw new Error('useToast must be used within ToastProvider');
+            return context;
+        };
+
+        // ============= REUSABLE COMPONENTS =============
+
+        const Modal = ({ open, onClose, title, children, size = 'md' }) => {
+            if (!open) return null;
+
+            const sizeClasses = {
+                sm: 'max-w-sm',
+                md: 'max-w-md',
+                lg: 'max-w-lg',
+                xl: 'max-w-2xl',
+            };
+
+            return (
+                <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 fade-in">
+                    <div className={`bg-white rounded-lg shadow-xl ${sizeClasses[size]} w-full mx-4`}>
+                        <div className="flex justify-between items-center p-6 border-b">
+                            <h2 className="text-xl font-bold">{title}</h2>
+                            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+                                ✕
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            {children}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const Button = ({ children, variant = 'primary', size = 'md', fullWidth = false, disabled = false, ...props }) => {
+            const baseClasses = 'font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2';
+            const sizeClasses = {
+                sm: 'px-3 py-1.5 text-sm',
+                md: 'px-4 py-2 text-base',
+                lg: 'px-6 py-3 text-lg',
+            };
+            const variantClasses = {
+                primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
+                secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-400',
+                danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
+                ghost: 'text-blue-600 hover:bg-blue-50 focus:ring-blue-500',
+            };
+
+            return (
+                <button
+                    className={`${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]} ${fullWidth ? 'w-full' : ''} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={disabled}
+                    {...props}
+                >
+                    {children}
+                </button>
+            );
+        };
+
+        const Card = ({ children, className = '' }) => (
+            <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>
+                {children}
+            </div>
+        );
+
+        const Badge = ({ children, variant = 'info' }) => (
+            <span className={`badge ${variant}`}>
+                {children}
+            </span>
+        );
+
+        const Input = ({ label, error, ...props }) => (
+            <div className="mb-4">
+                {label && <label className="block text-sm font-medium mb-1 text-gray-700">{label}</label>}
+                <input
+                    {...props}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${error ? 'border-red-500' : 'border-gray-300'}`}
+                />
+                {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+            </div>
+        );
+
+        const Select = ({ label, options, error, ...props }) => (
+            <div className="mb-4">
+                {label && <label className="block text-sm font-medium mb-1 text-gray-700">{label}</label>}
+                <select
+                    {...props}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${error ? 'border-red-500' : 'border-gray-300'}`}
+                >
+                    <option value="">-- Select --</option>
+                    {options.map(opt => (
+                        <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </option>
+                    ))}
+                </select>
+                {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+            </div>
+        );
+
+        const Textarea = ({ label, error, ...props }) => (
+            <div className="mb-4">
+                {label && <label className="block text-sm font-medium mb-1 text-gray-700">{label}</label>}
+                <textarea
+                    {...props}
+                    className={`custom-textarea w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${error ? 'border-red-500' : 'border-gray-300'}`}
+                />
+                {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+            </div>
+        );
+
+        const ProtectedRoute = ({ children }) => {
+            const { auth, loading } = useAuth();
+
+            if (loading) {
+                return <div className="flex items-center justify-center h-screen"><div className="spin text-4xl">⏳</div></div>;
+            }
+
+            return auth ? children : <Navigate to="/login" />;
+        };
+
+        // ============= PAGES =============
+
+        const LoginPage = () => {
+            const [username, setUsername] = useState('');
+            const [password, setPassword] = useState('');
+            const [mfaCode, setMfaCode] = useState('');
+            const [requiresMfa, setRequiresMfa] = useState(false);
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+            const [brandConfig, setBrandConfig] = useState({ brand_name: 'LMS Course Builder' });
+            const navigate = useNavigate();
+            const { login } = useAuth();
+            const { showToast } = useToast();
+
+            useEffect(() => {
+                fetchBrandConfig();
+            }, []);
+
+            const fetchBrandConfig = async () => {
+                try {
+                    const res = await fetch('/api/whitelabel/preview');
+                    if (res.ok) {
+                        const data = await res.json();
+                        setBrandConfig(data);
+                        applyTheme(data);
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch brand config:', err);
+                }
+            };
+
+            const applyTheme = (config) => {
+                if (config.primary_color) document.documentElement.style.setProperty('--primary', config.primary_color);
+                if (config.secondary_color) document.documentElement.style.setProperty('--secondary', config.secondary_color);
+                if (config.accent_color) document.documentElement.style.setProperty('--accent', config.accent_color);
+                if (config.bg_color) document.documentElement.style.setProperty('--bg', config.bg_color);
+                if (config.text_color) document.documentElement.style.setProperty('--text', config.text_color);
+                if (config.font_family) document.documentElement.style.setProperty('--font-family', config.font_family);
+                if (config.heading_font) document.documentElement.style.setProperty('--heading-font', config.heading_font);
+                if (config.border_radius) document.documentElement.style.setProperty('--border-radius', `${config.border_radius}px`);
+            };
+
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                setError('');
+
+                const result = await login(username, password, requiresMfa ? mfaCode : null);
+
+                if (result.success) {
+                    showToast('Login successful!', 'success');
+                    navigate('/admin');
+                } else if (result.requiresMfa) {
+                    setRequiresMfa(true);
+                    setPassword('');
+                    setError('');
+                } else {
+                    setError(result.error);
+                    showToast(result.error, 'error');
+                }
+
+                setLoading(false);
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg)' }}>
+                    <Card className="w-full max-w-md">
+                        <div className="p-8">
+                            <div className="text-center mb-8">
+                                <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text)' }}>
+                                    {brandConfig.brand_name}
+                                </h1>
+                                <p className="text-gray-600">Admin Portal</p>
+                            </div>
+
+                            <form onSubmit={handleLogin}>
+                                {!requiresMfa ? (
+                                    <>
+                                        <Input
+                                            type="text"
+                                            label="Username"
+                                            placeholder="Enter your username"
+                                            value={username}
+                                            onChange={(e) => setUsername(e.target.value)}
+                                            required
+                                        />
+                                        <Input
+                                            type="password"
+                                            label="Password"
+                                            placeholder="Enter your password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            required
+                                        />
+                                    </>
+                                ) : (
+                                    <Input
+                                        type="text"
+                                        label="MFA Code"
+                                        placeholder="Enter 6-digit code"
+                                        value={mfaCode}
+                                        onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                        maxLength="6"
+                                        required
+                                    />
+                                )}
+
+                                {error && (
+                                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+                                        {error}
+                                    </div>
+                                )}
+
+                                <Button
+                                    type="submit"
+                                    fullWidth
+                                    disabled={loading}
+                                >
+                                    {loading ? '⏳ Processing...' : (requiresMfa ? 'Verify MFA' : 'Sign In')}
+                                </Button>
+
+                                {requiresMfa && (
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        fullWidth
+                                        onClick={() => {
+                                            setRequiresMfa(false);
+                                            setMfaCode('');
+                                            setPassword('');
+                                        }}
+                                        className="mt-2"
+                                    >
+                                        Back to Login
+                                    </Button>
+                                )}
+                            </form>
+                        </div>
+                    </Card>
+                </div>
+            );
+        };
+
+        const AdminLayout = ({ children }) => {
+            const { user, logout } = useAuth();
+            const location = useLocation();
+            const navigate = useNavigate();
+            const [sidebarOpen, setSidebarOpen] = useState(true);
+            const [brandName, setBrandName] = useState('LMS Course Builder');
+
+            useEffect(() => {
+                fetchBrandConfig();
+            }, []);
+
+            const fetchBrandConfig = async () => {
+                try {
+                    const res = await fetch('/api/whitelabel/preview');
+                    if (res.ok) {
+                        const data = await res.json();
+                        setBrandName(data.brand_name || 'LMS Course Builder');
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch brand config:', err);
+                }
+            };
+
+            const navItems = [
+                { label: 'Dashboard', path: '/admin', icon: '📊' },
+                { label: 'Users', path: '/admin/users', icon: '👤' },
+                { label: 'Courses', path: '/admin/courses', icon: '📚' },
+                { label: 'Security', path: '/admin/security', icon: '🛡️' },
+                { label: 'Dev Tools', path: '/admin/dev-tools', icon: '🔧' },
+                { label: 'White Label', path: '/admin/whitelabel', icon: '🎨' },
+            ];
+
+            const getPageTitle = () => {
+                const item = navItems.find(n => n.path === location.pathname);
+                return item ? item.label : 'Dashboard';
+            };
+
+            return (
+                <div className="flex h-screen bg-gray-100">
+                    {/* Sidebar */}
+                    <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gray-900 text-white transition-all duration-200 flex flex-col`}>
+                        <div className="p-4 border-b border-gray-700">
+                            <h1 className={`font-bold ${sidebarOpen ? 'text-lg' : 'text-xs text-center'}`}>
+                                {sidebarOpen ? brandName : '◉'}
+                            </h1>
+                        </div>
+
+                        <nav className="flex-1 p-4 space-y-2">
+                            {navItems.map(item => (
+                                <button
+                                    key={item.path}
+                                    onClick={() => navigate(item.path)}
+                                    className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition ${location.pathname === item.path ? 'bg-blue-600' : 'hover:bg-gray-800'}`}
+                                >
+                                    <span className="text-xl">{item.icon}</span>
+                                    {sidebarOpen && <span>{item.label}</span>}
+                                </button>
+                            ))}
+                        </nav>
+
+                        <div className="p-4 border-t border-gray-700 space-y-2">
+                            <button
+                                onClick={() => setSidebarOpen(!sidebarOpen)}
+                                className="w-full flex items-center justify-center px-3 py-2 rounded-lg hover:bg-gray-800 transition text-sm"
+                            >
+                                {sidebarOpen ? '◀' : '▶'}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    logout();
+                                    navigate('/login');
+                                }}
+                                className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-800 transition text-red-400"
+                            >
+                                <span className="text-xl">🚪</span>
+                                {sidebarOpen && <span>Logout</span>}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="flex-1 flex flex-col">
+                        {/* Top Bar */}
+                        <div className="bg-white border-b border-gray-200 p-4 flex justify-between items-center shadow-sm">
+                            <h2 className="text-2xl font-bold">{getPageTitle()}</h2>
+                            <div className="flex items-center space-x-4">
+                                {user && (
+                                    <div className="flex items-center space-x-2">
+                                        <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+                                            {user.username?.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="text-sm">
+                                            <p className="font-medium">{user.username}</p>
+                                            <p className="text-gray-500 text-xs">{user.role}</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Page Content */}
+                        <div className="flex-1 overflow-auto p-6">
+                            {children}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const AdminDashboard = () => {
+            const [stats, setStats] = useState({ users: 0, courses: 0, completionRate: 0, apiCalls: 0 });
+            const [activity, setActivity] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const { user } = useAuth();
+
+            useEffect(() => {
+                fetchDashboardData();
+            }, []);
+
+            const fetchDashboardData = async () => {
+                try {
+                    const [statsRes, activityRes] = await Promise.all([
+                        api.get('/admin/stats'),
+                        api.get('/admin/audit-log?limit=5'),
+                    ]);
+
+                    if (statsRes.ok) {
+                        const s = await statsRes.json();
+                        setStats({
+                            users: s.total_users ?? s.users ?? 0,
+                            courses: s.active_courses ?? s.courses ?? 0,
+                            completionRate: s.completion_rate ?? s.completionRate ?? 0,
+                            apiCalls: s.api_calls_today ?? s.apiCalls ?? 0,
+                        });
+                    }
+                    if (activityRes.ok) {
+                        setActivity(await activityRes.json());
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch dashboard data:', err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const StatCard = ({ title, value, icon }) => (
+                <Card className="p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-gray-600 text-sm">{title}</p>
+                            <p className="text-3xl font-bold mt-2">{value}</p>
+                        </div>
+                        <div className="text-4xl">{icon}</div>
+                    </div>
+                </Card>
+            );
+
+            if (loading) {
+                return <div className="text-center py-12"><div className="spin text-4xl inline-block">⏳</div></div>;
+            }
+
+            return (
+                <div className="space-y-6">
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                        <p className="text-lg font-semibold">
+                            Welcome, {user?.username}! 👋
+                        </p>
+                        <p className="text-gray-600 text-sm mt-1">
+                            Here's what's happening with your LMS today.
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <StatCard title="Total Users" value={stats.users} icon="👥" />
+                        <StatCard title="Active Courses" value={stats.courses} icon="📚" />
+                        <StatCard title="Completion Rate" value={`${stats.completionRate}%`} icon="✅" />
+                        <StatCard title="API Calls (24h)" value={stats.apiCalls} icon="📡" />
+                    </div>
+
+                    <Card className="p-6">
+                        <h3 className="text-lg font-bold mb-4">Recent Activity</h3>
+                        {activity.length === 0 ? (
+                            <p className="text-gray-500 text-center py-8">No recent activity</p>
+                        ) : (
+                            <div className="space-y-3">
+                                {activity.map((item, idx) => (
+                                    <div key={idx} className="flex items-start space-x-3 pb-3 border-b last:border-b-0">
+                                        <span className="text-2xl">{item.action === 'LOGIN' ? '🔑' : item.action === 'CREATE' ? '➕' : '✏️'}</span>
+                                        <div className="flex-1">
+                                            <p className="font-medium">{(item.action || '').toUpperCase()}</p>
+                                            <p className="text-sm text-gray-600">{item.resource_type}: {item.resource_id}</p>
+                                            <p className="text-xs text-gray-500 mt-1">{new Date(item.timestamp).toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </Card>
+                </div>
+            );
+        };
+
+        const UserManagementPage = () => {
+            const [users, setUsers] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [search, setSearch] = useState('');
+            const [roleFilter, setRoleFilter] = useState('');
+            const [page, setPage] = useState(1);
+            const [modalOpen, setModalOpen] = useState(false);
+            const [editingUser, setEditingUser] = useState(null);
+            const [formData, setFormData] = useState({ username: '', email: '', password: '', role: 'user' });
+            const [formError, setFormError] = useState('');
+            const { showToast } = useToast();
+
+            const pageSize = 10;
+
+            useEffect(() => {
+                fetchUsers();
+            }, [page, search, roleFilter]);
+
+            const fetchUsers = async () => {
+                setLoading(true);
+                try {
+                    const params = new URLSearchParams({
+                        skip: (page - 1) * pageSize,
+                        limit: pageSize,
+                    });
+                    if (search) params.append('search', search);
+                    if (roleFilter) params.append('role', roleFilter);
+
+                    const res = await api.get(`/users?${params}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        setUsers(Array.isArray(data) ? data : data.items || []);
+                        if (data.total !== undefined) setTotalUsers(data.total);
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch users:', err);
+                    showToast('Failed to load users', 'error');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleSaveUser = async () => {
+                setFormError('');
+                if (!formData.username || !formData.email || (!editingUser && !formData.password)) {
+                    setFormError('Please fill all required fields');
+                    return;
+                }
+
+                try {
+                    const endpoint = editingUser ? `/users/${editingUser.id}` : '/users';
+                    const method = editingUser ? 'put' : 'post';
+                    const res = await api[method](endpoint, formData);
+
+                    if (res.ok) {
+                        showToast(editingUser ? 'User updated' : 'User created', 'success');
+                        setModalOpen(false);
+                        setEditingUser(null);
+                        setFormData({ username: '', email: '', password: '', role: 'user' });
+                        fetchUsers();
+                    } else {
+                        const err = await res.json();
+                        setFormError(err.detail || 'Failed to save user');
+                    }
+                } catch (err) {
+                    setFormError(err.message);
+                }
+            };
+
+            const handleDeleteUser = async (userId) => {
+                if (confirm('Are you sure? This cannot be undone.')) {
+                    try {
+                        const res = await api.delete(`/users/${userId}`);
+                        if (res.ok) {
+                            showToast('User deleted', 'success');
+                            fetchUsers();
+                        } else {
+                            showToast('Failed to delete user', 'error');
+                        }
+                    } catch (err) {
+                        showToast(err.message, 'error');
+                    }
+                }
+            };
+
+            const handleEditUser = (user) => {
+                setEditingUser(user);
+                setFormData({ username: user.username, email: user.email, password: '', role: user.role });
+                setModalOpen(true);
+            };
+
+            return (
+                <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                        <div className="flex gap-4 flex-1">
+                            <input
+                                type="text"
+                                placeholder="Search users..."
+                                value={search}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    setPage(1);
+                                }}
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <select
+                                value={roleFilter}
+                                onChange={(e) => {
+                                    setRoleFilter(e.target.value);
+                                    setPage(1);
+                                }}
+                                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="">All Roles</option>
+                                <option value="admin">Admin</option>
+                                <option value="instructor">Instructor</option>
+                                <option value="user">User</option>
+                            </select>
+                        </div>
+                        <Button onClick={() => {
+                            setEditingUser(null);
+                            setFormData({ username: '', email: '', password: '', role: 'user' });
+                            setModalOpen(true);
+                        }}>
+                            ➕ New User
+                        </Button>
+                    </div>
+
+                    {loading ? (
+                        <div className="text-center py-12"><div className="spin text-4xl inline-block">⏳</div></div>
+                    ) : (
+                        <Card className="overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead className="bg-gray-50 border-b">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-sm font-semibold">Name</th>
+                                            <th className="px-6 py-3 text-left text-sm font-semibold">Email</th>
+                                            <th className="px-6 py-3 text-left text-sm font-semibold">Role</th>
+                                            <th className="px-6 py-3 text-left text-sm font-semibold">Status</th>
+                                            <th className="px-6 py-3 text-left text-sm font-semibold">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                        {users.map(user => (
+                                            <tr key={user.id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4 font-medium">{user.username}</td>
+                                                <td className="px-6 py-4 text-gray-600">{user.email}</td>
+                                                <td className="px-6 py-4">
+                                                    <Badge variant={user.role === 'admin' ? 'danger' : 'info'}>
+                                                        {user.role}
+                                                    </Badge>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <Badge variant={user.is_active ? 'success' : 'warning'}>
+                                                        {user.is_active ? 'Active' : 'Inactive'}
+                                                    </Badge>
+                                                </td>
+                                                <td className="px-6 py-4 text-sm space-x-2">
+                                                    <button onClick={() => handleEditUser(user)} className="text-blue-600 hover:underline">
+                                                        Edit
+                                                    </button>
+                                                    <button onClick={() => handleDeleteUser(user.id)} className="text-red-600 hover:underline">
+                                                        Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="px-6 py-4 border-t flex justify-between items-center">
+                                <p className="text-sm text-gray-600">Page {page}</p>
+                                <div className="space-x-2">
+                                    <Button variant="secondary" size="sm" onClick={() => setPage(Math.max(1, page - 1))}>
+                                        ← Prev
+                                    </Button>
+                                    <Button variant="secondary" size="sm" onClick={() => setPage(page + 1)}>
+                                        Next →
+                                    </Button>
+                                </div>
+                            </div>
+                        </Card>
+                    )}
+
+                    <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingUser ? 'Edit User' : 'Create User'}>
+                        <div className="space-y-4">
+                            <Input
+                                label="Username"
+                                value={formData.username}
+                                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                disabled={!!editingUser}
+                            />
+                            <Input
+                                label="Email"
+                                type="email"
+                                value={formData.email}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            />
+                            {!editingUser && (
+                                <Input
+                                    label="Password"
+                                    type="password"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                />
+                            )}
+                            <Select
+                                label="Role"
+                                value={formData.role}
+                                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                options={[
+                                    { value: 'user', label: 'User' },
+                                    { value: 'instructor', label: 'Instructor' },
+                                    { value: 'admin', label: 'Admin' },
+                                ]}
+                            />
+                            {formError && (
+                                <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+                                    {formError}
+                                </div>
+                            )}
+                            <div className="flex gap-2 justify-end">
+                                <Button variant="secondary" onClick={() => setModalOpen(false)}>
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleSaveUser}>
+                                    Save
+                                </Button>
+                            </div>
+                        </div>
+                    </Modal>
+                </div>
+            );
+        };
+
+        const CourseManagementPage = () => {
+            const [courses, setCourses] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [modalOpen, setModalOpen] = useState(false);
+            const [aiModalOpen, setAiModalOpen] = useState(false);
+            const [formData, setFormData] = useState({ title: '', description: '' });
+            const [aiData, setAiData] = useState({ topic: '', num_modules: 5, difficulty: 'intermediate', additional_instructions: '' });
+            const [formError, setFormError] = useState('');
+            const [aiMode, setAiMode] = useState('document');
+            const [uploadedFile, setUploadedFile] = useState(null);
+            const [docDifficulty, setDocDifficulty] = useState('intermediate');
+            const [docInstructions, setDocInstructions] = useState('');
+            const [generating, setGenerating] = useState(false);
+            const [wizardStep, setWizardStep] = useState(1);
+            const [wizardParams, setWizardParams] = useState({
+                videos_per_module: 1,
+                video_duration: 'medium',
+                tone: 'formal',
+                target_audience: 'general',
+                include_assessment: true,
+            });
+            const fileInputRef = useRef(null);
+            const { showToast } = useToast();
+
+            useEffect(() => {
+                fetchCourses();
+            }, []);
+
+            const fetchCourses = async () => {
+                setLoading(true);
+                try {
+                    const res = await api.get('/courses');
+                    if (res.ok) {
+                        const d = await res.json();
+                        setCourses(Array.isArray(d) ? d : d.items || []);
+                    }
+                } catch (err) {
+                    showToast('Failed to load courses', 'error');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleCreateCourse = async () => {
+                setFormError('');
+                if (!formData.title || !formData.description) {
+                    setFormError('Please fill all fields');
+                    return;
+                }
+
+                try {
+                    const res = await api.post('/courses', formData);
+                    if (res.ok) {
+                        showToast('Course created', 'success');
+                        setModalOpen(false);
+                        setFormData({ title: '', description: '' });
+                        fetchCourses();
+                    } else {
+                        const err = await res.json();
+                        setFormError(err.detail || 'Failed to create course');
+                    }
+                } catch (err) {
+                    setFormError(err.message);
+                }
+            };
+
+            const handleGenerateCourse = async () => {
+                setFormError('');
+
+                if (wizardStep === 1) {
+                    if (aiMode === 'document' && !uploadedFile) {
+                        setFormError('Please select a file');
+                        return;
+                    }
+                    if (aiMode === 'topic' && !aiData.topic) {
+                        setFormError('Please enter a topic');
+                        return;
+                    }
+                    setWizardStep(2);
+                    return;
+                }
+
+                setGenerating(true);
+
+                try {
+                    if (aiMode === 'document') {
+                        const formData = new FormData();
+                        formData.append('file', uploadedFile);
+                        formData.append('difficulty', docDifficulty);
+                        if (docInstructions) formData.append('additional_instructions', docInstructions);
+                        formData.append('videos_per_module', wizardParams.videos_per_module);
+                        formData.append('video_duration', wizardParams.video_duration);
+                        formData.append('tone', wizardParams.tone);
+                        formData.append('target_audience', wizardParams.target_audience);
+                        formData.append('include_assessment', wizardParams.include_assessment);
+
+                        const res = await fetch(`/api/courses/generate-from-document`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                            body: formData
+                        });
+
+                        if (res.ok) {
+                            showToast('Course generated from document!', 'success');
+                            setAiModalOpen(false);
+                            setUploadedFile(null);
+                            setDocDifficulty('intermediate');
+                            setDocInstructions('');
+                            setWizardStep(1);
+                            setWizardParams({
+                                videos_per_module: 1,
+                                video_duration: 'medium',
+                                tone: 'formal',
+                                target_audience: 'general',
+                                include_assessment: true,
+                            });
+                            fetchCourses();
+                        } else {
+                            const err = await res.json();
+                            setFormError(err.detail || 'Failed to generate course from document');
+                        }
+                    } else {
+                        const res = await api.post('/courses/generate', { ...aiData, ...wizardParams });
+                        if (res.ok) {
+                            showToast('Course generated! Check your courses list.', 'success');
+                            setAiModalOpen(false);
+                            setAiData({ topic: '', num_modules: 5, difficulty: 'intermediate', additional_instructions: '' });
+                            setWizardStep(1);
+                            setWizardParams({
+                                videos_per_module: 1,
+                                video_duration: 'medium',
+                                tone: 'formal',
+                                target_audience: 'general',
+                                include_assessment: true,
+                            });
+                            fetchCourses();
+                        } else {
+                            const err = await res.json();
+                            setFormError(err.detail || 'Failed to generate course');
+                        }
+                    }
+                } catch (err) {
+                    setFormError(err.message);
+                } finally {
+                    setGenerating(false);
+                }
+            };
+
+            const handlePublish = async (courseId) => {
+                try {
+                    const res = await api.put(`/courses/${courseId}`, { status: 'published' });
+                    if (res.ok) {
+                        showToast('Course published', 'success');
+                        fetchCourses();
+                    } else {
+                        showToast('Failed to publish course', 'error');
+                    }
+                } catch (err) {
+                    showToast(err.message, 'error');
+                }
+            };
+
+            const handleDelete = async (courseId) => {
+                if (confirm('Are you sure you want to delete this course?')) {
+                    try {
+                        const res = await api.delete(`/courses/${courseId}`);
+                        if (res.ok) {
+                            showToast('Course deleted', 'success');
+                            fetchCourses();
+                        } else {
+                            showToast('Failed to delete course', 'error');
+                        }
+                    } catch (err) {
+                        showToast(err.message, 'error');
+                    }
+                }
+            };
+
+            const handleDownload = async (courseId, type, courseTitle) => {
+                try {
+                    const endpoint = type === 'script' ? 'generate-script' : 'generate-slides';
+                    const ext = type === 'script' ? 'docx' : 'pptx';
+                    const res = await fetch(`/api/courses/${courseId}/${endpoint}`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                    });
+                    if (!res.ok) {
+                        showToast(`Failed to generate ${type}`, 'error');
+                        return;
+                    }
+                    const blob = await res.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${courseTitle}_${type}.${ext}`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    showToast(`${type === 'script' ? 'Script' : 'Slides'} downloaded!`, 'success');
+                } catch (err) {
+                    showToast(`Error: ${err.message}`, 'error');
+                }
+            };
+
+            const handleGenerateVoiceover = async (courseId, courseTitle) => {
+                showToast('Generating voiceover — this may take a minute...', 'success');
+                try {
+                    const res = await fetch(`/api/courses/${courseId}/generate-voiceover`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                    });
+                    if (res.ok) {
+                        showToast('Voiceover generated!', 'success');
+                    } else {
+                        const err = await res.json();
+                        showToast(err.detail || 'Voiceover generation failed', 'error');
+                    }
+                } catch (err) {
+                    showToast(`Error: ${err.message}`, 'error');
+                }
+            };
+
+            const handleViewPlayer = (courseId) => {
+                window.open(`http://127.0.0.1:7000/api/courses/${courseId}/player`, '_blank');
+            };
+
+            return (
+                <div className="space-y-6">
+                    <div className="flex gap-4">
+                        <Button onClick={() => setModalOpen(true)}>
+                            📚 New Course
+                        </Button>
+                        <Button variant="secondary" onClick={() => setAiModalOpen(true)}>
+                            ✨ Generate with AI
+                        </Button>
+                    </div>
+
+                    {loading ? (
+                        <div className="text-center py-12"><div className="spin text-4xl inline-block">⏳</div></div>
+                    ) : courses.length === 0 ? (
+                        <Card className="p-12 text-center">
+                            <p className="text-gray-600 text-lg">No courses yet. Create one to get started!</p>
+                        </Card>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {courses.map(course => (
+                                <Card key={course.id} className="p-6 flex flex-col h-full">
+                                    <div className="flex-1">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h3 className="font-bold text-lg flex-1">{course.title}</h3>
+                                            <Badge variant={course.status === 'published' ? 'success' : 'warning'}>
+                                                {course.status}
+                                            </Badge>
+                                        </div>
+                                        <p className="text-gray-600 text-sm mb-3">{safeDesc(course.description)}</p>
+                                        <div className="text-xs text-gray-500 space-y-1">
+                                            <p>Creator: {course.creator_id}</p>
+                                            <p>Created: {new Date(course.created_at).toLocaleDateString()}</p>
+                                            <p>Enrollments: {course.enrollment_count || 0}</p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 pt-4 border-t space-y-2">
+                                        {course.status !== 'published' && (
+                                            <Button size="sm" fullWidth onClick={() => handlePublish(course.id)}>
+                                                Publish
+                                            </Button>
+                                        )}
+                                        {(course.has_content || course.content) && (
+                                            <>
+                                                <Button size="sm" variant="secondary" fullWidth onClick={() => handleDownload(course.id, 'script', course.title)}>
+                                                    📝 Script
+                                                </Button>
+                                                <Button size="sm" variant="secondary" fullWidth onClick={() => handleDownload(course.id, 'slides', course.title)}>
+                                                    📊 Slides
+                                                </Button>
+                                                <Button size="sm" variant="secondary" fullWidth onClick={() => handleGenerateVoiceover(course.id, course.title)}>
+                                                    🎙️ Voiceover
+                                                </Button>
+                                                <Button size="sm" variant="secondary" fullWidth onClick={() => handleViewPlayer(course.id)}>
+                                                    🎬 View Course
+                                                </Button>
+                                            </>
+                                        )}
+                                        <Button size="sm" variant="danger" fullWidth onClick={() => handleDelete(course.id)}>
+                                            Delete
+                                        </Button>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
+
+                    <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Create Course">
+                        <div className="space-y-4">
+                            <Input
+                                label="Title"
+                                value={formData.title}
+                                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                placeholder="Course title"
+                            />
+                            <Textarea
+                                label="Description"
+                                value={formData.description}
+                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                placeholder="Course description"
+                                rows={4}
+                            />
+                            {formError && (
+                                <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+                                    {formError}
+                                </div>
+                            )}
+                            <div className="flex gap-2 justify-end">
+                                <Button variant="secondary" onClick={() => setModalOpen(false)}>
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleCreateCourse}>
+                                    Create
+                                </Button>
+                            </div>
+                        </div>
+                    </Modal>
+
+                    <Modal open={aiModalOpen} onClose={() => {
+                        setAiModalOpen(false);
+                        setWizardStep(1);
+                        setWizardParams({
+                            videos_per_module: 1,
+                            video_duration: 'medium',
+                            tone: 'formal',
+                            target_audience: 'general',
+                            include_assessment: true,
+                        });
+                    }} title={wizardStep === 1 ? "Generate Course with AI" : "Customise Your Course"}>
+                        <div className="space-y-4">
+                            {wizardStep === 2 && (
+                                <button
+                                    onClick={() => setWizardStep(1)}
+                                    className="text-gray-500 hover:text-gray-700 text-sm font-medium mb-4"
+                                >
+                                    ← Back
+                                </button>
+                            )}
+                            {wizardStep === 1 && (
+                                <>
+                                    {/* Tab Toggle */}
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => setAiMode('document')}
+                                            className={`px-4 py-2 rounded font-medium transition-colors ${
+                                                aiMode === 'document'
+                                                    ? 'bg-blue-500 text-white'
+                                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                            }`}
+                                        >
+                                            From Document
+                                        </button>
+                                        <button
+                                            onClick={() => setAiMode('topic')}
+                                            className={`px-4 py-2 rounded font-medium transition-colors ${
+                                                aiMode === 'topic'
+                                                    ? 'bg-blue-500 text-white'
+                                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                            }`}
+                                        >
+                                            From Topic
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+
+                            {wizardStep === 1 && (
+                                <>
+                                    {/* From Document Tab */}
+                                    {aiMode === 'document' && (
+                                        <>
+                                    {/* File Upload Zone */}
+                                    <div
+                                        onDragOver={(e) => {
+                                            e.preventDefault();
+                                            e.currentTarget.classList.add('border-blue-400');
+                                        }}
+                                        onDragLeave={(e) => {
+                                            e.currentTarget.classList.remove('border-blue-400');
+                                        }}
+                                        onDrop={(e) => {
+                                            e.preventDefault();
+                                            e.currentTarget.classList.remove('border-blue-400');
+                                            const files = e.dataTransfer.files;
+                                            if (files.length > 0) {
+                                                const file = files[0];
+                                                const validTypes = ['.docx', '.pptx', '.pdf'];
+                                                const isValid = validTypes.some(type => file.name.toLowerCase().endsWith(type));
+                                                if (isValid && file.size <= 10 * 1024 * 1024) {
+                                                    setUploadedFile(file);
+                                                } else {
+                                                    setFormError('Invalid file. Please upload .docx, .pptx, or .pdf (max 10MB)');
+                                                }
+                                            }
+                                        }}
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                                            uploadedFile
+                                                ? 'border-green-400 bg-green-50'
+                                                : 'border-gray-300 hover:border-blue-400'
+                                        }`}
+                                    >
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept=".docx,.pptx,.pdf"
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                    const validTypes = ['.docx', '.pptx', '.pdf'];
+                                                    const isValid = validTypes.some(type => file.name.toLowerCase().endsWith(type));
+                                                    if (isValid && file.size <= 10 * 1024 * 1024) {
+                                                        setUploadedFile(file);
+                                                        setFormError('');
+                                                    } else {
+                                                        setFormError('Invalid file. Please upload .docx, .pptx, or .pdf (max 10MB)');
+                                                    }
+                                                }
+                                            }}
+                                            style={{ display: 'none' }}
+                                        />
+                                        {uploadedFile ? (
+                                            <div className="space-y-2">
+                                                <p className="text-green-700 font-medium">✓ {uploadedFile.name}</p>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setUploadedFile(null);
+                                                    }}
+                                                    className="inline-block text-gray-500 hover:text-gray-700 text-lg"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                <p className="font-medium text-gray-800">Drop your document here or click to browse</p>
+                                                <p className="text-sm text-gray-600">Supports .docx, .pptx, .pdf — max 10MB</p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <Select
+                                        label="Difficulty Level"
+                                        value={docDifficulty}
+                                        onChange={(e) => setDocDifficulty(e.target.value)}
+                                        options={[
+                                            { value: 'beginner', label: 'Beginner' },
+                                            { value: 'intermediate', label: 'Intermediate' },
+                                            { value: 'advanced', label: 'Advanced' },
+                                        ]}
+                                    />
+
+                                    <Textarea
+                                        label="Additional Instructions"
+                                        value={docInstructions}
+                                        onChange={(e) => setDocInstructions(e.target.value)}
+                                        placeholder="Any specific topics or focus areas? (optional)"
+                                        rows={3}
+                                    />
+                                </>
+                            )}
+
+                                    {/* From Topic Tab */}
+                                    {aiMode === 'topic' && (
+                                        <>
+                                            <Input
+                                                label="Topic"
+                                                value={aiData.topic}
+                                                onChange={(e) => setAiData({ ...aiData, topic: e.target.value })}
+                                                placeholder="e.g., 'Advanced JavaScript Patterns'"
+                                            />
+                                            <Input
+                                                label="Number of Modules"
+                                                type="number"
+                                                value={aiData.num_modules}
+                                                onChange={(e) => setAiData({ ...aiData, num_modules: parseInt(e.target.value) })}
+                                                min={1}
+                                                max={20}
+                                            />
+                                            <Select
+                                                label="Difficulty Level"
+                                                value={aiData.difficulty}
+                                                onChange={(e) => setAiData({ ...aiData, difficulty: e.target.value })}
+                                                options={[
+                                                    { value: 'beginner', label: 'Beginner' },
+                                                    { value: 'intermediate', label: 'Intermediate' },
+                                                    { value: 'advanced', label: 'Advanced' },
+                                                ]}
+                                            />
+                                            <Textarea
+                                                label="Additional Instructions"
+                                                value={aiData.additional_instructions}
+                                                onChange={(e) => setAiData({ ...aiData, additional_instructions: e.target.value })}
+                                                placeholder="Any specific topics or focus areas?"
+                                                rows={3}
+                                            />
+                                        </>
+                                    )}
+                                </>
+                            )}
+
+                            {wizardStep === 2 && (
+                                <>
+                                    <div className="text-xs text-gray-500 mb-4">Step 2 of 2</div>
+                                    <Input
+                                        label="Videos per module"
+                                        type="number"
+                                        value={wizardParams.videos_per_module}
+                                        onChange={(e) => setWizardParams({ ...wizardParams, videos_per_module: parseInt(e.target.value) })}
+                                        min={1}
+                                        max={5}
+                                    />
+                                    <Select
+                                        label="Video duration"
+                                        value={wizardParams.video_duration}
+                                        onChange={(e) => setWizardParams({ ...wizardParams, video_duration: e.target.value })}
+                                        options={[
+                                            { value: 'short', label: 'Short (3-5 min)' },
+                                            { value: 'medium', label: 'Medium (10-15 min)' },
+                                            { value: 'long', label: 'Long (20-30 min)' },
+                                        ]}
+                                    />
+                                    <Select
+                                        label="Tone"
+                                        value={wizardParams.tone}
+                                        onChange={(e) => setWizardParams({ ...wizardParams, tone: e.target.value })}
+                                        options={[
+                                            { value: 'formal', label: 'Formal & Educational' },
+                                            { value: 'conversational', label: 'Conversational' },
+                                            { value: 'technical', label: 'Technical' },
+                                        ]}
+                                    />
+                                    <Select
+                                        label="Target audience"
+                                        value={wizardParams.target_audience}
+                                        onChange={(e) => setWizardParams({ ...wizardParams, target_audience: e.target.value })}
+                                        options={[
+                                            { value: 'new_starters', label: 'New Starters' },
+                                            { value: 'experienced_staff', label: 'Experienced Staff' },
+                                            { value: 'management', label: 'Management' },
+                                            { value: 'general', label: 'General' },
+                                        ]}
+                                    />
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="checkbox"
+                                            id="include-assessment"
+                                            checked={wizardParams.include_assessment}
+                                            onChange={(e) => setWizardParams({ ...wizardParams, include_assessment: e.target.checked })}
+                                            className="w-4 h-4"
+                                        />
+                                        <label htmlFor="include-assessment" className="text-sm font-medium">
+                                            Include end-of-course assessment?
+                                        </label>
+                                    </div>
+                                </>
+                            )}
+
+                            {formError && (
+                                <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+                                    {formError}
+                                </div>
+                            )}
+
+                            <div className="flex gap-2 justify-end">
+                                <Button variant="secondary" onClick={() => setAiModalOpen(false)} disabled={generating}>
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleGenerateCourse} disabled={generating}>
+                                    {wizardStep === 1 ? (
+                                        'Next →'
+                                    ) : generating ? (
+                                        <span className="flex items-center gap-2">
+                                            <span className="inline-block spin">⏳</span>
+                                            Generating...
+                                        </span>
+                                    ) : (
+                                        'Generate Course'
+                                    )}
+                                </Button>
+                            </div>
+                        </div>
+                    </Modal>
+                </div>
+            );
+        };
+
+        const SecurityPage = () => {
+            const [activeTab, setActiveTab] = useState('sessions');
+            const [sessions, setSessions] = useState([]);
+            const [loginAttempts, setLoginAttempts] = useState([]);
+            const [auditLog, setAuditLog] = useState([]);
+            const [ipAllowlist, setIpAllowlist] = useState([]);
+            const [stats, setStats] = useState({ activeSessions: 0, failedLogins24h: 0, lockedAccounts: 0 });
+            const [loading, setLoading] = useState(true);
+            const [newIp, setNewIp] = useState('');
+            const { showToast } = useToast();
+
+            useEffect(() => {
+                fetchSecurityData();
+            }, [activeTab]);
+
+            const fetchSecurityData = async () => {
+                setLoading(true);
+                try {
+                    const [statsRes, sessionsRes, attemptsRes, auditRes, ipRes] = await Promise.all([
+                        api.get('/security/dashboard'),
+                        api.get('/security/sessions'),
+                        api.get('/security/login-attempts'),
+                        api.get('/admin/audit-log?limit=50'),
+                        api.get('/security/ip-allowlist'),
+                    ]);
+
+                    if (statsRes.ok) {
+                        const sd = await statsRes.json();
+                        setStats({
+                            activeSessions: sd.active_sessions ?? 0,
+                            failedLogins24h: sd.failed_logins_24h ?? 0,
+                            lockedAccounts: sd.locked_accounts ?? 0,
+                        });
+                    }
+                    if (sessionsRes.ok) { const d = await sessionsRes.json(); setSessions(Array.isArray(d) ? d : d.items || []); }
+                    if (attemptsRes.ok) { const d = await attemptsRes.json(); setLoginAttempts(Array.isArray(d) ? d : d.items || []); }
+                    if (auditRes.ok) { const d = await auditRes.json(); setAuditLog(Array.isArray(d) ? d : d.items || []); }
+                    if (ipRes.ok) { const d = await ipRes.json(); setIpAllowlist(Array.isArray(d) ? d : d.items || []); }
+                } catch (err) {
+                    showToast('Failed to load security data', 'error');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleKillSession = async (sessionId) => {
+                try {
+                    const res = await api.delete(`/security/sessions/${sessionId}`);
+                    if (res.ok) {
+                        showToast('Session terminated', 'success');
+                        fetchSecurityData();
+                    } else {
+                        showToast('Failed to terminate session', 'error');
+                    }
+                } catch (err) {
+                    showToast(err.message, 'error');
+                }
+            };
+
+            const handleAddIp = async () => {
+                if (!newIp) return;
+                try {
+                    const res = await api.post('/security/ip-allowlist', { ip_address: newIp });
+                    if (res.ok) {
+                        showToast('IP added to allowlist', 'success');
+                        setNewIp('');
+                        fetchSecurityData();
+                    } else {
+                        showToast('Failed to add IP', 'error');
+                    }
+                } catch (err) {
+                    showToast(err.message, 'error');
+                }
+            };
+
+            const handleRemoveIp = async (ipId) => {
+                try {
+                    const res = await api.delete(`/security/ip-allowlist/${ipId}`);
+                    if (res.ok) {
+                        showToast('IP removed', 'success');
+                        fetchSecurityData();
+                    } else {
+                        showToast('Failed to remove IP', 'error');
+                    }
+                } catch (err) {
+                    showToast(err.message, 'error');
+                }
+            };
+
+            const StatCard = ({ title, value, icon }) => (
+                <Card className="p-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-gray-600 text-xs uppercase">{title}</p>
+                            <p className="text-2xl font-bold mt-1">{value}</p>
+                        </div>
+                        <span className="text-3xl">{icon}</span>
+                    </div>
+                </Card>
+            );
+
+            return (
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <StatCard title="Active Sessions" value={stats.activeSessions} icon="👥" />
+                        <StatCard title="Failed Logins (24h)" value={stats.failedLogins24h} icon="🚫" />
+                        <StatCard title="Locked Accounts" value={stats.lockedAccounts} icon="🔒" />
+                    </div>
+
+                    <div className="border-b">
+                        <div className="flex space-x-4">
+                            {['sessions', 'attempts', 'audit', 'iplist'].map(tab => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    className={`px-4 py-2 font-medium border-b-2 transition ${activeTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-900'}`}
+                                >
+                                    {tab === 'sessions' && 'Sessions'}
+                                    {tab === 'attempts' && 'Login Attempts'}
+                                    {tab === 'audit' && 'Audit Log'}
+                                    {tab === 'iplist' && 'IP Allowlist'}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {loading ? (
+                        <div className="text-center py-12"><div className="spin text-4xl inline-block">⏳</div></div>
+                    ) : (
+                        <>
+                            {activeTab === 'sessions' && (
+                                <Card className="overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full">
+                                            <thead className="bg-gray-50 border-b">
+                                                <tr>
+                                                    <th className="px-6 py-3 text-left text-sm font-semibold">User</th>
+                                                    <th className="px-6 py-3 text-left text-sm font-semibold">IP Address</th>
+                                                    <th className="px-6 py-3 text-left text-sm font-semibold">User Agent</th>
+                                                    <th className="px-6 py-3 text-left text-sm font-semibold">Created</th>
+                                                    <th className="px-6 py-3 text-left text-sm font-semibold">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y">
+                                                {sessions.map(session => (
+                                                    <tr key={session.id} className="hover:bg-gray-50">
+                                                        <td className="px-6 py-4 font-medium">{session.user_id}</td>
+                                                        <td className="px-6 py-4 text-sm">{session.ip_address}</td>
+                                                        <td className="px-6 py-4 text-sm text-gray-600 truncate">{session.user_agent}</td>
+                                                        <td className="px-6 py-4 text-sm">{new Date(session.created_at).toLocaleString()}</td>
+                                                        <td className="px-6 py-4">
+                                                            <button onClick={() => handleKillSession(session.id)} className="text-red-600 hover:underline text-sm">
+                                                                Terminate
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </Card>
+                            )}
+
+                            {activeTab === 'attempts' && (
+                                <Card className="overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full">
+                                            <thead className="bg-gray-50 border-b">
+                                                <tr>
+                                                    <th className="px-6 py-3 text-left text-sm font-semibold">Username</th>
+                                                    <th className="px-6 py-3 text-left text-sm font-semibold">IP Address</th>
+                                                    <th className="px-6 py-3 text-left text-sm font-semibold">Status</th>
+                                                    <th className="px-6 py-3 text-left text-sm font-semibold">Timestamp</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y">
+                                                {loginAttempts.map((attempt, idx) => (
+                                                    <tr key={idx} className="hover:bg-gray-50">
+                                                        <td className="px-6 py-4 font-medium">{attempt.username}</td>
+                                                        <td className="px-6 py-4 text-sm">{attempt.ip_address}</td>
+                                                        <td className="px-6 py-4">
+                                                            <Badge variant={attempt.success ? 'success' : 'danger'}>
+                                                                {attempt.success ? 'Success' : 'Failed'}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm">{new Date(attempt.timestamp).toLocaleString()}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </Card>
+                            )}
+
+                            {activeTab === 'audit' && (
+                                <Card className="overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full">
+                                            <thead className="bg-gray-50 border-b">
+                                                <tr>
+                                                    <th className="px-6 py-3 text-left text-sm font-semibold">Admin</th>
+                                                    <th className="px-6 py-3 text-left text-sm font-semibold">Action</th>
+                                                    <th className="px-6 py-3 text-left text-sm font-semibold">Resource</th>
+                                                    <th className="px-6 py-3 text-left text-sm font-semibold">Timestamp</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y">
+                                                {auditLog.map((log, idx) => (
+                                                    <tr key={idx} className="hover:bg-gray-50">
+                                                        <td className="px-6 py-4 font-medium text-sm">{log.admin_id}</td>
+                                                        <td className="px-6 py-4 text-sm">{log.action_type}</td>
+                                                        <td className="px-6 py-4 text-sm text-gray-600">{log.resource_type}: {log.resource_id}</td>
+                                                        <td className="px-6 py-4 text-sm">{new Date(log.timestamp).toLocaleString()}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </Card>
+                            )}
+
+                            {activeTab === 'iplist' && (
+                                <div className="space-y-4">
+                                    <Card className="p-4">
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                placeholder="e.g., 192.168.1.0/24"
+                                                value={newIp}
+                                                onChange={(e) => setNewIp(e.target.value)}
+                                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                            <Button onClick={handleAddIp}>Add IP</Button>
+                                        </div>
+                                    </Card>
+
+                                    {ipAllowlist.length === 0 ? (
+                                        <Card className="p-12 text-center">
+                                            <p className="text-gray-600">No IPs in allowlist</p>
+                                        </Card>
+                                    ) : (
+                                        <Card className="overflow-hidden">
+                                            <div className="divide-y">
+                                                {ipAllowlist.map(item => (
+                                                    <div key={item.id} className="p-4 flex justify-between items-center hover:bg-gray-50">
+                                                        <div>
+                                                            <p className="font-medium">{item.ip_address}</p>
+                                                            <p className="text-sm text-gray-600">Added: {new Date(item.created_at).toLocaleString()}</p>
+                                                        </div>
+                                                        <button onClick={() => handleRemoveIp(item.id)} className="text-red-600 hover:underline text-sm">
+                                                            Remove
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </Card>
+                                    )}
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            );
+        };
+
+        const DevToolsPage = () => {
+            const [sysHealth, setSysHealth] = useState({ uptime: 0, memory: 0, dbSize: 0, apiCalls: 0 });
+            const [errors, setErrors] = useState([]);
+            const [apiUsage, setApiUsage] = useState([]);
+            const [flags, setFlags] = useState([]);
+            const [envInfo, setEnvInfo] = useState({});
+            const [loading, setLoading] = useState(true);
+            const { showToast } = useToast();
+
+            useEffect(() => {
+                fetchDevData();
+            }, []);
+
+            const fetchDevData = async () => {
+                setLoading(true);
+                try {
+                    const [healthRes, errorsRes, usageRes, flagsRes, envRes] = await Promise.all([
+                        api.get('/dev/health'),
+                        api.get('/dev/errors?limit=20'),
+                        api.get('/dev/api-usage?limit=20'),
+                        api.get('/dev/feature-flags'),
+                        api.get('/dev/env-info'),
+                    ]);
+
+                    if (healthRes.ok) {
+                        const h = await healthRes.json();
+                        setSysHealth({
+                            uptime: h.uptime_seconds ?? h.uptime ?? 0,
+                            memory: h.memory_percent ?? h.memory ?? 0,
+                            dbSize: (h.database_size_mb ?? 0) * 1024 * 1024,
+                            apiCalls: h.api_calls ?? h.apiCalls ?? 0,
+                            cpu: h.cpu_percent ?? 0,
+                        });
+                    }
+                    if (errorsRes.ok) { const d = await errorsRes.json(); setErrors(Array.isArray(d) ? d : d.items || []); }
+                    if (usageRes.ok) { const d = await usageRes.json(); setApiUsage(Array.isArray(d) ? d : d.items || []); }
+                    if (flagsRes.ok) { const d = await flagsRes.json(); setFlags(Array.isArray(d) ? d : d.items || []); }
+                    if (envRes.ok) setEnvInfo(await envRes.json());
+                } catch (err) {
+                    showToast('Failed to load dev data', 'error');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const handleToggleFlag = async (flagId, enabled) => {
+                try {
+                    const res = await api.put(`/dev/feature-flags/${flagId}`, { enabled: !enabled });
+                    if (res.ok) {
+                        showToast('Flag updated', 'success');
+                        fetchDevData();
+                    } else {
+                        showToast('Failed to update flag', 'error');
+                    }
+                } catch (err) {
+                    showToast(err.message, 'error');
+                }
+            };
+
+            const [expandedError, setExpandedError] = useState(null);
+
+            return (
+                <div className="space-y-6">
+                    {loading ? (
+                        <div className="text-center py-12"><div className="spin text-4xl inline-block">⏳</div></div>
+                    ) : (
+                        <>
+                            <div>
+                                <h3 className="text-lg font-bold mb-4">System Health</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <Card className="p-4">
+                                        <p className="text-sm text-gray-600">Uptime</p>
+                                        <p className="text-2xl font-bold mt-1">{(sysHealth.uptime / 3600).toFixed(1)}h</p>
+                                    </Card>
+                                    <Card className="p-4">
+                                        <p className="text-sm text-gray-600">Memory Usage</p>
+                                        <div className="mt-2 bg-gray-200 rounded-full h-2">
+                                            <div
+                                                className="bg-blue-600 h-2 rounded-full"
+                                                style={{ width: `${Math.min(sysHealth.memory, 100)}%` }}
+                                            ></div>
+                                        </div>
+                                        <p className="text-sm mt-1">{sysHealth.memory.toFixed(1)}%</p>
+                                    </Card>
+                                    <Card className="p-4">
+                                        <p className="text-sm text-gray-600">DB Size</p>
+                                        <p className="text-2xl font-bold mt-1">{(sysHealth.dbSize / 1024 / 1024).toFixed(1)}MB</p>
+                                    </Card>
+                                    <Card className="p-4">
+                                        <p className="text-sm text-gray-600">API Calls</p>
+                                        <p className="text-2xl font-bold mt-1">{sysHealth.apiCalls}</p>
+                                    </Card>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 className="text-lg font-bold mb-4">Error Log</h3>
+                                <Card className="overflow-hidden">
+                                    <div className="divide-y max-h-96 overflow-y-auto">
+                                        {errors.length === 0 ? (
+                                            <div className="p-6 text-center text-gray-600">
+                                                No errors
+                                            </div>
+                                        ) : (
+                                            errors.map((err, idx) => (
+                                                <div key={idx} className="p-4 hover:bg-gray-50">
+                                                    <button
+                                                        onClick={() => setExpandedError(expandedError === idx ? null : idx)}
+                                                        className="w-full text-left"
+                                                    >
+                                                        <div className="flex justify-between items-start">
+                                                            <div>
+                                                                <p className="font-medium text-red-600">{err.error_type}</p>
+                                                                <p className="text-sm text-gray-600 mt-1">{err.message}</p>
+                                                                <p className="text-xs text-gray-500 mt-1">{new Date(err.timestamp).toLocaleString()}</p>
+                                                            </div>
+                                                            <span className="text-gray-400">{expandedError === idx ? '▼' : '▶'}</span>
+                                                        </div>
+                                                    </button>
+                                                    {expandedError === idx && (
+                                                        <div className="mt-3 p-3 bg-gray-100 rounded text-xs font-mono text-gray-700 overflow-auto max-h-48">
+                                                            {err.stack_trace}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </Card>
+                            </div>
+
+                            <div>
+                                <h3 className="text-lg font-bold mb-4">Claude API Usage</h3>
+                                <Card className="overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-gray-50 border-b">
+                                                <tr>
+                                                    <th className="px-4 py-2 text-left">Model</th>
+                                                    <th className="px-4 py-2 text-left">Calls</th>
+                                                    <th className="px-4 py-2 text-left">Input Tokens</th>
+                                                    <th className="px-4 py-2 text-left">Output Tokens</th>
+                                                    <th className="px-4 py-2 text-left">Cost</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y">
+                                                {apiUsage.map((usage, idx) => (
+                                                    <tr key={idx} className="hover:bg-gray-50">
+                                                        <td className="px-4 py-2">{usage.model}</td>
+                                                        <td className="px-4 py-2">{usage.call_count}</td>
+                                                        <td className="px-4 py-2">{usage.input_tokens}</td>
+                                                        <td className="px-4 py-2">{usage.output_tokens}</td>
+                                                        <td className="px-4 py-2">${(usage.cost || 0).toFixed(4)}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </Card>
+                            </div>
+
+                            <div>
+                                <h3 className="text-lg font-bold mb-4">Feature Flags</h3>
+                                <Card className="p-4 space-y-3">
+                                    {flags.map(flag => (
+                                        <div key={flag.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                                            <div>
+                                                <p className="font-medium">{flag.name}</p>
+                                                <p className="text-sm text-gray-600">{flag.description}</p>
+                                            </div>
+                                            <button
+                                                onClick={() => handleToggleFlag(flag.id, flag.enabled)}
+                                                className={`px-4 py-2 rounded font-medium transition ${flag.enabled ? 'bg-green-600 text-white' : 'bg-gray-400 text-white'}`}
+                                            >
+                                                {flag.enabled ? 'ON' : 'OFF'}
+                                            </button>
+                                        </div>
+                                    ))}
+                                </Card>
+                            </div>
+
+                            <div>
+                                <h3 className="text-lg font-bold mb-4">Environment Info</h3>
+                                <Card className="p-6">
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <p className="text-gray-600">Version</p>
+                                            <p className="font-mono font-bold">{envInfo.version}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-600">Environment</p>
+                                            <p className="font-mono font-bold">{envInfo.environment}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-600">Python Version</p>
+                                            <p className="font-mono font-bold">{envInfo.python_version}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-600">API Version</p>
+                                            <p className="font-mono font-bold">{envInfo.api_version}</p>
+                                        </div>
+                                    </div>
+                                </Card>
+                            </div>
+                        </>
+                    )}
+                </div>
+            );
+        };
+
+        const WhiteLabelPage = () => {
+            const [config, setConfig] = useState({
+                brand_name: 'LMS Course Builder',
+                primary_color: '#2563eb',
+                secondary_color: '#7c3aed',
+                accent_color: '#f59e0b',
+                bg_color: '#f8fafc',
+                text_color: '#1e293b',
+                font_family: 'Inter',
+                heading_font: 'Inter',
+                border_radius: 8,
+                custom_css: '',
+                logo_url: '',
+                favicon_url: '',
+            });
+            const [loading, setLoading] = useState(true);
+            const [saving, setSaving] = useState(false);
+            const { showToast } = useToast();
+
+            useEffect(() => {
+                fetchWhitelabelConfig();
+            }, []);
+
+            const fetchWhitelabelConfig = async () => {
+                try {
+                    const res = await api.get('/whitelabel/preview');
+                    if (res.ok) {
+                        const data = await res.json();
+                        setConfig(data);
+                        applyTheme(data);
+                    }
+                } catch (err) {
+                    showToast('Failed to load config', 'error');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const applyTheme = (data) => {
+                if (data.primary_color) document.documentElement.style.setProperty('--primary', data.primary_color);
+                if (data.secondary_color) document.documentElement.style.setProperty('--secondary', data.secondary_color);
+                if (data.accent_color) document.documentElement.style.setProperty('--accent', data.accent_color);
+                if (data.bg_color) document.documentElement.style.setProperty('--bg', data.bg_color);
+                if (data.text_color) document.documentElement.style.setProperty('--text', data.text_color);
+                if (data.font_family) document.documentElement.style.setProperty('--font-family', data.font_family + ', sans-serif');
+                if (data.heading_font) document.documentElement.style.setProperty('--heading-font', data.heading_font + ', sans-serif');
+                if (data.border_radius) document.documentElement.style.setProperty('--border-radius', data.border_radius + 'px');
+            };
+
+            const handleSave = async () => {
+                setSaving(true);
+                try {
+                    const res = await api.put('/whitelabel/config', config);
+                    if (res.ok) {
+                        applyTheme(config);
+                        showToast('Configuration saved!', 'success');
+                    } else {
+                        showToast('Failed to save configuration', 'error');
+                    }
+                } catch (err) {
+                    showToast(err.message, 'error');
+                } finally {
+                    setSaving(false);
+                }
+            };
+
+            const handleReset = () => {
+                if (confirm('Reset to defaults?')) {
+                    const defaults = {
+                        brand_name: 'LMS Course Builder',
+                        primary_color: '#2563eb',
+                        secondary_color: '#7c3aed',
+                        accent_color: '#f59e0b',
+                        bg_color: '#f8fafc',
+                        text_color: '#1e293b',
+                        font_family: 'Inter',
+                        heading_font: 'Inter',
+                        border_radius: 8,
+                        custom_css: '',
+                        logo_url: '',
+                        favicon_url: '',
+                    };
+                    setConfig(defaults);
+                    applyTheme(defaults);
+                }
+            };
+
+            const handleExportTheme = () => {
+                const json = JSON.stringify(config, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'theme.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+
+            if (loading) {
+                return <div className="text-center py-12"><div className="spin text-4xl inline-block">⏳</div></div>;
+            }
+
+            return (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 space-y-6">
+                        <Card className="p-6">
+                            <h3 className="text-lg font-bold mb-4">Branding</h3>
+                            <Input
+                                label="Brand Name"
+                                value={config.brand_name}
+                                onChange={(e) => setConfig({ ...config, brand_name: e.target.value })}
+                            />
+                            <Input
+                                label="Logo URL"
+                                type="url"
+                                value={config.logo_url}
+                                onChange={(e) => setConfig({ ...config, logo_url: e.target.value })}
+                            />
+                            <Input
+                                label="Favicon URL"
+                                type="url"
+                                value={config.favicon_url}
+                                onChange={(e) => setConfig({ ...config, favicon_url: e.target.value })}
+                            />
+                        </Card>
+
+                        <Card className="p-6">
+                            <h3 className="text-lg font-bold mb-4">Colors</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">Primary Color</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="color"
+                                            value={config.primary_color}
+                                            onChange={(e) => setConfig({ ...config, primary_color: e.target.value })}
+                                            className="w-12 h-10 rounded cursor-pointer"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={config.primary_color}
+                                            onChange={(e) => setConfig({ ...config, primary_color: e.target.value })}
+                                            className="flex-1 px-2 py-1 border rounded text-sm"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">Secondary Color</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="color"
+                                            value={config.secondary_color}
+                                            onChange={(e) => setConfig({ ...config, secondary_color: e.target.value })}
+                                            className="w-12 h-10 rounded cursor-pointer"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={config.secondary_color}
+                                            onChange={(e) => setConfig({ ...config, secondary_color: e.target.value })}
+                                            className="flex-1 px-2 py-1 border rounded text-sm"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">Accent Color</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="color"
+                                            value={config.accent_color}
+                                            onChange={(e) => setConfig({ ...config, accent_color: e.target.value })}
+                                            className="w-12 h-10 rounded cursor-pointer"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={config.accent_color}
+                                            onChange={(e) => setConfig({ ...config, accent_color: e.target.value })}
+                                            className="flex-1 px-2 py-1 border rounded text-sm"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">Background Color</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="color"
+                                            value={config.bg_color}
+                                            onChange={(e) => setConfig({ ...config, bg_color: e.target.value })}
+                                            className="w-12 h-10 rounded cursor-pointer"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={config.bg_color}
+                                            onChange={(e) => setConfig({ ...config, bg_color: e.target.value })}
+                                            className="flex-1 px-2 py-1 border rounded text-sm"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-2">Text Color</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="color"
+                                            value={config.text_color}
+                                            onChange={(e) => setConfig({ ...config, text_color: e.target.value })}
+                                            className="w-12 h-10 rounded cursor-pointer"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={config.text_color}
+                                            onChange={(e) => setConfig({ ...config, text_color: e.target.value })}
+                                            className="flex-1 px-2 py-1 border rounded text-sm"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </Card>
+
+                        <Card className="p-6">
+                            <h3 className="text-lg font-bold mb-4">Typography & Layout</h3>
+                            <Select
+                                label="Font Family"
+                                value={config.font_family}
+                                onChange={(e) => setConfig({ ...config, font_family: e.target.value })}
+                                options={[
+                                    { value: 'Inter', label: 'Inter' },
+                                    { value: 'Roboto', label: 'Roboto' },
+                                    { value: 'Open Sans', label: 'Open Sans' },
+                                    { value: 'Lato', label: 'Lato' },
+                                    { value: 'Poppins', label: 'Poppins' },
+                                    { value: 'Montserrat', label: 'Montserrat' },
+                                    { value: 'system-ui', label: 'System UI' },
+                                ]}
+                            />
+                            <Select
+                                label="Heading Font"
+                                value={config.heading_font}
+                                onChange={(e) => setConfig({ ...config, heading_font: e.target.value })}
+                                options={[
+                                    { value: 'Inter', label: 'Inter' },
+                                    { value: 'Roboto', label: 'Roboto' },
+                                    { value: 'Open Sans', label: 'Open Sans' },
+                                    { value: 'Lato', label: 'Lato' },
+                                    { value: 'Poppins', label: 'Poppins' },
+                                    { value: 'Montserrat', label: 'Montserrat' },
+                                    { value: 'system-ui', label: 'System UI' },
+                                ]}
+                            />
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium mb-2">Border Radius: {config.border_radius}px</label>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="24"
+                                    value={config.border_radius}
+                                    onChange={(e) => setConfig({ ...config, border_radius: parseInt(e.target.value) })}
+                                    className="w-full"
+                                />
+                            </div>
+                        </Card>
+
+                        <Card className="p-6">
+                            <h3 className="text-lg font-bold mb-4">Custom CSS</h3>
+                            <Textarea
+                                value={config.custom_css}
+                                onChange={(e) => setConfig({ ...config, custom_css: e.target.value })}
+                                placeholder="Enter custom CSS here..."
+                                rows={6}
+                            />
+                        </Card>
+
+                        <div className="flex gap-2">
+                            <Button onClick={handleSave} disabled={saving} className="flex-1">
+                                {saving ? '💾 Saving...' : '💾 Save Configuration'}
+                            </Button>
+                            <Button variant="secondary" onClick={handleReset} className="flex-1">
+                                🔄 Reset
+                            </Button>
+                            <Button variant="ghost" onClick={handleExportTheme} className="flex-1">
+                                ⬇️ Export
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="lg:col-span-1">
+                        <Card className="p-6 sticky top-6">
+                            <h3 className="text-lg font-bold mb-4">Preview</h3>
+                            <div
+                                className="space-y-3 p-4 rounded-lg"
+                                style={{
+                                    backgroundColor: config.bg_color,
+                                    color: config.text_color,
+                                    fontFamily: config.font_family + ', sans-serif',
+                                    borderRadius: config.border_radius + 'px',
+                                }}
+                            >
+                                <div>
+                                    <h2
+                                        className="text-lg font-bold mb-2"
+                                        style={{
+                                            fontFamily: config.heading_font + ', sans-serif',
+                                            color: config.primary_color,
+                                        }}
+                                    >
+                                        {config.brand_name}
+                                    </h2>
+                                </div>
+
+                                {config.logo_url && (
+                                    <img src={config.logo_url} alt="Logo" className="w-full max-h-20 object-contain mb-2" />
+                                )}
+
+                                <div className="space-y-2">
+                                    <button
+                                        className="w-full py-2 rounded-lg font-medium text-white transition"
+                                        style={{
+                                            backgroundColor: config.primary_color,
+                                            borderRadius: config.border_radius + 'px',
+                                        }}
+                                    >
+                                        Primary Button
+                                    </button>
+                                    <button
+                                        className="w-full py-2 rounded-lg font-medium text-white transition"
+                                        style={{
+                                            backgroundColor: config.secondary_color,
+                                            borderRadius: config.border_radius + 'px',
+                                        }}
+                                    >
+                                        Secondary Button
+                                    </button>
+                                    <button
+                                        className="w-full py-2 rounded-lg font-medium text-white transition"
+                                        style={{
+                                            backgroundColor: config.accent_color,
+                                            borderRadius: config.border_radius + 'px',
+                                        }}
+                                    >
+                                        Accent Button
+                                    </button>
+                                </div>
+
+                                <div className="pt-3 border-t" style={{ borderColor: config.text_color + '33' }}>
+                                    <p className="text-xs opacity-75">
+                                        This is a preview of your theme. Colors and fonts are applied in real-time.
+                                    </p>
+                                </div>
+                            </div>
+                        </Card>
+                    </div>
+                </div>
+            );
+        };
+
+        const CourseViewerPage = () => {
+            return (
+                <Card className="p-12 text-center">
+                    <p className="text-gray-600 text-lg">Course viewer page (for trainees)</p>
+                </Card>
+            );
+        };
+
+        // ============= MAIN APP =============
+
+        const App = () => {
+            return (
+                <BrowserRouter>
+                    <Routes>
+                        <Route path="/login" element={<LoginPage />} />
+                        <Route
+                            path="/admin"
+                            element={
+                                <ProtectedRoute>
+                                    <AdminLayout>
+                                        <AdminDashboard />
+                                    </AdminLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/users"
+                            element={
+                                <ProtectedRoute>
+                                    <AdminLayout>
+                                        <UserManagementPage />
+                                    </AdminLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/courses"
+                            element={
+                                <ProtectedRoute>
+                                    <AdminLayout>
+                                        <CourseManagementPage />
+                                    </AdminLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/security"
+                            element={
+                                <ProtectedRoute>
+                                    <AdminLayout>
+                                        <SecurityPage />
+                                    </AdminLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/dev-tools"
+                            element={
+                                <ProtectedRoute>
+                                    <AdminLayout>
+                                        <DevToolsPage />
+                                    </AdminLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/whitelabel"
+                            element={
+                                <ProtectedRoute>
+                                    <AdminLayout>
+                                        <WhiteLabelPage />
+                                    </AdminLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/courses/:id"
+                            element={
+                                <ProtectedRoute>
+                                    <AdminLayout>
+                                        <CourseViewerPage />
+                                    </AdminLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route path="/" element={<Navigate to="/admin" />} />
+                        <Route path="*" element={<Navigate to="/admin" />} />
+                    </Routes>
+                </BrowserRouter>
+            );
+        };
+
+        // ============= RENDER =============
+
+        const root = createRoot(document.getElementById('app'));
+        root.render(
+            <ToastProvider>
+                <AuthProvider>
+                    <App />
+                </AuthProvider>
+            </ToastProvider>
+        );
+    </script>
+</body>
+</html>

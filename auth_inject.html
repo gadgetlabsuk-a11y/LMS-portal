@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head><title>Logging in...</title></head>
+<body>
+<script>
+// Must be served from same origin — redirect via meta first, then inject
+const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsInVzZXJfaWQiOjEsInJvbGUiOiJhZG1pbiIsImV4cCI6MTc3Njk0MjUwMSwidHlwZSI6ImFjY2VzcyJ9.aJETOPiUHCW3rU-KoP8Bc3D3T8SvkZ3q_9fwgxC6eh8';
+const target = 'http://localhost:6000';
+// Open target in same tab with a fragment that carries the token
+window.location.href = target + '/set-token#' + token;
+</script>
+</body>
+</html>

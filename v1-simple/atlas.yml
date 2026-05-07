@@ -1,0 +1,41 @@
+name: lms-course-builder
+version: "1.0.0"
+description: AI-powered LMS Course Builder — converts PDF/DOCX documents into structured, interactive video-based learning courses
+author: stuart
+port: 8500
+
+health:
+  path: /health
+  interval: 30s
+  timeout: 5s
+
+ready:
+  path: /ready
+
+environment:
+  - name: ANTHROPIC_API_KEY
+    required: true
+    description: Anthropic API key for Claude course generation
+  - name: DATABASE_URL
+    required: false
+    default: sqlite:///data/lms.db
+    description: SQLite database path
+  - name: LOG_LEVEL
+    required: false
+    default: INFO
+    description: Application log level
+  - name: HOST
+    required: false
+    default: "0.0.0.0"
+  - name: PORT
+    required: false
+    default: "8500"
+
+resources:
+  memory: 512Mi
+  cpu: "0.5"
+
+volumes:
+  - name: data
+    path: /app/data
+    size: 1Gi

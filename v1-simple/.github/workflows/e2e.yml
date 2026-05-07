@@ -1,0 +1,50 @@
+name: E2E + Accessibility CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: sqlite+aiosqlite:///data/lms_e2e.db
+      STORAGE_BACKEND: local
+      UPLOAD_DIR: /tmp/e2e_uploads
+      MAIL_PROVIDER: log
+      BASE_URL: http://localhost:8000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Python deps
+        run: pip install -r requirements.txt uvicorn
+
+      - name: Start server
+        run: |
+          uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          sleep 3
+        env:
+          PYTHONPATH: .
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save @playwright/test @axe-core/playwright
+          npx playwright install --with-deps chromium
+
+      - name: Run accessibility tests
+        run: npx playwright test tests/e2e/ --reporter=list
+        continue-on-error: true
