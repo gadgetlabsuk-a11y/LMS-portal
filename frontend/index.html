@@ -3336,6 +3336,36 @@
                             }
                         />
                         <Route
+                            path="/creator"
+                            element={
+                                <ProtectedRoute creatorRoute={true}>
+                                    <CreatorLayout>
+                                        <CreatorDashboard />
+                                    </CreatorLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/creator/courses"
+                            element={
+                                <ProtectedRoute creatorRoute={true}>
+                                    <CreatorLayout>
+                                        <CourseManagementPage />
+                                    </CreatorLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/creator/learners"
+                            element={
+                                <ProtectedRoute creatorRoute={true}>
+                                    <CreatorLayout>
+                                        <CreatorLearners />
+                                    </CreatorLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
                             path="/courses/:id"
                             element={
                                 <ProtectedRoute>
