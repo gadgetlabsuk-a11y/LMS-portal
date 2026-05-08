@@ -1249,7 +1249,8 @@
             const [page, setPage] = useState(1);
             const [modalOpen, setModalOpen] = useState(false);
             const [editingUser, setEditingUser] = useState(null);
-            const [formData, setFormData] = useState({ username: '', email: '', password: '', role: 'user' });
+            const [formData, setFormData] = useState({ username: '', email: '', password: '', role: 'trainee' });
+            const [totalUsers, setTotalUsers] = useState(0);
             const [formError, setFormError] = useState('');
             const { showToast } = useToast();
 
@@ -1299,11 +1300,16 @@
                         showToast(editingUser ? 'User updated' : 'User created', 'success');
                         setModalOpen(false);
                         setEditingUser(null);
-                        setFormData({ username: '', email: '', password: '', role: 'user' });
+                        setFormData({ username: '', email: '', password: '', role: 'trainee' });
                         fetchUsers();
                     } else {
                         const err = await res.json();
-                        setFormError(err.detail || 'Failed to save user');
+                        const detail = err.detail;
+                        setFormError(
+                            Array.isArray(detail)
+                                ? detail.map(e => e.msg || JSON.stringify(e)).join('; ')
+                                : detail || 'Failed to save user'
+                        );
                     }
                 } catch (err) {
                     setFormError(err.message);
@@ -1356,13 +1362,13 @@
                             >
                                 <option value="">All Roles</option>
                                 <option value="admin">Admin</option>
-                                <option value="instructor">Instructor</option>
-                                <option value="user">User</option>
+                                <option value="creator">Creator</option>
+                                <option value="trainee">Trainee</option>
                             </select>
                         </div>
                         <Button onClick={() => {
                             setEditingUser(null);
-                            setFormData({ username: '', email: '', password: '', role: 'user' });
+                            setFormData({ username: '', email: '', password: '', role: 'trainee' });
                             setModalOpen(true);
                         }}>
                             ➕ New User
@@ -1453,8 +1459,8 @@
                                 value={formData.role}
                                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                                 options={[
-                                    { value: 'user', label: 'User' },
-                                    { value: 'instructor', label: 'Instructor' },
+                                    { value: 'trainee', label: 'Trainee' },
+                                    { value: 'creator', label: 'Creator' },
                                     { value: 'admin', label: 'Admin' },
                                 ]}
                             />
