@@ -1,7 +1,7 @@
 // API_BASE: empty string in dev (Vite proxy forwards /api to localhost:8000)
 // In prod: '/lms' prefix — Traefik strips /lms before forwarding to FastAPI,
 // so FastAPI receives /api/... unchanged. This matches the monolith behaviour exactly.
-const API_BASE = import.meta.env.PROD ? '/lms' : ''
+export const API_BASE = import.meta.env.PROD ? '/lms' : ''
 
 // Singleton navigate function — set once from within the React Router tree.
 // Required because api.ts is a plain module (not a hook) and cannot call useNavigate directly.
