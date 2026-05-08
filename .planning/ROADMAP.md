@@ -50,7 +50,16 @@ Phases 1–8 were tracked manually before GSD was adopted. What shipped:
   2. Deep-linking to any route (e.g. `/lms/admin`, `/lms/creator`) works after a hard browser refresh
   3. The build pipeline produces a `frontend/dist/` directory; Coolify deploys it via nixpacks staticfile with the committed `nginx.conf`
   4. No Babel standalone script tag exists in the deployed HTML; assets reference `/lms/` path prefix correctly
-**Plans**: TBD
+**Plans**: 7 plans
+
+Plans:
+- [ ] 09-01-PLAN.md — Vite scaffold: package.json, vite.config.ts, tsconfig, nginx.conf, main.tsx, App.tsx stubs, vitest setup
+- [ ] 09-02-PLAN.md — Core services and contexts: api.ts, AuthContext, ToastContext
+- [ ] 09-03-PLAN.md — Common components: Modal, Button, Card, Badge, Input, Select, Textarea
+- [ ] 09-04-PLAN.md — Layouts and auth guards: AdminLayout, LearnerLayout, CreatorLayout, ProtectedRoute, SmartRedirect, LoginPage
+- [ ] 09-05-PLAN.md — Admin pages: AdminDashboard, UserManagementPage, CourseManagementPage, SecurityPage, DevToolsPage, WhiteLabelPage
+- [ ] 09-06-PLAN.md — Creator and learner pages: CreatorDashboard, CreatorLearners, LearnerCatalogue, CourseDetail, ModuleAccordion, CourseViewerPage
+- [ ] 09-07-PLAN.md — Wire App.tsx routes + Coolify staging smoke test checkpoint
 
 ### Phase 10: Data Models
 **Goal**: All new relational tables exist in the production database, `Course.content` JSON is retired, and schema changes run automatically on every Coolify deploy
@@ -164,7 +173,7 @@ Phases 1–8 were tracked manually before GSD was adopted. What shipped:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 9. Vite Migration | v1.0 | 0/TBD | Not started | - |
+| 9. Vite Migration | v1.0 | 0/7 | Not started | - |
 | 10. Data Models | v1.0 | 0/TBD | Not started | - |
 | 11. Backend CRUD API | v1.0 | 0/TBD | Not started | - |
 | 12. Course Identity & Structure | v1.0 | 0/TBD | Not started | - |
