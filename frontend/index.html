@@ -278,10 +278,12 @@
                     if (res.ok) {
                         const data = await res.json();
                         setUser(data);
+                        return data;
                     }
                 } catch (err) {
                     console.error('Failed to fetch user profile:', err);
                 }
+                return null;
             };
 
             const login = async (username, password, mfaCode = null) => {
@@ -300,8 +302,8 @@
                     if (res.ok) {
                         localStorage.setItem('token', data.access_token);
                         setAuth(data.access_token);
-                        await fetchUserProfile(data.access_token);
-                        return { success: true };
+                        const userData = await fetchUserProfile(data.access_token);
+                        return { success: true, user: userData };
                     } else if (res.status === 403 && data.detail?.includes('MFA')) {
                         return { success: false, requiresMfa: true, error: data.detail };
                     } else {
@@ -546,14 +548,20 @@
             </div>
         );
 
-        const ProtectedRoute = ({ children }) => {
-            const { auth, loading } = useAuth();
+        const ProtectedRoute = ({ children, adminOnly = false }) => {
+            const { auth, loading, user } = useAuth();
+            const { pathname } = useLocation();
 
             if (loading) {
                 return <div className="flex items-center justify-center h-screen"><div className="spin text-4xl">⏳</div></div>;
             }
 
-            return auth ? children : <Navigate to="/login" />;
+            if (!auth) return <Navigate to="/login" />;
+
+            // Trainees must not access admin routes
+            if (adminOnly && user?.role === 'trainee') return <Navigate to="/learn" />;
+
+            return children;
         };
 
         // ============= LEARNER PORTAL =============
@@ -929,7 +937,8 @@
 
                 if (result.success) {
                     showToast('Login successful!', 'success');
-                    navigate('/admin');
+                    const dest = result.user?.role === 'trainee' ? '/learn' : '/admin';
+                    navigate(dest);
                 } else if (result.requiresMfa) {
                     setRequiresMfa(true);
                     setPassword('');
@@ -2916,7 +2925,7 @@
                         <Route
                             path="/admin"
                             element={
-                                <ProtectedRoute>
+                                <ProtectedRoute adminOnly={true}>
                                     <AdminLayout>
                                         <AdminDashboard />
                                     </AdminLayout>
@@ -2926,7 +2935,7 @@
                         <Route
                             path="/admin/users"
                             element={
-                                <ProtectedRoute>
+                                <ProtectedRoute adminOnly={true}>
                                     <AdminLayout>
                                         <UserManagementPage />
                                     </AdminLayout>
@@ -2936,7 +2945,7 @@
                         <Route
                             path="/admin/courses"
                             element={
-                                <ProtectedRoute>
+                                <ProtectedRoute adminOnly={true}>
                                     <AdminLayout>
                                         <CourseManagementPage />
                                     </AdminLayout>
@@ -2946,7 +2955,7 @@
                         <Route
                             path="/admin/security"
                             element={
-                                <ProtectedRoute>
+                                <ProtectedRoute adminOnly={true}>
                                     <AdminLayout>
                                         <SecurityPage />
                                     </AdminLayout>
@@ -2956,7 +2965,7 @@
                         <Route
                             path="/admin/dev-tools"
                             element={
-                                <ProtectedRoute>
+                                <ProtectedRoute adminOnly={true}>
                                     <AdminLayout>
                                         <DevToolsPage />
                                     </AdminLayout>
@@ -2966,7 +2975,7 @@
                         <Route
                             path="/admin/whitelabel"
                             element={
-                                <ProtectedRoute>
+                                <ProtectedRoute adminOnly={true}>
                                     <AdminLayout>
                                         <WhiteLabelPage />
                                     </AdminLayout>
@@ -2977,14 +2986,32 @@
                             path="/courses/:id"
                             element={
                                 <ProtectedRoute>
-                                    <AdminLayout>
-                                        <CourseViewerPage />
-                                    </AdminLayout>
+                                    <CourseViewerPage />
                                 </ProtectedRoute>
                             }
                         />
-                        <Route path="/" element={<Navigate to="/admin" />} />
-                        <Route path="*" element={<Navigate to="/admin" />} />
+                        <Route
+                            path="/learn"
+                            element={
+                                <ProtectedRoute>
+                                    <LearnerLayout>
+                                        <LearnerCatalogue />
+                                    </LearnerLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/learn/:id"
+                            element={
+                                <ProtectedRoute>
+                                    <LearnerLayout>
+                                        <CourseDetail />
+                                    </LearnerLayout>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route path="/" element={<Navigate to="/learn" />} />
+                        <Route path="*" element={<Navigate to="/learn" />} />
                     </Routes>
                 </BrowserRouter>
             );
