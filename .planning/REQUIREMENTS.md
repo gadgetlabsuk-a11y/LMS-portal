@@ -161,17 +161,89 @@ Explicitly excluded. Documented to prevent scope creep.
 
 ## Traceability
 
-Populated by roadmapper. Phases continue from v0.1 (last phase: 8).
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (to be filled by roadmapper) | | |
+| INFRA-01 | Phase 9 | Pending |
+| INFRA-02 | Phase 9 | Pending |
+| INFRA-03 | Phase 9 | Pending |
+| INFRA-04 | Phase 9 | Pending |
+| INFRA-05 | Phase 9 | Pending |
+| DATA-01 | Phase 10 | Pending |
+| DATA-02 | Phase 10 | Pending |
+| DATA-03 | Phase 10 | Pending |
+| DATA-04 | Phase 10 | Pending |
+| DATA-05 | Phase 10 | Pending |
+| DATA-06 | Phase 10 | Pending |
+| DATA-07 | Phase 10 | Pending |
+| DATA-08 | Phase 10 | Pending |
+| DATA-09 | Phase 10 | Pending |
+| API-01 | Phase 11 | Pending |
+| API-02 | Phase 11 | Pending |
+| API-03 | Phase 11 | Pending |
+| API-04 | Phase 11 | Pending |
+| API-05 | Phase 11 | Pending |
+| API-06 | Phase 11 | Pending |
+| API-07 | Phase 11 | Pending |
+| COURSE-01 | Phase 12 | Pending |
+| COURSE-02 | Phase 12 | Pending |
+| COURSE-03 | Phase 12 | Pending |
+| COURSE-04 | Phase 12 | Pending |
+| COURSE-05 | Phase 12 | Pending |
+| BUILD-01 | Phase 13 | Pending |
+| BUILD-02 | Phase 13 | Pending |
+| BUILD-03 | Phase 13 | Pending |
+| BUILD-04 | Phase 13 | Pending |
+| BUILD-05 | Phase 13 | Pending |
+| BUILD-06 | Phase 13 | Pending |
+| SLIDE-01 | Phase 14 | Pending |
+| SLIDE-02 | Phase 14 | Pending |
+| SLIDE-03 | Phase 14 | Pending |
+| SLIDE-04 | Phase 14 | Pending |
+| SLIDE-05 | Phase 14 | Pending |
+| SLIDE-06 | Phase 14 | Pending |
+| SLIDE-07 | Phase 14 | Pending |
+| SLIDE-08 | Phase 14 | Pending |
+| SLIDE-09 | Phase 14 | Pending |
+| SLIDE-10 | Phase 14 | Pending |
+| SLIDE-11 | Phase 14 | Pending |
+| SLIDE-12 | Phase 14 | Pending |
+| AI-01 | Phase 15 | Pending |
+| AI-02 | Phase 15 | Pending |
+| AI-03 | Phase 15 | Pending |
+| AI-04 | Phase 15 | Pending |
+| AI-05 | Phase 15 | Pending |
+| AI-06 | Phase 15 | Pending |
+| AI-07 | Phase 15 | Pending |
+| QUIZ-01 | Phase 16 | Pending |
+| QUIZ-02 | Phase 16 | Pending |
+| QUIZ-03 | Phase 16 | Pending |
+| QUIZ-04 | Phase 16 | Pending |
+| QUIZ-05 | Phase 16 | Pending |
+| QUIZ-06 | Phase 16 | Pending |
+| QUIZ-07 | Phase 16 | Pending |
+| QUIZ-08 | Phase 16 | Pending |
+| TTS-01 | Phase 17 | Pending |
+| TTS-02 | Phase 17 | Pending |
+| TTS-03 | Phase 17 | Pending |
+| TTS-04 | Phase 17 | Pending |
+| TTS-05 | Phase 17 | Pending |
+| PREVIEW-01 | Phase 18 | Pending |
+| PREVIEW-02 | Phase 18 | Pending |
+| PREVIEW-03 | Phase 18 | Pending |
+| PUBLISH-01 | Phase 18 | Pending |
+| PUBLISH-02 | Phase 18 | Pending |
+| PUBLISH-03 | Phase 18 | Pending |
+| PUBLISH-04 | Phase 18 | Pending |
+| PUBLISH-05 | Phase 18 | Pending |
+| PUBLISH-06 | Phase 18 | Pending |
+| PUBLISH-07 | Phase 18 | Pending |
+| PUBLISH-08 | Phase 18 | Pending |
 
 **Coverage:**
 - v1 requirements: 75 total
-- Mapped to phases: 0
-- Unmapped: 75 ⚠️ (pending roadmap)
+- Mapped to phases: 75
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-08*
-*Last updated: 2026-05-08 after initial milestone v1.0 definition*
+*Last updated: 2026-05-08 — traceability populated by roadmapper (phases 9–18)*
