@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #2563eb;
+  --secondary: #7c3aed;
+  --accent: #f59e0b;
+  --bg: #f8fafc;
+  --text: #1e293b;
+  --font-family: 'Inter', sans-serif;
+  --heading-font: 'Inter', sans-serif;
+  --border-radius: 8px;
+}
+
+* {
+  font-family: var(--font-family);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--heading-font);
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+.primary-bg { background-color: var(--primary); }
+.primary-text { color: var(--primary); }
+.secondary-bg { background-color: var(--secondary); }
+.accent-bg { background-color: var(--accent); }
+.custom-border-radius { border-radius: var(--border-radius); }
+
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.fade-in { animation: fadeIn 0.3s ease-in; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 16px 24px;
+  border-radius: var(--border-radius);
+  color: white;
+  z-index: 9999;
+  animation: slideIn 0.3s ease-out;
+}
+.toast.success { background-color: #10b981; }
+.toast.error { background-color: #ef4444; }
+.toast.info { background-color: var(--primary); }
+
+@keyframes slideIn {
+  from { transform: translateX(400px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.modal-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.badge.success { background-color: #d1fae5; color: #065f46; }
+.badge.warning { background-color: #fef3c7; color: #92400e; }
+.badge.danger { background-color: #fee2e2; color: #991b1b; }
+.badge.info { background-color: #dbeafe; color: #0c4a6e; }
+
+.chart-bar {
+  display: inline-block;
+  background-color: var(--primary);
+  border-radius: 4px;
+  margin: 0 4px;
+}
+
+textarea.custom-textarea {
+  font-family: 'Courier New', monospace;
+  resize: vertical;
+}
