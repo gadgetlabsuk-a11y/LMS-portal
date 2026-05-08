@@ -23,7 +23,7 @@ from models import User, UserRole, WhiteLabelConfig, FeatureFlag, ErrorLog
 from services.auth_service import AuthService
 
 # Import routers
-from routers import admin, auth, users, courses, security, dev_tools, whitelabel
+from routers import admin, auth, users, courses, security, dev_tools, whitelabel, learn
 
 # Configure logging
 logging.basicConfig(
@@ -199,6 +199,7 @@ app.include_router(courses.router)
 app.include_router(security.router)
 app.include_router(dev_tools.router)
 app.include_router(whitelabel.router)
+app.include_router(learn.router)
 
 
 # Mount static files for uploads
