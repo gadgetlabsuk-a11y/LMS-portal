@@ -28,7 +28,7 @@ Phases 1–8 were tracked manually before GSD was adopted. What shipped:
 
 **Milestone Goal:** Creators can build and publish high-quality AI-assisted courses through a structured authoring flow — from course identity through slide editing, quiz building, and TTS narration — and publish with confidence using pre-flight validation.
 
-- [ ] **Phase 9: Vite Migration** — Replace single-file Babel frontend with a proper Vite + React build; verify all existing features work under `/lms`
+- [x] **Phase 9: Vite Migration** — Replace single-file Babel frontend with a proper Vite + React build; verify all existing features work under `/lms` (completed 2026-05-08)
 - [ ] **Phase 10: Data Models** — Normalise course data from JSON blob to relational tables via Alembic migrations
 - [ ] **Phase 11: Backend CRUD API** — Add all new creator API endpoints (modules, videos, slides, blocks, quizzes, uploads)
 - [ ] **Phase 12: Course Identity & Structure** — Course creation Modal 1A (identity + AI assistance) and Modal 1B (structure wizard with live skeleton)
@@ -173,7 +173,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 9. Vite Migration | 6/7 | In Progress|  | - |
+| 9. Vite Migration | 7/7 | Complete   | 2026-05-08 | - |
 | 10. Data Models | v1.0 | 0/TBD | Not started | - |
 | 11. Backend CRUD API | v1.0 | 0/TBD | Not started | - |
 | 12. Course Identity & Structure | v1.0 | 0/TBD | Not started | - |

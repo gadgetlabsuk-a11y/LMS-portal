@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: completed
-last_updated: "2026-05-08T21:33:22.873Z"
-last_activity: 2026-05-08 — Completed 09-06-PLAN.md (Creator and Learner Portal Pages)
+last_updated: "2026-05-08T21:56:32Z"
+last_activity: 2026-05-08 — Completed 09-07-PLAN.md (Final Route Wiring + Deploy) — smoke test approved, Phase 09 complete
 progress:
   total_phases: 10
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # State
 
 ## Current Position
 
-Phase: 9 (Vite Migration) — In progress
-Plan: 09-06 complete; next: 09-07
-Status: Plans 09-01 through 09-06 complete — all 27 monolith components extracted, build passes, 6 tests passing
-Last activity: 2026-05-08 — Completed 09-06-PLAN.md (Creator and Learner Portal Pages)
+Phase: 9 (Vite Migration) — Complete
+Plan: 09-07 complete — all 7 plans done
+Status: Phase 09 fully complete — all 27 monolith components extracted, all routes wired, smoke test passed on buildbench.uk/lms
+Last activity: 2026-05-08 — Completed 09-07-PLAN.md (Final Route Wiring + Deploy) — smoke test approved
 
 ## Project Reference
 
@@ -42,8 +42,13 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | 09    | 04   | ~8 min   | 2/2   | 6     |
 | 09    | 05   | ~4 min   | 2/2   | 6     |
 | 09    | 06   | ~7 min   | 2/2   | 7     |
+| 09    | 07   | ~10 min  | 2/2   | 3     |
 
 ## Accumulated Context
+
+### Decisions from 09-07
+
+- router.test.tsx rewritten to wrap with AuthProvider + ToastProvider and assert real component behaviour (redirect to /login when unauthenticated) instead of Todo-placeholder text
 
 ### Decisions from 09-02
 
@@ -123,4 +128,4 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 
 ## Session Continuity
 
-Next action: Continue with 09-07. All 27 monolith components now extracted across Plans 09-01 through 09-06. App.tsx router wiring is the next step.
+Phase 09 complete. All 7 plans (09-01 through 09-07) done. All 27 monolith components extracted, integrated, and deployed. Smoke test passed on buildbench.uk/lms. Next: Phase 10.
