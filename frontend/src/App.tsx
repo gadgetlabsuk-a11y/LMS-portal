@@ -1,31 +1,172 @@
-import { Routes, Route } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Routes, Route, useNavigate } from 'react-router-dom'
+import { setNavigate } from '@/services/api'
 
-// Placeholder components — replaced by real implementations in later plans
-const Todo = ({ name }: { name: string }) => (
-  <div style={{ padding: 32, fontFamily: 'monospace' }}>
-    <h2>{name}</h2>
-    <p>Placeholder — implementation in progress</p>
-  </div>
-)
+// Layouts
+import { AdminLayout } from '@/components/layout/AdminLayout'
+import { LearnerLayout } from '@/components/layout/LearnerLayout'
+import { CreatorLayout } from '@/components/layout/CreatorLayout'
+
+// Auth
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { SmartRedirect } from '@/components/auth/SmartRedirect'
+
+// Pages
+import { LoginPage } from '@/pages/LoginPage'
+import { AdminDashboard } from '@/pages/admin/AdminDashboard'
+import { UserManagementPage } from '@/pages/admin/UserManagementPage'
+import { CourseManagementPage } from '@/pages/admin/CourseManagementPage'
+import { SecurityPage } from '@/pages/admin/SecurityPage'
+import { DevToolsPage } from '@/pages/admin/DevToolsPage'
+import { WhiteLabelPage } from '@/pages/admin/WhiteLabelPage'
+import { CreatorDashboard } from '@/pages/creator/CreatorDashboard'
+import { CreatorLearners } from '@/pages/creator/CreatorLearners'
+import { LearnerCatalogue } from '@/pages/learn/LearnerCatalogue'
+import { CourseDetail } from '@/pages/learn/CourseDetail'
+import { CourseViewerPage } from '@/pages/CourseViewerPage'
 
 export default function App() {
+  const navigate = useNavigate()
+
+  // Wire the api service's 401 handler to React Router's navigate.
+  // This replaces the monolith's window.history.pushState + PopStateEvent pattern.
+  useEffect(() => {
+    setNavigate(navigate)
+  }, [navigate])
+
   return (
     <Routes>
-      <Route path="/login" element={<Todo name="LoginPage" />} />
-      <Route path="/admin" element={<Todo name="AdminDashboard" />} />
-      <Route path="/admin/users" element={<Todo name="UserManagementPage" />} />
-      <Route path="/admin/courses" element={<Todo name="CourseManagementPage (admin)" />} />
-      <Route path="/admin/security" element={<Todo name="SecurityPage" />} />
-      <Route path="/admin/dev-tools" element={<Todo name="DevToolsPage" />} />
-      <Route path="/admin/whitelabel" element={<Todo name="WhiteLabelPage" />} />
-      <Route path="/creator" element={<Todo name="CreatorDashboard" />} />
-      <Route path="/creator/courses" element={<Todo name="CourseManagementPage (creator)" />} />
-      <Route path="/creator/learners" element={<Todo name="CreatorLearners" />} />
-      <Route path="/courses/:id" element={<Todo name="CourseViewerPage" />} />
-      <Route path="/learn" element={<Todo name="LearnerCatalogue" />} />
-      <Route path="/learn/:id" element={<Todo name="CourseDetail" />} />
-      <Route path="/" element={<Todo name="SmartRedirect" />} />
-      <Route path="*" element={<Todo name="SmartRedirect (404)" />} />
+      <Route path="/login" element={<LoginPage />} />
+
+      {/* Admin routes */}
+      <Route
+        path="/admin"
+        element={
+          <AdminLayout>
+            <ProtectedRoute adminOnly>
+              <AdminDashboard />
+            </ProtectedRoute>
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <AdminLayout>
+            <ProtectedRoute adminOnly>
+              <UserManagementPage />
+            </ProtectedRoute>
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/admin/courses"
+        element={
+          <AdminLayout>
+            <ProtectedRoute adminOnly>
+              <CourseManagementPage />
+            </ProtectedRoute>
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/admin/security"
+        element={
+          <AdminLayout>
+            <ProtectedRoute adminOnly>
+              <SecurityPage />
+            </ProtectedRoute>
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/admin/dev-tools"
+        element={
+          <AdminLayout>
+            <ProtectedRoute adminOnly>
+              <DevToolsPage />
+            </ProtectedRoute>
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/admin/whitelabel"
+        element={
+          <AdminLayout>
+            <ProtectedRoute adminOnly>
+              <WhiteLabelPage />
+            </ProtectedRoute>
+          </AdminLayout>
+        }
+      />
+
+      {/* Creator routes */}
+      <Route
+        path="/creator"
+        element={
+          <CreatorLayout>
+            <ProtectedRoute creatorRoute>
+              <CreatorDashboard />
+            </ProtectedRoute>
+          </CreatorLayout>
+        }
+      />
+      <Route
+        path="/creator/courses"
+        element={
+          <CreatorLayout>
+            <ProtectedRoute creatorRoute>
+              <CourseManagementPage />
+            </ProtectedRoute>
+          </CreatorLayout>
+        }
+      />
+      <Route
+        path="/creator/learners"
+        element={
+          <CreatorLayout>
+            <ProtectedRoute creatorRoute>
+              <CreatorLearners />
+            </ProtectedRoute>
+          </CreatorLayout>
+        }
+      />
+
+      {/* Course viewer (no layout wrapper — full-screen) */}
+      <Route
+        path="/courses/:id"
+        element={
+          <ProtectedRoute>
+            <CourseViewerPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Learner routes */}
+      <Route
+        path="/learn"
+        element={
+          <LearnerLayout>
+            <ProtectedRoute>
+              <LearnerCatalogue />
+            </ProtectedRoute>
+          </LearnerLayout>
+        }
+      />
+      <Route
+        path="/learn/:id"
+        element={
+          <LearnerLayout>
+            <ProtectedRoute>
+              <CourseDetail />
+            </ProtectedRoute>
+          </LearnerLayout>
+        }
+      />
+
+      {/* Catch-all */}
+      <Route path="/" element={<SmartRedirect />} />
+      <Route path="*" element={<SmartRedirect />} />
     </Routes>
   )
 }
