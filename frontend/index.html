@@ -186,12 +186,10 @@
         // or the backend origin when deployed as a separate frontend service.
         const API_BASE = (() => {
             const h = window.location.hostname;
-            // Production custom domain
-            if (h === 'buildbench.uk' || h.endsWith('.buildbench.uk')) return 'https://api.buildbench.uk';
-            // Legacy sslip.io backend (dev)
-            const LEGACY_BACKEND = 'grezgrjpzsiy1x1aqlqu4yml.188.245.67.238.sslip.io';
-            if (h === 'localhost' || h === '127.0.0.1' || h === LEGACY_BACKEND) return '';
-            return `http://${LEGACY_BACKEND}`;
+            // Local dev: backend is co-located
+            if (h === 'localhost' || h === '127.0.0.1') return '';
+            // Backend always lives at api.buildbench.uk
+            return 'https://api.buildbench.uk';
         })();
 
         // ============= CUSTOM ROUTER (no external dep) =============
