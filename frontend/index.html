@@ -740,6 +740,144 @@
             );
         };
 
+        const ModuleAccordion = ({ module, index }) => {
+            const [open, setOpen] = useState(index === 0);
+            const lessons = module.lessons || [];
+            return (
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <button
+                        onClick={() => setOpen(o => !o)}
+                        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 text-left"
+                    >
+                        <span className="font-medium text-gray-800 text-sm">{module.title || `Module ${index + 1}`}</span>
+                        <span className="text-gray-500 text-xs ml-2">{open ? '▲' : '▼'}</span>
+                    </button>
+                    {open && (
+                        <ul className="divide-y divide-gray-100">
+                            {lessons.map((lesson, li) => (
+                                <li key={li} className="px-6 py-2 text-sm text-gray-600 flex items-center gap-2">
+                                    <span className="text-gray-400">▶</span>
+                                    {lesson.title || `Lesson ${li + 1}`}
+                                </li>
+                            ))}
+                            {lessons.length === 0 && (
+                                <li className="px-6 py-2 text-sm text-gray-400 italic">No lessons yet</li>
+                            )}
+                        </ul>
+                    )}
+                </div>
+            );
+        };
+
+        const CourseDetail = () => {
+            const { pathname } = useLocation();
+            const courseId = pathname.split('/').pop();
+            const [course, setCourse] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [notFound, setNotFound] = useState(false);
+            const navigate = useNavigate();
+
+            useEffect(() => {
+                fetchCourse();
+            }, [courseId]);
+
+            const fetchCourse = async () => {
+                setLoading(true);
+                setNotFound(false);
+                try {
+                    const res = await api.get(`/learn/courses/${courseId}`);
+                    if (res.status === 404) { setNotFound(true); return; }
+                    if (!res.ok) throw new Error('Failed to load course');
+                    setCourse(await res.json());
+                } catch (err) {
+                    setNotFound(true);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            if (loading) return (
+                <div className="flex items-center justify-center py-24">
+                    <div className="spin text-4xl">⏳</div>
+                </div>
+            );
+
+            if (notFound) return (
+                <div className="text-center py-24">
+                    <div className="text-6xl mb-4">🔍</div>
+                    <p className="text-gray-600 text-lg mb-4">Course not found.</p>
+                    <button onClick={() => navigate('/learn')} className="text-blue-600 hover:underline text-sm">
+                        ← Back to Courses
+                    </button>
+                </div>
+            );
+
+            const modules = course.content?.modules || [];
+
+            return (
+                <div>
+                    {/* Back link */}
+                    <button
+                        onClick={() => navigate('/learn')}
+                        className="text-blue-600 hover:underline text-sm mb-6 flex items-center gap-1"
+                    >
+                        ← Back to Courses
+                    </button>
+
+                    <div className="lg:grid lg:grid-cols-3 lg:gap-8">
+                        {/* Main content */}
+                        <div className="lg:col-span-2">
+                            <h1 className="text-3xl font-bold text-gray-900 mb-4">{course.title}</h1>
+                            {course.description && (
+                                <p className="text-gray-600 text-base mb-8 leading-relaxed">
+                                    {course.description}
+                                </p>
+                            )}
+
+                            {/* Module accordion */}
+                            {modules.length > 0 ? (
+                                <div>
+                                    <h2 className="text-xl font-semibold text-gray-800 mb-4">Course Content</h2>
+                                    <div className="space-y-2">
+                                        {modules.map((mod, mi) => (
+                                            <ModuleAccordion key={mi} module={mod} index={mi} />
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="bg-gray-50 rounded-lg p-8 text-center">
+                                    <p className="text-gray-500">Course content coming soon.</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Sticky side panel */}
+                        <div className="mt-8 lg:mt-0">
+                            <div className="lg:sticky lg:top-20 bg-white rounded-lg shadow-md border border-gray-100 p-6">
+                                <p className="text-gray-500 text-sm mb-4">
+                                    {modules.length > 0
+                                        ? `${modules.length} module${modules.length > 1 ? 's' : ''}`
+                                        : 'No modules yet'}
+                                </p>
+                                <button
+                                    onClick={() => course.has_content ? navigate(`/courses/${course.id}`) : null}
+                                    disabled={!course.has_content}
+                                    title={!course.has_content ? 'No content yet' : ''}
+                                    className={`w-full py-3 px-6 rounded-lg font-bold text-white text-base transition-all ${
+                                        course.has_content
+                                            ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                                            : 'bg-gray-300 cursor-not-allowed'
+                                    }`}
+                                >
+                                    {course.has_content ? '▶ Start Course' : 'No content yet'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // ============= PAGES =============
 
         const LoginPage = () => {
@@ -2742,10 +2880,29 @@
         };
 
         const CourseViewerPage = () => {
+            const { pathname } = useLocation();
+            const courseId = pathname.split('/').pop();
+            const navigate = useNavigate();
+
             return (
-                <Card className="p-12 text-center">
-                    <p className="text-gray-600 text-lg">Course viewer page (for trainees)</p>
-                </Card>
+                <div className="min-h-screen flex flex-col bg-gray-900">
+                    <div className="bg-gray-800 px-6 py-3 flex items-center justify-between flex-shrink-0">
+                        <button
+                            onClick={() => window.history.back()}
+                            className="text-gray-300 hover:text-white text-sm flex items-center gap-1"
+                        >
+                            ← Back
+                        </button>
+                        <span className="text-gray-400 text-xs">Course Player</span>
+                    </div>
+                    <iframe
+                        src={`${API_BASE}/api/courses/${courseId}/player`}
+                        className="flex-1 w-full border-0"
+                        style={{ minHeight: 'calc(100vh - 52px)' }}
+                        title="Course Player"
+                        allowFullScreen
+                    />
+                </div>
             );
         };
 
