@@ -186,25 +186,31 @@
         // or the backend origin when deployed as a separate frontend service.
         const API_BASE = (() => {
             const h = window.location.hostname;
-            // Local dev: backend is co-located
             if (h === 'localhost' || h === '127.0.0.1') return '';
-            // Backend always lives at api.buildbench.uk
-            return 'https://api.buildbench.uk';
+            // Production: served at buildbench.uk/lms — Traefik strips /lms before
+            // forwarding, so FastAPI always sees /api/... unchanged.
+            return '/lms';
         })();
 
         // ============= CUSTOM ROUTER (no external dep) =============
 
+        const BASE = '/lms';
+
         const RouterCtx = createContext({ path: '/', navigate: () => {} });
 
         const BrowserRouter = ({ children }) => {
-            const [path, setPath] = useState(window.location.pathname);
+            const getInternalPath = () => {
+                const p = window.location.pathname;
+                return p.startsWith(BASE) ? (p.slice(BASE.length) || '/') : p;
+            };
+            const [path, setPath] = useState(getInternalPath);
             useEffect(() => {
-                const handler = () => setPath(window.location.pathname);
+                const handler = () => setPath(getInternalPath());
                 window.addEventListener('popstate', handler);
                 return () => window.removeEventListener('popstate', handler);
             }, []);
             const navigate = useCallback((to) => {
-                window.history.pushState(null, '', to);
+                window.history.pushState(null, '', BASE + to);
                 setPath(to);
             }, []);
             return React.createElement(RouterCtx.Provider, { value: { path, navigate } }, children);
