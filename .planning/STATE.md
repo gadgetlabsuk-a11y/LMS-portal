@@ -3,9 +3,9 @@
 ## Current Position
 
 Phase: 9 (Vite Migration) — In progress
-Plan: 09-01 complete; next: 09-02
-Status: Plan 09-01 (Vite scaffold) complete — build passes, 4 tests passing
-Last activity: 2026-05-08 — Completed 09-01-PLAN.md (Vite scaffold)
+Plan: 09-03 complete; next: 09-04
+Status: Plans 09-01, 09-03 complete — 7 common UI components extracted, build passes, 4 tests passing
+Last activity: 2026-05-08 — Completed 09-03-PLAN.md (Common UI Components)
 
 ## Project Reference
 
@@ -23,8 +23,17 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 09    | 01   | ~4 min   | 2/2   | 19    |
+| 09    | 03   | ~6 min   | 2/2   | 7     |
 
 ## Accumulated Context
+
+### Decisions from 09-03
+
+- Badge uses CSS class approach (.badge.info etc.) matching globals.css, not inline Tailwind — preserves monolith styling intent
+- Textarea uses .custom-textarea CSS class for monospace font and resize:vertical, matching globals.css definition
+- Form wrapper divs include mb-4 to match monolith spacing — callers should not add extra margin
+- All 7 components use named exports (not default exports) for tree-shaking clarity
+- Modal returns null when open=false — conditional rendering handled inside component, not at call site
 
 ### Decisions from 09-01
 
@@ -70,4 +79,4 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 
 ## Session Continuity
 
-Next action: Run `/gsd:plan-phase 9` to plan the Vite Migration phase.
+Next action: Continue with 09-02 and/or 09-04 (page components).
