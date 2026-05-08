@@ -1,4 +1,0 @@
-[start]
-# Patch the Nixpacks-generated nginx config to add SPA try_files routing,
-# then start nginx using that same generated config (preserves mime.types etc.)
-cmd = "sed -i '/autoindex off/i\\            try_files $uri $uri/ /index.html;' /assets/nginx.conf && nginx -c /assets/nginx.conf -g 'daemon off;'"
