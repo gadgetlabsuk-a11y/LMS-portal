@@ -1,0 +1,14 @@
+# Build outputs
+dist/
+node_modules/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Compiled JS from tsc -b (vite.config.js, vitest.config.js etc.)
+vite.config.js
+vitest.config.js
+node_modules/.ts-declarations/
+
+# OS
+.DS_Store

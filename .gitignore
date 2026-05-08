@@ -49,6 +49,9 @@ Thumbs.db
 *.json
 !package.json
 !package-lock.json
+!tsconfig.json
+!tsconfig.node.json
+!tsconfig.*.json
 
 # Logs
 *.log
