@@ -120,3 +120,43 @@ def draft_course(db, admin_user):
     db.commit()
     db.refresh(course)
     return course
+
+
+@pytest.fixture
+def creator_user(db):
+    user = User(
+        username="creator_test",
+        email="creator_test@example.com",
+        hashed_password=AuthService.hash_password("pass123"),
+        role=UserRole.CREATOR,
+        is_active=True,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@pytest.fixture
+def creator_token(creator_user):
+    """JWT token for the creator — created directly, no login endpoint DB writes."""
+    return AuthService.create_access_token(
+        user_id=creator_user.id,
+        username=creator_user.username,
+        role=creator_user.role.value,
+    )
+
+
+@pytest.fixture
+def creator_course(db, creator_user):
+    course = Course(
+        title="Creator's Python Course",
+        description="A course by the creator.",
+        status=CourseStatus.PUBLISHED,
+        creator_id=creator_user.id,
+        content={"modules": [{"title": "Module 1", "lessons": [{"title": "Lesson 1"}]}]},
+    )
+    db.add(course)
+    db.commit()
+    db.refresh(course)
+    return course
