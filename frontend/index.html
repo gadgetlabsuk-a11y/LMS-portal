@@ -348,7 +348,8 @@
                 });
                 if (res.status === 401) {
                     localStorage.removeItem('token');
-                    window.location.href = '/login';
+                    window.history.pushState(null, '', '/login');
+                    window.dispatchEvent(new PopStateEvent('popstate'));
                 }
                 return res;
             },
@@ -366,7 +367,8 @@
                 });
                 if (res.status === 401) {
                     localStorage.removeItem('token');
-                    window.location.href = '/login';
+                    window.history.pushState(null, '', '/login');
+                    window.dispatchEvent(new PopStateEvent('popstate'));
                 }
                 return res;
             },
@@ -384,7 +386,8 @@
                 });
                 if (res.status === 401) {
                     localStorage.removeItem('token');
-                    window.location.href = '/login';
+                    window.history.pushState(null, '', '/login');
+                    window.dispatchEvent(new PopStateEvent('popstate'));
                 }
                 return res;
             },
@@ -401,7 +404,8 @@
                 });
                 if (res.status === 401) {
                     localStorage.removeItem('token');
-                    window.location.href = '/login';
+                    window.history.pushState(null, '', '/login');
+                    window.dispatchEvent(new PopStateEvent('popstate'));
                 }
                 return res;
             },
