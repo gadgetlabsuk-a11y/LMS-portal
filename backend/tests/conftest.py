@@ -148,6 +148,16 @@ def creator_token(creator_user):
 
 
 @pytest.fixture
+def admin_token(admin_user):
+    """JWT token for the admin — created directly, no login endpoint DB writes."""
+    return AuthService.create_access_token(
+        user_id=admin_user.id,
+        username=admin_user.username,
+        role=admin_user.role.value,
+    )
+
+
+@pytest.fixture
 def creator_course(db, creator_user):
     course = Course(
         title="Creator's Python Course",

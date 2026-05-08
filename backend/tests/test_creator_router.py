@@ -67,6 +67,14 @@ class TestCreatorStats:
         assert "draft_courses" in data
         assert "total_enrollments" in data
 
+    def test_admin_can_access_stats(self, client, admin_token):
+        res = client.get(
+            "/api/creator/stats",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        # require_creator allows admin role — must not return 403
+        assert res.status_code == 200
+
 
 class TestCreatorLearners:
 
@@ -134,7 +142,9 @@ class TestCreatorLearners:
         db.add(enrollment)
         db.commit()
 
-        # Filter to a non-existent course_id — should return empty (not an error)
+        # Filter to a course_id that doesn't belong to this creator — endpoint is a filtered
+        # view, not a resource lookup, so unknown/foreign course IDs silently return []
+        # (not 404 or 422).
         res = client.get(
             "/api/creator/learners?course_id=99999",
             headers={"Authorization": f"Bearer {creator_token}"},
@@ -157,3 +167,12 @@ class TestCreatorLearners:
         )
         assert res.status_code == 200
         assert res.json() == []
+
+    def test_admin_can_access_learners(self, client, admin_token):
+        res = client.get(
+            "/api/creator/learners",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        # require_creator allows admin role — must not return 403
+        assert res.status_code == 200
+        assert isinstance(res.json(), list)
