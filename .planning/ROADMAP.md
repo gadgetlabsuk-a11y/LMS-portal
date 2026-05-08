@@ -70,7 +70,13 @@ Plans:
   2. The `Course.content` JSON column no longer exists; existing course data has been migrated to the new relational structure without data loss
   3. A developer can confirm the Module, Video, Slide, Block, Quiz, Question, and Resource tables exist with correct columns via a database inspector or `alembic current`
   4. Rolling back the migration via `alembic downgrade` completes cleanly
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 10-01-PLAN.md — Alembic bootstrap: install, alembic init, env.py with dynamic DB URL, failing test stubs for DATA-01 through DATA-09
+- [ ] 10-02-PLAN.md — New SQLAlchemy models: Module, Video, Slide, Block, Quiz, Question, Resource, AiPromptLog + updated Course model
+- [ ] 10-03-PLAN.md — Four Alembic migration scripts: extend courses, create 8 tables, data migration from content JSON, drop content column
+- [ ] 10-04-PLAN.md — Coolify start command update + production migration smoke test checkpoint
 
 ### Phase 11: Backend CRUD API
 **Goal**: All creator API endpoints for the new data model are live, auth-guarded, and testable via `/docs`
@@ -174,7 +180,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 9. Vite Migration | 7/7 | Complete    | 2026-05-08 | - |
-| 10. Data Models | v1.0 | 0/TBD | Not started | - |
+| 10. Data Models | v1.0 | 0/4 | In progress | - |
 | 11. Backend CRUD API | v1.0 | 0/TBD | Not started | - |
 | 12. Course Identity & Structure | v1.0 | 0/TBD | Not started | - |
 | 13. Course Builder & Module Detail | v1.0 | 0/TBD | Not started | - |
