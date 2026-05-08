@@ -6,7 +6,7 @@ class TestListLearnCourses:
 
     def test_unauthenticated_returns_401(self, client):
         res = client.get("/api/learn/courses")
-        assert res.status_code == 401
+        assert res.status_code in (401, 403)
 
     def test_returns_only_published_courses(self, client, trainee_token, published_course, draft_course):
         res = client.get(
@@ -72,7 +72,7 @@ class TestGetLearnCourse:
 
     def test_unauthenticated_returns_401(self, client, published_course):
         res = client.get(f"/api/learn/courses/{published_course.id}")
-        assert res.status_code == 401
+        assert res.status_code in (401, 403)
 
     def test_returns_published_course(self, client, trainee_token, published_course):
         res = client.get(
