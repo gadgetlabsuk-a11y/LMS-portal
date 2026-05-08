@@ -743,6 +743,8 @@
                         const d = await coursesRes.json();
                         const list = Array.isArray(d) ? d : d.items || [];
                         setRecentCourses(list.slice(0, 5));
+                    } else if (!error) {
+                        setError('Could not load courses.');
                     }
                 } catch (err) {
                     setError('Could not load dashboard. Please try again.');
@@ -853,7 +855,7 @@
 
             useEffect(() => {
                 fetchLearners();
-            }, [selectedCourse]);
+            }, [fetchLearners]);
 
             const fetchCourses = async () => {
                 try {
@@ -861,13 +863,15 @@
                     if (res.ok) {
                         const d = await res.json();
                         setCourses(Array.isArray(d) ? d : d.items || []);
+                    } else {
+                        console.error('Failed to load courses list');
                     }
                 } catch (err) {
                     console.error('Failed to load courses', err);
                 }
             };
 
-            const fetchLearners = async () => {
+            const fetchLearners = useCallback(async () => {
                 setLoading(true);
                 setError('');
                 try {
@@ -883,7 +887,7 @@
                 } finally {
                     setLoading(false);
                 }
-            };
+            }, [selectedCourse]);
 
             return (
                 <div className="space-y-4">
@@ -924,8 +928,8 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {learners.map((l, i) => (
-                                        <tr key={i} className="border-b last:border-0 hover:bg-gray-50">
+                                    {learners.map((l) => (
+                                        <tr key={`${l.email}-${l.course_id}`} className="border-b last:border-0 hover:bg-gray-50">
                                             <td className="px-4 py-3 font-medium text-gray-900">{l.learner_name}</td>
                                             <td className="px-4 py-3 text-gray-600">{l.email}</td>
                                             <td className="px-4 py-3 text-gray-700">{l.course_title}</td>
