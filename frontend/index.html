@@ -270,9 +270,10 @@
                 const token = localStorage.getItem('token');
                 if (token) {
                     setAuth(token);
-                    fetchUserProfile(token);
+                    fetchUserProfile(token).finally(() => setLoading(false));
+                } else {
+                    setLoading(false);
                 }
-                setLoading(false);
             }, []);
 
             const fetchUserProfile = async (token) => {
@@ -559,7 +560,6 @@
 
         const ProtectedRoute = ({ children, adminOnly = false, creatorRoute = false }) => {
             const { auth, loading, user } = useAuth();
-            const { pathname } = useLocation();
 
             if (loading) {
                 return <div className="flex items-center justify-center h-screen"><div className="spin text-4xl">⏳</div></div>;
@@ -912,7 +912,7 @@
                 else if (user.role === 'trainee') nav('/learn');
                 else if (user.role === 'creator') nav('/creator');
                 else nav('/admin');
-            }, [user, loading]);
+            }, [user, loading, nav]);
             return null;
         };
 
