@@ -181,6 +181,17 @@
         const { useState, useEffect, useContext, createContext, useCallback, useRef } = React;
         const { createRoot } = ReactDOM;
 
+        // API base URL — empty string when backend serves this file (same origin),
+        // or the backend origin when deployed as a separate frontend service.
+        const API_BASE = (() => {
+            const h = window.location.hostname;
+            const BACKEND = 'grezgrjpzsiy1x1aqlqu4yml.188.245.67.238.sslip.io';
+            // localhost / backend-served: relative paths work
+            if (h === 'localhost' || h === '127.0.0.1' || h === BACKEND) return '';
+            // Standalone frontend deployment: prefix every /api call with backend origin
+            return `http://${BACKEND}`;
+        })();
+
         // ============= CUSTOM ROUTER (no external dep) =============
 
         const RouterCtx = createContext({ path: '/', navigate: () => {} });
@@ -260,7 +271,7 @@
 
             const fetchUserProfile = async (token) => {
                 try {
-                    const res = await fetch('/api/auth/me', {
+                    const res = await fetch(API_BASE + '/api/auth/me', {
                         headers: { Authorization: `Bearer ${token}` },
                     });
                     if (res.ok) {
@@ -277,7 +288,7 @@
                     const body = { username, password };
                     if (mfaCode) body.mfa_code = mfaCode;
 
-                    const res = await fetch('/api/auth/login', {
+                    const res = await fetch(API_BASE + '/api/auth/login', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(body),
@@ -324,7 +335,7 @@
         const api = {
             get: async (path, options = {}) => {
                 const { auth } = { auth: localStorage.getItem('token') };
-                const res = await fetch(`/api${path}`, {
+                const res = await fetch(`${API_BASE}/api${path}`, {
                     ...options,
                     headers: {
                         'Authorization': auth ? `Bearer ${auth}` : '',
@@ -340,7 +351,7 @@
             },
             post: async (path, body, options = {}) => {
                 const { auth } = { auth: localStorage.getItem('token') };
-                const res = await fetch(`/api${path}`, {
+                const res = await fetch(`${API_BASE}/api${path}`, {
                     method: 'POST',
                     ...options,
                     headers: {
@@ -358,7 +369,7 @@
             },
             put: async (path, body, options = {}) => {
                 const { auth } = { auth: localStorage.getItem('token') };
-                const res = await fetch(`/api${path}`, {
+                const res = await fetch(`${API_BASE}/api${path}`, {
                     method: 'PUT',
                     ...options,
                     headers: {
@@ -376,7 +387,7 @@
             },
             delete: async (path, options = {}) => {
                 const { auth } = { auth: localStorage.getItem('token') };
-                const res = await fetch(`/api${path}`, {
+                const res = await fetch(`${API_BASE}/api${path}`, {
                     method: 'DELETE',
                     ...options,
                     headers: {
@@ -564,7 +575,7 @@
 
             const fetchBrandConfig = async () => {
                 try {
-                    const res = await fetch('/api/whitelabel/preview');
+                    const res = await fetch(API_BASE + '/api/whitelabel/preview');
                     if (res.ok) {
                         const data = await res.json();
                         setBrandConfig(data);
@@ -700,7 +711,7 @@
 
             const fetchBrandConfig = async () => {
                 try {
-                    const res = await fetch('/api/whitelabel/preview');
+                    const res = await fetch(API_BASE + '/api/whitelabel/preview');
                     if (res.ok) {
                         const data = await res.json();
                         setBrandName(data.brand_name || 'LMS Course Builder');
@@ -1221,7 +1232,7 @@
                         formData.append('target_audience', wizardParams.target_audience);
                         formData.append('include_assessment', wizardParams.include_assessment);
 
-                        const res = await fetch(`/api/courses/generate-from-document`, {
+                        const res = await fetch(`${API_BASE}/api/courses/generate-from-document`, {
                             method: 'POST',
                             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                             body: formData
@@ -1307,7 +1318,7 @@
                 try {
                     const endpoint = type === 'script' ? 'generate-script' : 'generate-slides';
                     const ext = type === 'script' ? 'docx' : 'pptx';
-                    const res = await fetch(`/api/courses/${courseId}/${endpoint}`, {
+                    const res = await fetch(`${API_BASE}/api/courses/${courseId}/${endpoint}`, {
                         method: 'POST',
                         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                     });
@@ -1331,7 +1342,7 @@
             const handleGenerateVoiceover = async (courseId, courseTitle) => {
                 showToast('Generating voiceover — this may take a minute...', 'success');
                 try {
-                    const res = await fetch(`/api/courses/${courseId}/generate-voiceover`, {
+                    const res = await fetch(`${API_BASE}/api/courses/${courseId}/generate-voiceover`, {
                         method: 'POST',
                         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
                     });
