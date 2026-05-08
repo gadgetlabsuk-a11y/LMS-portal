@@ -124,7 +124,6 @@ app = FastAPI(
 # Note: allow_credentials=True is incompatible with allow_origins=["*"].
 # Set CORS_ORIGINS in your .env to restrict to specific origins in production.
 # e.g. CORS_ORIGINS=["http://localhost:3000","https://yourdomain.com"]
-_FRONTEND_ORIGIN = "http://dta9d9jm5k5tb94wnomxfxps.188.245.67.238.sslip.io"
 _cors_origins = (
     settings.CORS_ORIGINS
     if settings.CORS_ORIGINS != ["*"]
@@ -132,7 +131,11 @@ _cors_origins = (
         "http://localhost:8000",
         "http://localhost:3000",
         "http://127.0.0.1:8000",
-        _FRONTEND_ORIGIN,  # standalone frontend Coolify deployment
+        # Production custom domain
+        "https://buildbench.uk",
+        "http://buildbench.uk",
+        # Legacy sslip.io dev frontend
+        "http://dta9d9jm5k5tb94wnomxfxps.188.245.67.238.sslip.io",
     ]
 )
 
