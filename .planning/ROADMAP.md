@@ -173,7 +173,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 9. Vite Migration | 5/7 | In Progress|  | - |
+| 9. Vite Migration | 6/7 | In Progress|  | - |
 | 10. Data Models | v1.0 | 0/TBD | Not started | - |
 | 11. Backend CRUD API | v1.0 | 0/TBD | Not started | - |
 | 12. Course Identity & Structure | v1.0 | 0/TBD | Not started | - |

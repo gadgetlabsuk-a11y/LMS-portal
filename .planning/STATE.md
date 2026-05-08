@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: completed
-last_updated: "2026-05-08T21:31:20.474Z"
+last_updated: "2026-05-08T21:33:22.873Z"
 last_activity: 2026-05-08 — Completed 09-06-PLAN.md (Creator and Learner Portal Pages)
 progress:
   total_phases: 10
   completed_phases: 0
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # State
@@ -40,6 +40,7 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | 09    | 02   | ~2 min   | 2/2   | 4     |
 | 09    | 03   | ~6 min   | 2/2   | 7     |
 | 09    | 04   | ~8 min   | 2/2   | 6     |
+| 09    | 05   | ~4 min   | 2/2   | 6     |
 | 09    | 06   | ~7 min   | 2/2   | 7     |
 
 ## Accumulated Context
@@ -50,6 +51,12 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 - fetchUserProfile uses raw fetch (not api.get) to avoid circular dependency between AuthContext and api.ts
 - 401 handler uses setNavigate singleton pattern so api.ts can redirect without being a React hook
 - TOKEN_KEY = 'token' constant in AuthContext enforces the key contract; changing it would log out live users
+
+### Decisions from 09-05
+
+- CourseManagementPage placed in pages/admin/ but has no admin-only role checks — shared safely with /creator/courses route
+- File upload and blob download in CourseManagementPage use raw fetch + API_BASE — api service cannot handle multipart/FormData or streaming blob responses
+- handleViewPlayer opens API_BASE player URL in new tab (not SPA navigation) since course player is a FastAPI-rendered iframe page
 
 ### Decisions from 09-06
 
