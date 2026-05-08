@@ -1,3 +1,17 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: AI Course Builder
+status: completed
+last_updated: "2026-05-08T21:23:24.447Z"
+last_activity: 2026-05-08 — Completed 09-03-PLAN.md (Common UI Components)
+progress:
+  total_phases: 10
+  completed_phases: 0
+  total_plans: 7
+  completed_plans: 3
+---
+
 # State
 
 ## Current Position
@@ -23,9 +37,17 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 09    | 01   | ~4 min   | 2/2   | 19    |
+| 09    | 02   | ~2 min   | 2/2   | 4     |
 | 09    | 03   | ~6 min   | 2/2   | 7     |
 
 ## Accumulated Context
+
+### Decisions from 09-02
+
+- api.ts reads localStorage 'token' directly to avoid circular dependency with AuthContext (which imports api.ts)
+- fetchUserProfile uses raw fetch (not api.get) to avoid circular dependency between AuthContext and api.ts
+- 401 handler uses setNavigate singleton pattern so api.ts can redirect without being a React hook
+- TOKEN_KEY = 'token' constant in AuthContext enforces the key contract; changing it would log out live users
 
 ### Decisions from 09-03
 
@@ -79,4 +101,4 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 
 ## Session Continuity
 
-Next action: Continue with 09-02 and/or 09-04 (page components).
+Next action: Continue with 09-04 (page components). Plans 09-01, 09-02, 09-03 complete.
