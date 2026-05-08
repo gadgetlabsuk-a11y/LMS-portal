@@ -5,7 +5,8 @@ Available to creator and admin roles only.
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy import func, case
+from sqlalchemy.orm import Session, joinedload
 from datetime import datetime
 from typing import List, Optional
 import logging
@@ -33,8 +34,6 @@ class LearnerEnrollmentResponse(BaseModel):
     course_title: str
     enrolled_at: datetime
 
-    class Config:
-        from_attributes = True
 
 
 @router.get("/stats", response_model=CreatorStatsResponse)
@@ -43,18 +42,29 @@ def get_creator_stats(
     current_user: User = Depends(require_creator),
 ) -> CreatorStatsResponse:
     """Return course and enrollment stats for the current creator."""
-    courses = db.query(Course).filter(Course.creator_id == current_user.id).all()
-
-    total = len(courses)
-    published = sum(1 for c in courses if c.status == CourseStatus.PUBLISHED)
-    draft = sum(1 for c in courses if c.status == CourseStatus.DRAFT)
-
-    course_ids = [c.id for c in courses]
-    enrollments = (
-        db.query(Enrollment).filter(Enrollment.course_id.in_(course_ids)).count()
-        if course_ids
-        else 0
+    # Aggregate counts in SQL — avoids loading content blobs into memory
+    row = (
+        db.query(
+            func.count().label("total"),
+            func.sum(case((Course.status == CourseStatus.PUBLISHED, 1), else_=0)).label("published"),
+            func.sum(case((Course.status == CourseStatus.DRAFT, 1), else_=0)).label("draft"),
+        )
+        .filter(Course.creator_id == current_user.id)
+        .one()
     )
+    total = row.total or 0
+    published = row.published or 0
+    draft = row.draft or 0
+
+    # Count enrollments via subquery — no content blobs loaded
+    course_id_subquery = (
+        db.query(Course.id).filter(Course.creator_id == current_user.id).subquery()
+    )
+    enrollments = (
+        db.query(func.count(Enrollment.id))
+        .filter(Enrollment.course_id.in_(course_id_subquery))
+        .scalar()
+    ) or 0
 
     logger.info(f"Creator stats: user={current_user.id}, courses={total}, enrollments={enrollments}")
     return CreatorStatsResponse(
@@ -83,18 +93,18 @@ def get_creator_learners(
 
     enrollments = (
         db.query(Enrollment)
+        .options(joinedload(Enrollment.user))
         .filter(Enrollment.course_id.in_(course_map.keys()))
         .all()
     )
 
     result = []
     for e in enrollments:
-        user = db.query(User).filter(User.id == e.user_id).first()
-        if user:
+        if e.user:
             result.append(
                 LearnerEnrollmentResponse(
-                    learner_name=user.username,
-                    email=user.email,
+                    learner_name=e.user.username,
+                    email=e.user.email,
                     course_id=e.course_id,
                     course_title=course_map[e.course_id],
                     enrolled_at=e.enrolled_at,
