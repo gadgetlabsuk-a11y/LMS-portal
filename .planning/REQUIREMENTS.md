@@ -9,11 +9,11 @@
 
 ### Infrastructure (INFRA)
 
-- [ ] **INFRA-01**: Frontend is built with Vite + React (replaces single-file Babel; proper build step)
-- [ ] **INFRA-02**: Vite build outputs to `frontend/dist/` with `base: '/lms/'` (compatible with existing Traefik stripprefix + nginx setup)
-- [ ] **INFRA-03**: `nginx.conf` is committed to the repo (replaces opaque nixpacks Staticfile) with SPA fallback for all routes
+- [x] **INFRA-01**: Frontend is built with Vite + React (replaces single-file Babel; proper build step)
+- [x] **INFRA-02**: Vite build outputs to `frontend/dist/` with `base: '/lms/'` (compatible with existing Traefik stripprefix + nginx setup)
+- [x] **INFRA-03**: `nginx.conf` is committed to the repo (replaces opaque nixpacks Staticfile) with SPA fallback for all routes
 - [ ] **INFRA-04**: All existing features (auth, admin panel, learner portal, creator portal) continue to work after migration
-- [ ] **INFRA-05**: React Router operates with `basename=/lms`; all routes functional under path prefix
+- [x] **INFRA-05**: React Router operates with `basename=/lms`; all routes functional under path prefix
 
 ### Data Models (DATA)
 
@@ -163,11 +163,11 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 | Phase 9 | Pending |
-| INFRA-02 | Phase 9 | Pending |
-| INFRA-03 | Phase 9 | Pending |
+| INFRA-01 | Phase 9 | Complete |
+| INFRA-02 | Phase 9 | Complete |
+| INFRA-03 | Phase 9 | Complete |
 | INFRA-04 | Phase 9 | Pending |
-| INFRA-05 | Phase 9 | Pending |
+| INFRA-05 | Phase 9 | Complete |
 | DATA-01 | Phase 10 | Pending |
 | DATA-02 | Phase 10 | Pending |
 | DATA-03 | Phase 10 | Pending |

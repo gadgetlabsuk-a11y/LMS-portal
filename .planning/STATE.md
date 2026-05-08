@@ -2,10 +2,10 @@
 
 ## Current Position
 
-Phase: 9 (Vite Migration) — Not started
-Plan: —
-Status: Roadmap created; ready to plan Phase 9
-Last activity: 2026-05-08 — Roadmap created for v1.0 AI Course Builder
+Phase: 9 (Vite Migration) — In progress
+Plan: 09-01 complete; next: 09-02
+Status: Plan 09-01 (Vite scaffold) complete — build passes, 4 tests passing
+Last activity: 2026-05-08 — Completed 09-01-PLAN.md (Vite scaffold)
 
 ## Project Reference
 
@@ -17,10 +17,21 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 ## Performance Metrics
 
 - Phases complete: 0/10 (v1.0)
-- Plans complete: 0/TBD
+- Plans complete: 1/TBD (09-01 done)
 - Requirements mapped: 75/75
 
+| Phase | Plan | Duration | Tasks | Files |
+|-------|------|----------|-------|-------|
+| 09    | 01   | ~4 min   | 2/2   | 19    |
+
 ## Accumulated Context
+
+### Decisions from 09-01
+
+- vitest.config.ts uses `as any` casts on plugins to avoid vite version type mismatch
+- tsconfig.node.json uses `composite: true` + `emitDeclarationOnly` (not noEmit) for tsc -b compatibility
+- vite-env.d.ts required in src/ for import.meta.env type support
+- frontend/.gitignore created to exclude tsbuildinfo and compiled JS artifacts from tsc -b
 
 ### Architecture Decisions
 
