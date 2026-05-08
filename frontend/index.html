@@ -557,7 +557,7 @@
             </div>
         );
 
-        const ProtectedRoute = ({ children, adminOnly = false }) => {
+        const ProtectedRoute = ({ children, adminOnly = false, creatorRoute = false }) => {
             const { auth, loading, user } = useAuth();
             const { pathname } = useLocation();
 
@@ -567,8 +567,14 @@
 
             if (!auth) return <Navigate to="/login" />;
 
-            // Trainees must not access admin routes
-            if (adminOnly && user?.role === 'trainee') return <Navigate to="/learn" />;
+            // Admin routes: trainees → /learn, creators → /creator
+            if (adminOnly) {
+                if (user?.role === 'trainee') return <Navigate to="/learn" />;
+                if (user?.role === 'creator') return <Navigate to="/creator" />;
+            }
+
+            // Creator routes: trainees → /learn
+            if (creatorRoute && user?.role === 'trainee') return <Navigate to="/learn" />;
 
             return children;
         };
@@ -897,6 +903,19 @@
 
         // ============= PAGES =============
 
+        const SmartRedirect = () => {
+            const { user, loading } = useAuth();
+            const nav = useNavigate();
+            useEffect(() => {
+                if (loading) return;
+                if (!user) nav('/login');
+                else if (user.role === 'trainee') nav('/learn');
+                else if (user.role === 'creator') nav('/creator');
+                else nav('/admin');
+            }, [user, loading]);
+            return null;
+        };
+
         const LoginPage = () => {
             const [username, setUsername] = useState('');
             const [password, setPassword] = useState('');
@@ -946,7 +965,7 @@
 
                 if (result.success) {
                     showToast('Login successful!', 'success');
-                    const dest = result.user?.role === 'trainee' ? '/learn' : '/admin';
+                    const dest = result.user?.role === 'trainee' ? '/learn' : result.user?.role === 'creator' ? '/creator' : '/admin';
                     navigate(dest);
                 } else if (result.requiresMfa) {
                     setRequiresMfa(true);
@@ -3025,8 +3044,8 @@
                                 </ProtectedRoute>
                             }
                         />
-                        <Route path="/" element={<Navigate to="/learn" />} />
-                        <Route path="*" element={<Navigate to="/learn" />} />
+                        <Route path="/" element={<SmartRedirect />} />
+                        <Route path="*" element={<SmartRedirect />} />
                     </Routes>
                 </BrowserRouter>
             );
