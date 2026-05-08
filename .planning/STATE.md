@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: completed
-last_updated: "2026-05-08T22:28:00.000Z"
-last_activity: 2026-05-08 — Completed 09-04-PLAN.md (Auth Guards, Layout Shells, LoginPage)
+last_updated: "2026-05-08T21:31:20.474Z"
+last_activity: 2026-05-08 — Completed 09-06-PLAN.md (Creator and Learner Portal Pages)
 progress:
   total_phases: 10
   completed_phases: 0
   total_plans: 7
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # State
@@ -17,9 +17,9 @@ progress:
 ## Current Position
 
 Phase: 9 (Vite Migration) — In progress
-Plan: 09-04 complete; next: 09-05
-Status: Plans 09-01, 09-02, 09-03, 09-04 complete — auth guards, 3 layouts, LoginPage extracted, build passes, 6 tests passing
-Last activity: 2026-05-08 — Completed 09-04-PLAN.md (Auth Guards, Layout Shells, LoginPage)
+Plan: 09-06 complete; next: 09-07
+Status: Plans 09-01 through 09-06 complete — all 27 monolith components extracted, build passes, 6 tests passing
+Last activity: 2026-05-08 — Completed 09-06-PLAN.md (Creator and Learner Portal Pages)
 
 ## Project Reference
 
@@ -40,6 +40,7 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | 09    | 02   | ~2 min   | 2/2   | 4     |
 | 09    | 03   | ~6 min   | 2/2   | 7     |
 | 09    | 04   | ~8 min   | 2/2   | 6     |
+| 09    | 06   | ~7 min   | 2/2   | 7     |
 
 ## Accumulated Context
 
@@ -49,6 +50,13 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 - fetchUserProfile uses raw fetch (not api.get) to avoid circular dependency between AuthContext and api.ts
 - 401 handler uses setNavigate singleton pattern so api.ts can redirect without being a React hook
 - TOKEN_KEY = 'token' constant in AuthContext enforces the key contract; changing it would log out live users
+
+### Decisions from 09-06
+
+- CourseDetail and CourseViewerPage use useParams (not useLocation + pathname.split) — SPA-correct and avoids hash/basename edge cases
+- navigate(-1) replaces window.history.back() in CourseViewerPage — keeps navigation within React Router history stack
+- API_BASE exported from api.ts so CourseViewerPage can build iframe src correctly without duplicating env detection
+- ModuleAccordion accepts optional onLessonClick prop for future lesson-click wiring without a breaking change
 
 ### Decisions from 09-04
 
@@ -108,4 +116,4 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 
 ## Session Continuity
 
-Next action: Continue with 09-05 (admin page components). Plans 09-01, 09-02, 09-03, 09-04 complete.
+Next action: Continue with 09-07. All 27 monolith components now extracted across Plans 09-01 through 09-06. App.tsx router wiring is the next step.
