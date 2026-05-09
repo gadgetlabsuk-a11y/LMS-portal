@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { api } from '@/services/api'
 import { CourseTreeRail } from '@/components/builder/CourseTreeRail'
 import { ModuleOverviewList } from '@/components/builder/ModuleOverviewList'
+import { AISuggestionsRail } from '@/components/ai/AISuggestionsRail'
 import type { BuilderModule as Module, BuilderVideo as Video, BuilderQuiz as Quiz } from '@/components/builder/types'
 
 export function CourseBuilderPage() {
@@ -86,6 +87,9 @@ export function CourseBuilderPage() {
           onVideosReorder={handleVideosReorder}
         />
       </main>
+      <div style={{ width: '256px', flexShrink: 0, overflowY: 'auto', borderLeft: '1px solid #e5e7eb' }}>
+        <AISuggestionsRail modules={modules} videos={videos} quizzes={quizzes} />
+      </div>
     </div>
   )
 }
