@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: executing
-last_updated: "2026-05-09T22:30:54Z"
-last_activity: 2026-05-09 — Completed 15-03 — useSSEStream hook + SideDrawer + StreamingTextOutput created; 4 SSE surfaces refactored; ai_tone_preset propagation for AI-07
+last_updated: "2026-05-09T23:09:36.411Z"
+last_activity: 2026-05-10 — Completed 15-04 — AISuggestionsRail component + 7 tests GREEN + wired into CourseBuilderPage (AI-06)
 progress:
   total_phases: 10
   completed_phases: 6
   total_plans: 38
-  completed_plans: 36
+  completed_plans: 37
 ---
 
 # State
 
 ## Current Position
 
-Phase: 15 (AI Generation Infrastructure) — IN PROGRESS (3/7 plans done)
-Last completed: 15-03 — useSSEStream hook + SideDrawer + StreamingTextOutput; 4 SSE surfaces refactored; ai_tone_preset propagated (AI-01, AI-02, AI-07)
-Status: Phase 15 in progress. 15-03 complete. Ready for 15-04.
-Last activity: 2026-05-09 — Completed 15-03 — useSSEStream hook + SideDrawer + StreamingTextOutput created; 4 SSE surfaces refactored; ai_tone_preset propagation for AI-07
+Phase: 15 (AI Generation Infrastructure) — IN PROGRESS (4/7 plans done)
+Last completed: 15-04 — AISuggestionsRail component with completeness nudges; 7 unit tests GREEN; wired into CourseBuilderPage right panel (AI-06)
+Status: Phase 15 in progress. 15-04 complete. Ready for 15-05.
+Last activity: 2026-05-10 — Completed 15-04 — AISuggestionsRail component + 7 tests GREEN + wired into CourseBuilderPage (AI-06)
 
 ## Project Reference
 
@@ -74,8 +74,16 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 15 P01 | 18min | 2 tasks | 5 files |
 | Phase 15 P02 | 15min | 2 tasks | 3 files |
 | Phase 15 P03 | 33 | 2 tasks | 11 files |
+| Phase 15 P04 | 30min | 2 tasks | 3 files |
 
 ## Accumulated Context
+
+### Decisions from 15-04
+
+- computeNudges() pure function separates nudge logic from rendering — testable without DOM; returns Nudge[] from modules/videos/quizzes inputs
+- data-testid pattern: suggestion-{type}-{moduleId} (e.g. suggestion-missing-description-2) enables precise per-module assertions in tests
+- AISuggestionsRail rendered as 256px right sidebar in CourseBuilderPage with inline styles (consistent with page's existing inline style layout approach)
+- useSSEStream cancel() test pre-existing failure confirmed via stash test — unrelated to this plan, out of scope
 
 ### Decisions from 15-03
 
