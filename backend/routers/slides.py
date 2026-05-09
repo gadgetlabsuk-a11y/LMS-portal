@@ -3,7 +3,7 @@ Slide CRUD + reorder router.
 Available to creator and admin roles only.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -11,12 +11,16 @@ from typing import List, Optional
 import logging
 
 from database import get_db
-from models import Course, Module, Video, Slide
+from models import Course, Module, Video, Slide, Block
 from middleware.auth_middleware import require_creator
+from sse_starlette.sse import EventSourceResponse
+from services.claude_service import ClaudeService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["slides"])
+
+claude_service = ClaudeService()
 
 
 # ---------------------------------------------------------------------------
@@ -58,9 +62,37 @@ class SlideReorderRequest(BaseModel):
     slide_ids: List[int]
 
 
+class AiNarrationRequest(BaseModel):
+    tone_preset: Optional[str] = "professional"
+
+
+class AiOutlineRequest(BaseModel):
+    prompt: Optional[str] = None
+    tone_preset: Optional[str] = "professional"
+    slide_count: Optional[int] = 5
+
+
 # ---------------------------------------------------------------------------
-# Ownership helper
+# Ownership helpers
 # ---------------------------------------------------------------------------
+
+def _get_slide_or_404(slide_id: int, db: Session, current_user) -> Slide:
+    """Fetch slide (with full parent chain join), raise 404 if missing, 403 if not owner."""
+    slide = (
+        db.query(Slide)
+        .join(Video, Slide.video_id == Video.id)
+        .join(Module, Video.module_id == Module.id)
+        .join(Course, Module.course_id == Course.id)
+        .filter(Slide.id == slide_id)
+        .first()
+    )
+    if not slide:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Slide not found")
+    course = slide.video.module.course
+    if current_user.role.value != "admin" and course.creator_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    return slide
+
 
 def _get_video_or_404(video_id: int, db: Session, current_user) -> Video:
     """Fetch video by id (with module/course join), raise 404 if missing, 403 if not owner."""
@@ -132,6 +164,69 @@ def list_slides(
         .all()
     )
     return slides
+
+
+@router.post("/api/slides/{slide_id}/ai/generate-narration")
+async def generate_narration(
+    slide_id: int,
+    body: AiNarrationRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_creator),
+):
+    """Stream AI-generated narration script for a slide. SLIDE-11."""
+    slide = _get_slide_or_404(slide_id, db, current_user)
+    blocks = db.query(Block).filter(Block.slide_id == slide.id).all()
+    block_text = " ".join(
+        str(b.content.get("text") or b.content.get("html") or "")
+        for b in blocks
+        if b.content
+    )
+    prompt = (
+        f"Write a narration script for a slide with the following content: {block_text}. "
+        f"Tone: {body.tone_preset}. Be concise, 2-4 sentences."
+    )
+
+    async def event_generator():
+        async for token in claude_service._stream_text(prompt):
+            if await request.is_disconnected():
+                break
+            yield {"data": token}
+
+    return EventSourceResponse(event_generator())
+
+
+@router.post("/api/slides/{slide_id}/ai/generate-outline")
+async def generate_outline(
+    slide_id: int,
+    body: AiOutlineRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_creator),
+):
+    """Stream AI-generated slide outline as JSON text. SLIDE-12.
+
+    The slide_id here is the anchor slide (first slide of the video).
+    Returns a JSON array as streaming text: [{"title": "...", "blocks": [...]}]
+    Client accumulates tokens and JSON.parse() on stream completion.
+    """
+    slide = _get_slide_or_404(slide_id, db, current_user)
+    source_prompt = body.prompt or "Generate a slide outline"
+    prompt = (
+        f"Generate a slide outline as a JSON array with {body.slide_count} slides. "
+        f"Each slide has: title (string), blocks (array of objects with type and content). "
+        f"Block types: heading, text, image, code, quote, list, callout, divider. "
+        f"Source: {source_prompt}. Tone: {body.tone_preset}. "
+        f"Return ONLY valid JSON. No markdown, no code fences."
+    )
+
+    async def event_generator():
+        async for token in claude_service._stream_text(prompt):
+            if await request.is_disconnected():
+                break
+            yield {"data": token}
+
+    return EventSourceResponse(event_generator())
 
 
 @router.get(
