@@ -23,6 +23,8 @@ import { CreatorDashboard } from '@/pages/creator/CreatorDashboard'
 import { CreatorCourseListPage } from '@/pages/creator/CreatorCourseListPage'
 import { CourseBuilderPage } from '@/pages/creator/CourseBuilderPage'
 import { ModuleDetailPage } from '@/pages/creator/ModuleDetailPage'
+import { SlideBuilderPage } from '@/pages/creator/SlideBuilderPage'
+import { SlideEditorPage } from '@/pages/creator/SlideEditorPage'
 import { CreatorLearners } from '@/pages/creator/CreatorLearners'
 import { LearnerCatalogue } from '@/pages/learn/LearnerCatalogue'
 import { CourseDetail } from '@/pages/learn/CourseDetail'
@@ -140,6 +142,26 @@ export default function App() {
           <CreatorLayout>
             <ProtectedRoute creatorRoute>
               <ModuleDetailPage />
+            </ProtectedRoute>
+          </CreatorLayout>
+        }
+      />
+      <Route
+        path="/creator/courses/:id/videos/:videoId/slides"
+        element={
+          <CreatorLayout>
+            <ProtectedRoute creatorRoute>
+              <SlideBuilderPage />
+            </ProtectedRoute>
+          </CreatorLayout>
+        }
+      />
+      <Route
+        path="/creator/courses/:id/videos/:videoId/slides/:slideId/editor"
+        element={
+          <CreatorLayout>
+            <ProtectedRoute creatorRoute>
+              <SlideEditorPage />
             </ProtectedRoute>
           </CreatorLayout>
         }
