@@ -1,58 +1,47 @@
-import React, { useState } from 'react'
-import { useAuth } from '@/context/AuthContext'
-import { api, API_BASE } from '@/services/api'
+import React, { useState, useEffect, useRef } from 'react'
+import { api } from '@/services/api'
 import { useSlideEditorStore } from '@/store/slideEditorStore'
+import { useSSEStream } from '@/hooks/useSSEStream'
 
 interface Props {
   slideId: number
+  courseId: number
 }
 
-export function NarrationTab({ slideId }: Props) {
-  const { token } = useAuth()
+export function NarrationTab({ slideId, courseId }: Props) {
   const narrationScript = useSlideEditorStore(s => s.narrationScript)
   const setNarration = useSlideEditorStore(s => s.setNarration)
-  const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [tonePreset, setTonePreset] = useState('professional')
+  const { startStream, isStreaming: generating } = useSSEStream()
+  const accumulatedRef = useRef('')
+
+  useEffect(() => {
+    if (!courseId) return
+    api.get(`/courses/${courseId}`)
+      .then(res => res.json())
+      .then((course: { ai_tone_preset?: string }) => {
+        setTonePreset(course.ai_tone_preset || 'professional')
+      })
+      .catch(() => {})
+  }, [courseId])
 
   const handleSaveScript = async () => {
     await api.put(`/slides/${slideId}`, { narration_script: narrationScript })
   }
 
   const handleGenerate = async () => {
-    setGenerating(true)
     setError(null)
     setNarration('')
-    try {
-      const res = await fetch(`${API_BASE}/api/slides/${slideId}/ai/generate-narration`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ tone_preset: 'professional' }),
-      })
-      if (!res.ok) {
-        setError('Generation failed. Please try again.')
-        return
-      }
-      const reader = res.body!.getReader()
-      const decoder = new TextDecoder()
-      let accumulated = ''
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        for (const line of decoder.decode(value).split('\n')) {
-          if (line.startsWith('data: ')) {
-            accumulated += line.slice(6)
-            setNarration(accumulated)
-          }
-        }
-      }
-    } catch (err) {
-      setError('Connection error during generation.')
-    } finally {
-      setGenerating(false)
-    }
+    accumulatedRef.current = ''
+    await startStream({
+      url: `/api/slides/${slideId}/ai/generate-narration`,
+      body: { tone_preset: tonePreset },
+      onToken: t => {
+        accumulatedRef.current += t
+        setNarration(accumulatedRef.current)
+      },
+    })
   }
 
   return (

@@ -4,7 +4,8 @@ import { Button } from '@/components/common/Button'
 import { Input } from '@/components/common/Input'
 import { Select } from '@/components/common/Select'
 import { Textarea } from '@/components/common/Textarea'
-import { api, API_BASE } from '@/services/api'
+import { api } from '@/services/api'
+import { useSSEStream } from '@/hooks/useSSEStream'
 
 interface CourseIdentityModalProps {
   open: boolean
@@ -31,11 +32,10 @@ export function CourseIdentityModal({ open, onClose, onCreated }: CourseIdentity
   const [audienceLevel, setAudienceLevel] = useState('')
   const [tonePreset, setTonePreset] = useState('')
   const [objectives, setObjectives] = useState<string[]>([''])
-
-  const [isStreamingDescription, setIsStreamingDescription] = useState(false)
-  const [isStreamingObjectives, setIsStreamingObjectives] = useState(false)
-  const [streamAbortController, setStreamAbortController] = useState<AbortController | null>(null)
   const [saving, setSaving] = useState(false)
+
+  const { startStream: startDescStream, cancel: cancelDesc, isStreaming: isStreamingDescription } = useSSEStream()
+  const { startStream: startObjStream, cancel: cancelObj, isStreaming: isStreamingObjectives } = useSSEStream()
 
   const resetForm = () => {
     setTitle('')
@@ -43,13 +43,13 @@ export function CourseIdentityModal({ open, onClose, onCreated }: CourseIdentity
     setAudienceLevel('')
     setTonePreset('')
     setObjectives([''])
-    setIsStreamingDescription(false)
-    setIsStreamingObjectives(false)
+    cancelDesc()
+    cancelObj()
   }
 
   const handleClose = () => {
-    streamAbortController?.abort()
-    setStreamAbortController(null)
+    cancelDesc()
+    cancelObj()
     resetForm()
     onClose()
   }
@@ -67,91 +67,33 @@ export function CourseIdentityModal({ open, onClose, onCreated }: CourseIdentity
   }
 
   const streamDescription = async () => {
-    const controller = new AbortController()
-    setStreamAbortController(controller)
-    setIsStreamingDescription(true)
     setDescription('')
-    try {
-      const res = await fetch(`${API_BASE}/api/courses/ai/generate-description`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({ topic: title, tone_preset: tonePreset || 'professional' }),
-        signal: controller.signal,
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const reader = res.body!.getReader()
-      const decoder = new TextDecoder()
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        const text = decoder.decode(value)
-        for (const line of text.split('\n')) {
-          if (line.startsWith('data: ')) {
-            setDescription(prev => prev + line.slice(6))
-          }
-        }
-      }
-    } catch (e: unknown) {
-      if (e instanceof Error && e.name !== 'AbortError') {
-        console.error('Stream error:', e)
-      }
-    } finally {
-      setIsStreamingDescription(false)
-      setStreamAbortController(null)
-    }
+    await startDescStream({
+      url: '/api/courses/ai/generate-description',
+      body: { topic: title, tone_preset: tonePreset || 'professional' },
+      onToken: t => setDescription(prev => prev + t),
+    })
   }
 
   const streamObjectives = async () => {
-    const controller = new AbortController()
-    setStreamAbortController(controller)
-    setIsStreamingObjectives(true)
     let accumulated = ''
-    try {
-      const res = await fetch(`${API_BASE}/api/courses/ai/generate-objectives`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({
-          course_title: title,
-          description,
-          tone_preset: tonePreset || 'professional',
-        }),
-        signal: controller.signal,
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const reader = res.body!.getReader()
-      const decoder = new TextDecoder()
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        const text = decoder.decode(value)
-        for (const line of text.split('\n')) {
-          if (line.startsWith('data: ')) {
-            accumulated += line.slice(6)
-          }
-        }
-      }
-      // Parse accumulated text into objectives — lines starting with "- "
-      const parsed = accumulated
-        .split('\n')
-        .filter(l => l.trim().startsWith('- '))
-        .map(l => l.trim().slice(2).trim())
-        .slice(0, 5)
-      if (parsed.length > 0) {
-        setObjectives(parsed)
-      }
-    } catch (e: unknown) {
-      if (e instanceof Error && e.name !== 'AbortError') {
-        console.error('Stream error:', e)
-      }
-    } finally {
-      setIsStreamingObjectives(false)
-      setStreamAbortController(null)
+    await startObjStream({
+      url: '/api/courses/ai/generate-objectives',
+      body: {
+        course_title: title,
+        description,
+        tone_preset: tonePreset || 'professional',
+      },
+      onToken: t => { accumulated += t },
+    })
+    // Parse accumulated text into objectives — lines starting with "- "
+    const parsed = accumulated
+      .split('\n')
+      .filter(l => l.trim().startsWith('- '))
+      .map(l => l.trim().slice(2).trim())
+      .slice(0, 5)
+    if (parsed.length > 0) {
+      setObjectives(parsed)
     }
   }
 

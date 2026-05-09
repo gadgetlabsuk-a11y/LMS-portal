@@ -22,18 +22,18 @@ describe('NarrationTab', () => {
   })
 
   it('SLIDE-10: renders narration script textarea', () => {
-    render(<NarrationTab slideId={5} />)
+    render(<NarrationTab slideId={5} courseId={1} />)
     expect(screen.getByTestId('narration-script-textarea')).toBeInTheDocument()
   })
 
   it('SLIDE-10: textarea value reflects Zustand narrationScript state', () => {
     useSlideEditorStore.setState({ narrationScript: 'Hello world' })
-    render(<NarrationTab slideId={5} />)
+    render(<NarrationTab slideId={5} courseId={1} />)
     expect(screen.getByTestId('narration-script-textarea')).toHaveValue('Hello world')
   })
 
   it('SLIDE-11: generate narration button is present', () => {
-    render(<NarrationTab slideId={5} />)
+    render(<NarrationTab slideId={5} courseId={1} />)
     expect(screen.getByTestId('generate-narration-btn')).toBeInTheDocument()
   })
 })

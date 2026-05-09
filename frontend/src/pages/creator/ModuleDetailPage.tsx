@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api, API_BASE } from '@/services/api'
 import { Input } from '@/components/common/Input'
 import { Textarea } from '@/components/common/Textarea'
 import { Select } from '@/components/common/Select'
 import { Button } from '@/components/common/Button'
+import { useSSEStream } from '@/hooks/useSSEStream'
 
 interface ModuleData {
   id: number
@@ -44,9 +45,19 @@ export function ModuleDetailPage() {
 
   // AI generation state
   const [aiPrompt, setAiPrompt] = useState('')
-  const [streaming, setStreaming] = useState(false)
   const [docFile, setDocFile] = useState<File | null>(null)
-  const abortRef = useRef<AbortController | null>(null)
+  const [tonePreset, setTonePreset] = useState('professional')
+  const { startStream, cancel, isStreaming: streaming } = useSSEStream()
+
+  useEffect(() => {
+    if (!courseId) return
+    api.get(`/courses/${courseId}`)
+      .then(res => res.json())
+      .then((course: { ai_tone_preset?: string }) => {
+        setTonePreset(course.ai_tone_preset || 'professional')
+      })
+      .catch(() => {})
+  }, [courseId])
 
   useEffect(() => {
     if (!moduleId) return
@@ -94,9 +105,6 @@ export function ModuleDetailPage() {
 
   const handleGenerateDescription = async () => {
     if (!moduleId || !aiPrompt.trim()) return
-    if (abortRef.current) abortRef.current.abort()
-    abortRef.current = new AbortController()
-    setStreaming(true)
     setDescription('')
 
     let docUrl: string | undefined
@@ -117,46 +125,15 @@ export function ModuleDetailPage() {
       }
     }
 
-    try {
-      const res = await fetch(`${API_BASE}/api/modules/${moduleId}/ai/generate-description`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({
-          prompt: aiPrompt,
-          tone_preset: 'professional',
-          document_url: docUrl,
-        }),
-        signal: abortRef.current.signal,
-      })
-
-      if (!res.ok) {
-        console.error('AI generation failed:', res.status)
-        setStreaming(false)
-        return
-      }
-
-      const reader = res.body!.getReader()
-      const decoder = new TextDecoder()
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        const text = decoder.decode(value)
-        for (const line of text.split('\n')) {
-          if (line.startsWith('data: ')) {
-            setDescription(prev => prev + line.slice(6))
-          }
-        }
-      }
-    } catch (err: unknown) {
-      if (err instanceof Error && err.name !== 'AbortError') {
-        console.error('SSE stream error:', err)
-      }
-    } finally {
-      setStreaming(false)
-    }
+    await startStream({
+      url: `/api/modules/${moduleId}/ai/generate-description`,
+      body: {
+        prompt: aiPrompt,
+        tone_preset: tonePreset,
+        document_url: docUrl,
+      },
+      onToken: t => setDescription(prev => prev + t),
+    })
   }
 
   const updateObjective = (index: number, value: string) => {
@@ -252,7 +229,7 @@ export function ModuleDetailPage() {
               {streaming && (
                 <button
                   type="button"
-                  onClick={() => abortRef.current?.abort()}
+                  onClick={() => cancel()}
                   style={{ fontSize: '12px', color: '#ef4444', background: 'none',
                     border: 'none', cursor: 'pointer' }}
                 >

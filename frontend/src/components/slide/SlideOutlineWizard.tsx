@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
-import { useAuth } from '@/context/AuthContext'
-import { api, API_BASE } from '@/services/api'
+import React, { useState, useRef } from 'react'
+import { api } from '@/services/api'
+import { useSSEStream } from '@/hooks/useSSEStream'
 
 type WizardStep = 1 | 2 | 3 | 4
 
@@ -23,53 +23,33 @@ interface Props {
 }
 
 export function SlideOutlineWizard({ open, videoId, anchorSlideId, onClose, onCommitted }: Props) {
-  const { token } = useAuth()
   const [step, setStep] = useState<WizardStep>(1)
   const [sourcePrompt, setSourcePrompt] = useState('')
   const [slideCount, setSlideCount] = useState(5)
   const [tonePreset, setTonePreset] = useState('professional')
   const [outline, setOutline] = useState<SlideOutlineItem[]>([])
-  const [generating, setGenerating] = useState(false)
   const [parseError, setParseError] = useState<string | null>(null)
   const [committing, setCommitting] = useState(false)
+  const bufferRef = useRef('')
+  const { startStream, isStreaming: generating } = useSSEStream()
 
   if (!open) return null
 
   const handleGenerate = async () => {
-    setGenerating(true)
     setParseError(null)
+    bufferRef.current = ''
     try {
-      const res = await fetch(`${API_BASE}/api/slides/${anchorSlideId}/ai/generate-outline`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ prompt: sourcePrompt, slide_count: slideCount, tone_preset: tonePreset }),
+      await startStream({
+        url: `/api/slides/${anchorSlideId}/ai/generate-outline`,
+        body: { prompt: sourcePrompt, slide_count: slideCount, tone_preset: tonePreset },
+        onToken: t => { bufferRef.current += t },
       })
-      if (!res.ok) {
-        setParseError('Generation failed. Please try again.')
-        setGenerating(false)
-        return
-      }
-      const reader = res.body!.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        for (const line of decoder.decode(value).split('\n')) {
-          if (line.startsWith('data: ')) buffer += line.slice(6)
-        }
-      }
       // Only parse after stream is complete (research pitfall #7)
-      const parsed: SlideOutlineItem[] = JSON.parse(buffer)
+      const parsed: SlideOutlineItem[] = JSON.parse(bufferRef.current)
       setOutline(parsed)
       setStep(4)
     } catch (err) {
       setParseError('Failed to parse AI response. Try again.')
-    } finally {
-      setGenerating(false)
     }
   }
 

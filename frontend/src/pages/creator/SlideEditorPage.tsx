@@ -197,7 +197,7 @@ export function SlideEditorPage() {
               />
             )}
             {activeTab === 'narration' && (
-              <NarrationTab slideId={Number(slideId)} />
+              <NarrationTab slideId={Number(slideId)} courseId={Number(courseId)} />
             )}
           </div>
         </div>
