@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: completed
-last_updated: "2026-05-09T09:08:24.651Z"
-last_activity: 2026-05-09 — Completed 11-03 — Block CRUD + Quiz+Question CRUD+reorder routers, 14 tests GREEN
+last_updated: "2026-05-09T09:47:16.450Z"
+last_activity: 2026-05-09 — Completed 12-01 — Wave 0 test scaffold: 4 backend stubs + 1 frontend stub + sse-starlette declared
 progress:
   total_phases: 10
   completed_phases: 3
-  total_plans: 15
-  completed_plans: 15
+  total_plans: 20
+  completed_plans: 16
 ---
 
 # State
 
 ## Current Position
 
-Phase: 11 (Backend CRUD API) — All 4 plans complete (4/4 plans done)
-Last completed: 11-03 (blocks + quiz/question routers) — 16 endpoints, atomic question reorder, 14 tests GREEN
-Status: Phase 11 COMPLETE. Plans 01 (modules), 02 (videos/slides), 03 (blocks/quizzes), 04 (uploads) complete.
-Last activity: 2026-05-09 — Completed 11-03 — Block CRUD + Quiz+Question CRUD+reorder routers, 14 tests GREEN
+Phase: 12 (Course Identity & Structure) — 1/4 plans complete
+Last completed: 12-01 — Wave 0 test scaffold: 4 backend stubs (COURSE-01,02,03,05) + 1 frontend stub (COURSE-04) all FAILED, sse-starlette==2.1.3 declared
+Status: Phase 12 IN PROGRESS. Plan 01 (test scaffold) complete. Plans 02-04 (implementation) pending.
+Last activity: 2026-05-09 — Completed 12-01 — Wave 0 test scaffold: 4 backend stubs + 1 frontend stub + sse-starlette declared
 
 ## Project Reference
 
@@ -51,8 +51,15 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | 11    | 01   | ~3 min   | 2/2   | 4     |
 | Phase 11 P02 | 2 | 2 tasks | 4 files |
 | Phase 11 P03 | 2min | 2 tasks | 4 files |
+| Phase 12 P01 | 12min | 3 tasks | 3 files |
 
 ## Accumulated Context
+
+### Decisions from 12-01
+
+- Backend stubs use pytest.fail() directly (no Phase 12 imports) — ensures clean FAILED state (not ImportError/ERROR) before any implementation exists
+- Frontend Wave 0 stub uses direct import of non-existent SkeletonTreePreview.tsx — vitest import failure at collection is the acceptable RED state
+- sse-starlette==2.1.3 added to requirements.txt after httpx (grouped with async/HTTP dependencies); required for COURSE-02 and COURSE-03 SSE endpoints
 
 ### Decisions from 11-03
 

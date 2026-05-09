@@ -39,11 +39,11 @@
 
 ### Course Identity & Structure (COURSE)
 
-- [ ] **COURSE-01**: Creator can create a course via Modal 1A (title, description, audience level, AI tone preset, up to 5 learning objectives)
-- [ ] **COURSE-02**: Creator can generate a course description via AI from topic (streaming)
-- [ ] **COURSE-03**: Creator can generate learning objectives via AI from course title/description (streaming)
-- [ ] **COURSE-04**: Creator sees Course Structure wizard (Modal 1B) with module/video/quiz count inputs and live skeleton tree preview
-- [ ] **COURSE-05**: Creator can confirm structure and have empty modules/videos scaffolded automatically
+- [x] **COURSE-01**: Creator can create a course via Modal 1A (title, description, audience level, AI tone preset, up to 5 learning objectives)
+- [x] **COURSE-02**: Creator can generate a course description via AI from topic (streaming)
+- [x] **COURSE-03**: Creator can generate learning objectives via AI from course title/description (streaming)
+- [x] **COURSE-04**: Creator sees Course Structure wizard (Modal 1B) with module/video/quiz count inputs and live skeleton tree preview
+- [x] **COURSE-05**: Creator can confirm structure and have empty modules/videos scaffolded automatically
 
 ### Course Builder & Modules (BUILD)
 
@@ -184,11 +184,11 @@ Explicitly excluded. Documented to prevent scope creep.
 | API-05 | Phase 11 | Complete |
 | API-06 | Phase 11 | Complete |
 | API-07 | Phase 11 | Complete |
-| COURSE-01 | Phase 12 | Pending |
-| COURSE-02 | Phase 12 | Pending |
-| COURSE-03 | Phase 12 | Pending |
-| COURSE-04 | Phase 12 | Pending |
-| COURSE-05 | Phase 12 | Pending |
+| COURSE-01 | Phase 12 | Complete |
+| COURSE-02 | Phase 12 | Complete |
+| COURSE-03 | Phase 12 | Complete |
+| COURSE-04 | Phase 12 | Complete |
+| COURSE-05 | Phase 12 | Complete |
 | BUILD-01 | Phase 13 | Pending |
 | BUILD-02 | Phase 13 | Pending |
 | BUILD-03 | Phase 13 | Pending |

@@ -195,7 +195,7 @@ Plans:
 | 9. Vite Migration | 7/7 | Complete | 2026-05-08 | - |
 | 10. Data Models | 4/4 | Complete | 2026-05-09 | - |
 | 11. Backend CRUD API | 4/4 | Complete    | 2026-05-09 | - |
-| 12. Course Identity & Structure | v1.0 | 0/5 | In progress | - |
+| 12. Course Identity & Structure | 1/5 | In Progress|  | - |
 | 13. Course Builder & Module Detail | v1.0 | 0/TBD | Not started | - |
 | 14. Slide Builder & Slide Editor | v1.0 | 0/TBD | Not started | - |
 | 15. AI Generation Infrastructure | v1.0 | 0/TBD | Not started | - |
