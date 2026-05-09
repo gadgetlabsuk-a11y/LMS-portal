@@ -229,12 +229,17 @@ export const UserManagementPage = () => {
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           />
           {!editingUser && (
-            <Input
-              label="Password"
-              type="password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            />
+            <div>
+              <Input
+                label="Password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Min 8 chars · uppercase · lowercase · number · special character (e.g. <code>Test@1234!</code>)
+              </p>
+            </div>
           )}
           <Select
             label="Role"
