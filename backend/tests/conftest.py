@@ -172,7 +172,6 @@ def creator_course(db, creator_user):
         description="A course by the creator.",
         status=CourseStatus.PUBLISHED,
         creator_id=creator_user.id,
-        content={"modules": [{"title": "Module 1", "lessons": [{"title": "Lesson 1"}]}]},
     )
     db.add(course)
     db.commit()
