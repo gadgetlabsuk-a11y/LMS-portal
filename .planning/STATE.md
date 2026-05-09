@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: completed
-last_updated: "2026-05-09T17:00:00Z"
-last_activity: 2026-05-09 — Completed 14-03 — SlideBuilderPage and VideoSlideStrip
+last_updated: "2026-05-09T18:08:00Z"
+last_activity: 2026-05-09 — Completed 14-04 — SlideEditorPage, SlideCanvas, slideEditorStore
 progress:
   total_phases: 10
   completed_phases: 5
   total_plans: 31
-  completed_plans: 28
+  completed_plans: 29
 ---
 
 # State
 
 ## Current Position
 
-Phase: 14 (Slide Builder & Slide Editor) — IN PROGRESS (3/6 plans done)
-Last completed: 14-03 — SlideBuilderPage with VideoSlideStrip (dnd-kit sortable) and SLIDE-01/02/03 tests GREEN.
-Status: Phase 14 Plan 03 COMPLETE. Ready for Plan 14-04 (SlideEditorPage).
-Last activity: 2026-05-09 — Completed 14-03 — SlideBuilderPage and VideoSlideStrip
+Phase: 14 (Slide Builder & Slide Editor) — IN PROGRESS (4/6 plans done)
+Last completed: 14-04 — SlideEditorPage with react-grid-layout canvas, Zustand 5 temporal store, block palette, layout presets, autosave, nav guard.
+Status: Phase 14 Plan 04 COMPLETE. Ready for Plan 14-05.
+Last activity: 2026-05-09 — Completed 14-04 — SlideEditorPage, SlideCanvas, slideEditorStore
 
 ## Project Reference
 
@@ -65,8 +65,16 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 14 P02 | 15min | 2 tasks | 2 files |
 | Phase 14 P02 | 15min | 2 tasks | 2 files |
 | Phase 14 P03 | 15min | 2 tasks | 5 files |
+| Phase 14 P04 | 3min | 3 tasks | 9 files |
 
 ## Accumulated Context
+
+### Decisions from 14-04
+
+- zundo@2.3.0 installed as blocking dependency — was not in package.json despite being specified in plan (Rule 3)
+- react-grid-layout 2.x ships only `./css/styles.css` in package exports — removed non-existent `resizable.css` import from SlideCanvas (Rule 1)
+- useBlocker (react-router v6.4+) requires a data router — tests must use `createMemoryRouter` + `RouterProvider`, not `MemoryRouter` + `Routes`
+- vitest.config.ts: `css: true` added so CSS imports (react-grid-layout/css/styles.css) resolve in test environment
 
 ### Decisions from 14-03
 
