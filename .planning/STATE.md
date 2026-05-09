@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: completed
-last_updated: "2026-05-09T17:29:14.534Z"
-last_activity: 2026-05-09 — Completed 14-06 — Phase 14 human verification APPROVED, Phase 14 COMPLETE
+last_updated: "2026-05-09T17:37:42Z"
+last_activity: "2026-05-09 — Completed 14-07 — Gap closure: SlideOutlineWizard wired into SlideBuilderPage, SLIDE-12 reachable from UI"
 progress:
   total_phases: 10
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 33
-  completed_plans: 32
+  completed_plans: 33
 ---
 
 # State
@@ -17,9 +17,9 @@ progress:
 ## Current Position
 
 Phase: 14 (Slide Builder & Slide Editor) — COMPLETE (8/8 plans done, including gap-closure 14-07 and 14-08)
-Last completed: 14-08 — Gap closure: SLIDE-03 traceability corrected in REQUIREMENTS.md (unchecked, deferred to Phase 17 / TTS-02)
+Last completed: 14-07 — Gap closure: SlideOutlineWizard wired into SlideBuilderPage (AI Outline button, wizardOpen state, fetchSlides(), onCommitted refresh)
 Status: Phase 14 COMPLETE. Ready for Phase 15.
-Last activity: 2026-05-09 — Completed 14-08 — REQUIREMENTS.md gap closure: SLIDE-03 checkbox unchecked, annotated Phase 17 / TTS-02
+Last activity: 2026-05-09 — Completed 14-07 — Gap closure: SlideOutlineWizard wired into SlideBuilderPage, SLIDE-12 reachable from UI
 
 ## Project Reference
 
@@ -69,8 +69,15 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 14 P05 | 8min | 2 tasks | 6 files |
 | Phase 14 P06 | 5min | 2 tasks | 0 files |
 | Phase 14 P08 | 2min | 1 tasks | 1 files |
+| Phase 14 P07 | 9min | 2 tasks | 2 files |
 
 ## Accumulated Context
+
+### Decisions from 14-07
+
+- SlideBuilderPage renders SlideOutlineWizard unconditionally (open=false returns null per component contract); triggers useAuth() call at render time requiring vi.mock('@/context/AuthContext') in SlideBuilderPage.test.tsx
+- Named fetchSlides() function extracted from useEffect so onCommitted callback can re-trigger slide strip refresh without duplicating fetch logic
+- anchorSlideId = slides[slides.length-1].id if slides exist, else 0 — wizard appends new slides after last existing slide
 
 ### Decisions from 14-08
 
