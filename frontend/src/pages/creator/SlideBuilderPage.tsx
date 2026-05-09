@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '@/services/api'
 import { VideoSlideStrip } from '@/components/slide/VideoSlideStrip'
+import { SlideOutlineWizard } from '@/components/slide/SlideOutlineWizard'
 
 interface Slide {
   id: number
@@ -16,14 +17,19 @@ export function SlideBuilderPage() {
   const navigate = useNavigate()
   const [slides, setSlides] = useState<Slide[]>([])
   const [loading, setLoading] = useState(true)
+  const [wizardOpen, setWizardOpen] = useState(false)
 
-  useEffect(() => {
+  const fetchSlides = () => {
     if (!videoId) return
     api
       .get(`/videos/${videoId}/slides`)
       .then((r) => r.json())
       .then((data: Slide[]) => setSlides(data))
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    fetchSlides()
   }, [videoId])
 
   const handleAddSlide = async () => {
@@ -48,6 +54,13 @@ export function SlideBuilderPage() {
           <h1 className="text-lg font-semibold">Slide Builder</h1>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            data-testid="ai-outline-btn"
+            onClick={() => setWizardOpen(true)}
+            className="px-3 py-1.5 bg-purple-600 text-white text-sm rounded hover:bg-purple-700"
+          >
+            AI Outline
+          </button>
           <button
             data-testid="add-slide-btn"
             onClick={handleAddSlide}
@@ -83,6 +96,16 @@ export function SlideBuilderPage() {
           <p>Select a slide to edit</p>
         </div>
       </div>
+      <SlideOutlineWizard
+        open={wizardOpen}
+        videoId={Number(videoId)}
+        anchorSlideId={slides.length > 0 ? slides[slides.length - 1].id : 0}
+        onClose={() => setWizardOpen(false)}
+        onCommitted={() => {
+          setWizardOpen(false)
+          fetchSlides()
+        }}
+      />
     </div>
   )
 }
