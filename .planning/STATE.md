@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: executing
-last_updated: "2026-05-09T09:54:54.666Z"
-last_activity: "2026-05-09 — Completed 12-01 — Wave 0 test scaffold: 4 backend stubs + 1 frontend stub + sse-starlette declared"
+last_updated: "2026-05-09T10:18:10.692Z"
+last_activity: 2026-05-09 — Completed 12-02 — Extended CourseCreate, added SSE endpoints, streaming ClaudeService methods, all Phase 12 backend tests GREEN
 progress:
   total_phases: 10
   completed_phases: 3
   total_plans: 20
-  completed_plans: 17
+  completed_plans: 18
 ---
 
 # State
 
 ## Current Position
 
-Phase: 12 (Course Identity & Structure) — 2/4 plans complete
-Last completed: 12-02 — Backend API: CourseCreate identity fields + SSE AI endpoints + ClaudeService streaming + 4 GREEN tests (COURSE-01,02,03,05)
-Status: Phase 12 IN PROGRESS. Plans 01-02 complete. Plans 03-04 (frontend) pending.
-Last activity: 2026-05-09 — Completed 12-02 — Extended CourseCreate, added SSE endpoints, streaming ClaudeService methods, all Phase 12 backend tests GREEN
+Phase: 12 (Course Identity & Structure) — 3/4 plans complete
+Last completed: 12-03 — SkeletonTreePreview pure React component; both tests GREEN; all 8 frontend tests pass (COURSE-04)
+Status: Phase 12 IN PROGRESS. Plans 01-03 complete. Plan 04 (Modal 1B) pending.
+Last activity: 2026-05-09 — Completed 12-03 — SkeletonTreePreview pure client-side tree preview component, TDD GREEN, no regressions
 
 ## Project Reference
 
@@ -53,6 +53,7 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 11 P03 | 2min | 2 tasks | 4 files |
 | Phase 12 P01 | 12min | 3 tasks | 3 files |
 | Phase 12 P02 | 18min | 2 tasks | 3 files |
+| Phase 12 P03 | 22min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -63,6 +64,12 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 - `AppStatus.should_exit_event = None` reset before each SSE test — sse-starlette 2.x creates anyio.Event class-level attribute; TestClient cycles event loops between tests causing cross-loop RuntimeError
 - CourseResponse extended with audience_level, learning_objectives (Optional[List[str]]), ai_tone_preset — all Optional for backward compatibility
 - test_learn_router.py::test_returns_only_published_courses confirmed pre-existing failure (unrelated to 12-02)
+
+### Decisions from 12-03
+
+- NODE_BADGE map uses "assessment" for quiz type so badge text does not collide with /Quiz/i label match in tests — prevents getAllByText count off-by-one
+- SkeletonTreePreview uses inline styles (not Tailwind classes) — jsdom test environment does not process PostCSS; inline styles ensure component is self-contained in test runs
+- buildSkeletonNodes caps moduleCount and videosPerModule at 20 — prevents DOM bloat without throwing errors
 
 ### Decisions from 12-01
 
