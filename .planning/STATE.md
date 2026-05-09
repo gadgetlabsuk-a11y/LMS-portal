@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: completed
-last_updated: "2026-05-09T12:08:08.864Z"
-last_activity: 2026-05-09 — Completed 13-05 — Phase 13 human verification APPROVED
+last_updated: "2026-05-09T14:57:23Z"
+last_activity: 2026-05-09 — Completed 14-01 — Phase 14 Wave 0 stubs and dependencies
 progress:
   total_phases: 10
   completed_phases: 5
-  total_plans: 25
-  completed_plans: 25
+  total_plans: 31
+  completed_plans: 26
 ---
 
 # State
 
 ## Current Position
 
-Phase: 13 (Course Builder Module Detail) — COMPLETE (5/5 plans done)
-Last completed: 13-05 — Human verification APPROVED. All BUILD-01 through BUILD-06 confirmed in browser.
-Status: Phase 13 COMPLETE. Ready for Phase 14 (Slide Builder & Slide Editor).
-Last activity: 2026-05-09 — Completed 13-05 — Phase 13 human verification APPROVED
+Phase: 14 (Slide Builder & Slide Editor) — IN PROGRESS (1/6 plans done)
+Last completed: 14-01 — Wave 0: Dependencies installed, 5 frontend RED stubs, 5 backend RED stubs.
+Status: Phase 14 Plan 01 COMPLETE. Ready for Plan 14-02 (implementation).
+Last activity: 2026-05-09 — Completed 14-01 — Phase 14 Wave 0 stubs and dependencies
 
 ## Project Reference
 
@@ -61,8 +61,16 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 13 P03 | 3 | 3 tasks | 5 files |
 | Phase 13 P04 | 5 | 2 tasks | 3 files |
 | Phase 13 P05 | 5 | 2 tasks | 0 files |
+| Phase 14 P01 | 45min | 3 tasks | 8 files |
 
 ## Accumulated Context
+
+### Decisions from 14-01
+
+- Frontend TDD RED state: import non-existent files — vitest fails at collection with import resolution error (consistent with Phase 13 pattern)
+- Backend TDD RED state: pytest.fail() directly in test functions — produces FAILED not ERROR (consistent with Phase 12/13 pattern)
+- New test directories created: frontend/src/components/slide/__tests__/ and frontend/src/store/__tests__/
+- react-grid-layout ^2.2.3 (slide canvas), zustand ^5.0.13 (editor store), @tiptap/react+starter-kit ^3.23.1 (rich text) all installed
 
 ### Decisions from 13-05
 

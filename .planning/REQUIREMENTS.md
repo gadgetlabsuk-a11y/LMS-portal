@@ -56,18 +56,18 @@
 
 ### Slide Builder & Editor (SLIDE)
 
-- [ ] **SLIDE-01**: Creator can access Slide Builder for a video and see a thumbnail strip of slides
-- [ ] **SLIDE-02**: Creator can add, reorder, duplicate, and delete slides from the thumbnail strip
-- [ ] **SLIDE-03**: Creator can trigger bulk narration audio generation for all slides with populated scripts
-- [ ] **SLIDE-04**: Creator can open Slide Editor for any slide
-- [ ] **SLIDE-05**: Creator can drag content blocks (text, heading, image, video embed, code, quote, list, callout, divider) onto a 12-column snap grid canvas
-- [ ] **SLIDE-06**: Creator can resize and reposition blocks on the canvas
-- [ ] **SLIDE-07**: Creator can undo and redo canvas changes (minimum 20-step history)
-- [ ] **SLIDE-08**: Slide content autosaves on change; pending save flushes before navigation
-- [ ] **SLIDE-09**: Creator can select a layout preset (title+content, two-column, full-bleed image, etc.)
-- [ ] **SLIDE-10**: Creator can write or edit a narration script for a slide in the Narration tab
-- [ ] **SLIDE-11**: Creator can generate a narration script via AI from slide content blocks (streaming)
-- [ ] **SLIDE-12**: Creator can generate a slide outline via AI wizard (4-step: source → config → generation → commit)
+- [x] **SLIDE-01**: Creator can access Slide Builder for a video and see a thumbnail strip of slides
+- [x] **SLIDE-02**: Creator can add, reorder, duplicate, and delete slides from the thumbnail strip
+- [x] **SLIDE-03**: Creator can trigger bulk narration audio generation for all slides with populated scripts
+- [x] **SLIDE-04**: Creator can open Slide Editor for any slide
+- [x] **SLIDE-05**: Creator can drag content blocks (text, heading, image, video embed, code, quote, list, callout, divider) onto a 12-column snap grid canvas
+- [x] **SLIDE-06**: Creator can resize and reposition blocks on the canvas
+- [x] **SLIDE-07**: Creator can undo and redo canvas changes (minimum 20-step history)
+- [x] **SLIDE-08**: Slide content autosaves on change; pending save flushes before navigation
+- [x] **SLIDE-09**: Creator can select a layout preset (title+content, two-column, full-bleed image, etc.)
+- [x] **SLIDE-10**: Creator can write or edit a narration script for a slide in the Narration tab
+- [x] **SLIDE-11**: Creator can generate a narration script via AI from slide content blocks (streaming)
+- [x] **SLIDE-12**: Creator can generate a slide outline via AI wizard (4-step: source → config → generation → commit)
 
 ### AI Generation (AI)
 
@@ -195,18 +195,18 @@ Explicitly excluded. Documented to prevent scope creep.
 | BUILD-04 | Phase 13 | Complete |
 | BUILD-05 | Phase 13 | Complete |
 | BUILD-06 | Phase 13 | Complete |
-| SLIDE-01 | Phase 14 | Pending |
-| SLIDE-02 | Phase 14 | Pending |
-| SLIDE-03 | Phase 14 | Pending |
-| SLIDE-04 | Phase 14 | Pending |
-| SLIDE-05 | Phase 14 | Pending |
-| SLIDE-06 | Phase 14 | Pending |
-| SLIDE-07 | Phase 14 | Pending |
-| SLIDE-08 | Phase 14 | Pending |
-| SLIDE-09 | Phase 14 | Pending |
-| SLIDE-10 | Phase 14 | Pending |
-| SLIDE-11 | Phase 14 | Pending |
-| SLIDE-12 | Phase 14 | Pending |
+| SLIDE-01 | Phase 14 | Complete |
+| SLIDE-02 | Phase 14 | Complete |
+| SLIDE-03 | Phase 14 | Complete |
+| SLIDE-04 | Phase 14 | Complete |
+| SLIDE-05 | Phase 14 | Complete |
+| SLIDE-06 | Phase 14 | Complete |
+| SLIDE-07 | Phase 14 | Complete |
+| SLIDE-08 | Phase 14 | Complete |
+| SLIDE-09 | Phase 14 | Complete |
+| SLIDE-10 | Phase 14 | Complete |
+| SLIDE-11 | Phase 14 | Complete |
+| SLIDE-12 | Phase 14 | Complete |
 | AI-01 | Phase 15 | Pending |
 | AI-02 | Phase 15 | Pending |
 | AI-03 | Phase 15 | Pending |
