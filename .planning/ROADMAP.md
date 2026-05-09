@@ -105,7 +105,14 @@ Plans:
   2. A creator can click "Generate with AI" for description or objectives and see streamed text appear in the field in real time
   3. A creator can open Modal 1B, input module/video/quiz counts, and see a live skeleton tree preview update as they type
   4. A creator can confirm the structure and navigate to Course Builder with the empty modules and videos already scaffolded in the tree
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 12-01-PLAN.md — Wave 0: failing test stubs (COURSE-01 through COURSE-05) + sse-starlette in requirements.txt
+- [ ] 12-02-PLAN.md — Backend: extend CourseCreate schema, add ClaudeService.stream_text(), two SSE endpoints
+- [ ] 12-03-PLAN.md — Frontend: SkeletonTreePreview component (COURSE-04), test GREEN
+- [ ] 12-04-PLAN.md — Frontend: CourseIdentityModal (1A), CourseStructureModal (1B), CreatorCourseListPage, App.tsx wiring
+- [ ] 12-05-PLAN.md — Human verify: full Modal 1A → 1B → builder stub flow in browser
 
 ### Phase 13: Course Builder & Module Detail
 **Goal**: Creators have a home-base Course Builder they can navigate from, and can edit any module's details — including AI-assisted description generation — with full drag-drop reorder of the content tree
@@ -188,7 +195,7 @@ Plans:
 | 9. Vite Migration | 7/7 | Complete | 2026-05-08 | - |
 | 10. Data Models | 4/4 | Complete | 2026-05-09 | - |
 | 11. Backend CRUD API | 4/4 | Complete    | 2026-05-09 | - |
-| 12. Course Identity & Structure | v1.0 | 0/TBD | Not started | - |
+| 12. Course Identity & Structure | v1.0 | 0/5 | In progress | - |
 | 13. Course Builder & Module Detail | v1.0 | 0/TBD | Not started | - |
 | 14. Slide Builder & Slide Editor | v1.0 | 0/TBD | Not started | - |
 | 15. AI Generation Infrastructure | v1.0 | 0/TBD | Not started | - |
