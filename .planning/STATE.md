@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
-status: verifying
-last_updated: "2026-05-09T11:48:13.319Z"
-last_activity: 2026-05-09 — Completed 13-01 — dnd-kit installed, TDD RED stubs created for Phase 13 (CourseBuilderPage, ModuleDetailPage, SSE endpoint)
+status: executing
+last_updated: "2026-05-09T11:52:10.082Z"
+last_activity: 2026-05-09 — Completed 13-02 — SSE endpoint + GREEN tests for BUILD-05
 progress:
   total_phases: 10
   completed_phases: 4
   total_plans: 25
-  completed_plans: 21
+  completed_plans: 22
 ---
 
 # State
 
 ## Current Position
 
-Phase: 13 (Course Builder Module Detail) — 1/5 plans complete
-Last completed: 13-01 — Wave 0: dnd-kit installed, TDD RED stubs created (CourseBuilderPage.test.tsx, ModuleDetailPage.test.tsx, test_modules_phase13.py)
-Status: Phase 13 IN PROGRESS. Plan 13-01 done. Ready for 13-02 (CourseBuilderPage implementation).
-Last activity: 2026-05-09 — Completed 13-01 — dnd-kit installed, TDD RED stubs created for Phase 13
+Phase: 13 (Course Builder Module Detail) — 2/5 plans complete
+Last completed: 13-02 — SSE endpoint POST /api/modules/:id/ai/generate-description + BUILD-05 GREEN tests
+Status: Phase 13 IN PROGRESS. Plans 13-01 and 13-02 done. Ready for 13-03 (CourseBuilderPage drag-and-drop).
+Last activity: 2026-05-09 — Completed 13-02 — SSE endpoint + GREEN tests for BUILD-05
 
 ## Project Reference
 
@@ -57,8 +57,15 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 12 P04 | 15min | 2 tasks | 4 files |
 | Phase 12 P05 | 5min | 2 tasks | 0 files |
 | Phase 13 P01 | 2min | 3 tasks | 5 files |
+| Phase 13 P02 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
+
+### Decisions from 13-02
+
+- creator_course conftest fixture returns an ORM object — use `.id` attribute access, not `['id']` dict subscript (plan sample code used dict notation)
+- AppStatus.should_exit_event = None reset applied to all SSE tests (sse-starlette 2.x anyio.Event cross-loop RuntimeError fix, same as 12-02 decision)
+- _stream_text mock uses `side_effect=async_gen_fn` pattern (not `return_value=...`) in SSE integration tests
 
 ### Decisions from 13-01
 
