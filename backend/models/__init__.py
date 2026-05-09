@@ -17,6 +17,14 @@ from .models import (
     WhiteLabelConfig,
     LoginAttempt,
     IpAllowlist,
+    Module,
+    Video,
+    Slide,
+    Block,
+    Quiz,
+    Question,
+    Resource,
+    AiPromptLog,
 )
 
 __all__ = [
@@ -34,4 +42,12 @@ __all__ = [
     "WhiteLabelConfig",
     "LoginAttempt",
     "IpAllowlist",
+    "Module",
+    "Video",
+    "Slide",
+    "Block",
+    "Quiz",
+    "Question",
+    "Resource",
+    "AiPromptLog",
 ]
