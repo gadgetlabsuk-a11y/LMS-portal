@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: completed
-last_updated: "2026-05-09T18:08:00Z"
-last_activity: 2026-05-09 — Completed 14-04 — SlideEditorPage, SlideCanvas, slideEditorStore
+last_updated: "2026-05-09T17:11:47.118Z"
+last_activity: 2026-05-09 — Completed 14-05 — NarrationTab, SlideOutlineWizard, App.tsx routes
 progress:
   total_phases: 10
   completed_phases: 5
   total_plans: 31
-  completed_plans: 29
+  completed_plans: 30
 ---
 
 # State
 
 ## Current Position
 
-Phase: 14 (Slide Builder & Slide Editor) — IN PROGRESS (4/6 plans done)
-Last completed: 14-04 — SlideEditorPage with react-grid-layout canvas, Zustand 5 temporal store, block palette, layout presets, autosave, nav guard.
-Status: Phase 14 Plan 04 COMPLETE. Ready for Plan 14-05.
-Last activity: 2026-05-09 — Completed 14-04 — SlideEditorPage, SlideCanvas, slideEditorStore
+Phase: 14 (Slide Builder & Slide Editor) — IN PROGRESS (5/6 plans done)
+Last completed: 14-05 — NarrationTab (SSE narration generation), SlideOutlineWizard (4-step modal), App.tsx slide routes.
+Status: Phase 14 Plan 05 COMPLETE. Ready for Plan 14-06.
+Last activity: 2026-05-09 — Completed 14-05 — NarrationTab, SlideOutlineWizard, App.tsx routes
 
 ## Project Reference
 
@@ -66,8 +66,15 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 14 P02 | 15min | 2 tasks | 2 files |
 | Phase 14 P03 | 15min | 2 tasks | 5 files |
 | Phase 14 P04 | 3min | 3 tasks | 9 files |
+| Phase 14 P05 | 8min | 2 tasks | 6 files |
 
 ## Accumulated Context
+
+### Decisions from 14-05
+
+- @/contexts/AuthContext corrected to @/context/AuthContext — project uses singular `context` directory (Rule 1 auto-fix)
+- SlideOutlineWizard accumulates all SSE tokens in buffer string before JSON.parse on completion — implements research pitfall #7, avoids partial-JSON parse errors
+- App.tsx slide routes are purely additive; wrapped in CreatorLayout + ProtectedRoute(creatorRoute) consistent with all other creator routes
 
 ### Decisions from 14-04
 
