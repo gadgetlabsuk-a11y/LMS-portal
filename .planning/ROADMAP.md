@@ -238,7 +238,7 @@ Plans:
 | 10. Data Models | 4/4 | Complete | 2026-05-09 | - |
 | 11. Backend CRUD API | 4/4 | Complete    | 2026-05-09 | - |
 | 12. Course Identity & Structure | 5/5 | Complete    | 2026-05-09 | - |
-| 13. Course Builder & Module Detail | 3/5 | In Progress|  | - |
+| 13. Course Builder & Module Detail | 4/5 | In Progress|  | - |
 | 14. Slide Builder & Slide Editor | v1.0 | 0/TBD | Not started | - |
 | 15. AI Generation Infrastructure | v1.0 | 0/TBD | Not started | - |
 | 16. Quiz Builder | v1.0 | 0/TBD | Not started | - |

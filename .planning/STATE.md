@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: executing
-last_updated: "2026-05-09T11:53:00.000Z"
-last_activity: 2026-05-09 — Completed 13-03 — CourseBuilderPage, CourseTreeRail, ModuleOverviewList with dnd-kit drag-drop
+last_updated: "2026-05-09T12:58:00.000Z"
+last_activity: 2026-05-09 — Completed 13-04 — ModuleDetailPage (form+AI streaming) + App.tsx route wiring
 progress:
   total_phases: 10
   completed_phases: 4
   total_plans: 25
-  completed_plans: 23
+  completed_plans: 24
 ---
 
 # State
 
 ## Current Position
 
-Phase: 13 (Course Builder Module Detail) — 3/5 plans complete
-Last completed: 13-03 — CourseBuilderPage (two-panel), CourseTreeRail (left-rail tree), ModuleOverviewList (dnd-kit drag-drop)
-Status: Phase 13 IN PROGRESS. Plans 13-01, 13-02, 13-03 done. Ready for 13-04 (ModuleDetailPage).
-Last activity: 2026-05-09 — Completed 13-03 — CourseBuilderPage, CourseTreeRail, ModuleOverviewList with dnd-kit drag-drop
+Phase: 13 (Course Builder Module Detail) — 4/5 plans complete
+Last completed: 13-04 — ModuleDetailPage (form+AI streaming), App.tsx route wiring (CourseBuilderPage + ModuleDetailPage)
+Status: Phase 13 IN PROGRESS. Plans 13-01, 13-02, 13-03, 13-04 done. Ready for 13-05 (human verification checkpoint).
+Last activity: 2026-05-09 — Completed 13-04 — ModuleDetailPage (form+AI streaming) + App.tsx route wiring
 
 ## Project Reference
 
@@ -59,8 +59,15 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 13 P01 | 2min | 3 tasks | 5 files |
 | Phase 13 P02 | 2min | 2 tasks | 2 files |
 | Phase 13 P03 | 3 | 3 tasks | 5 files |
+| Phase 13 P04 | 5 | 2 tasks | 3 files |
 
 ## Accumulated Context
+
+### Decisions from 13-04
+
+- vi.mock('@/services/api') required in ModuleDetailPage tests — api.get called on mount triggers async state updates, test must mock before render
+- All common components (Input/Textarea/Select/Button) spread ...props to DOM elements so data-testid attributes pass through directly without wrapper divs
+- estimated_duration_minutes stored as string in local state (for controlled Input[type=number]) then parseInt before PUT — avoids React controlled input warning
 
 ### Decisions from 13-03
 
