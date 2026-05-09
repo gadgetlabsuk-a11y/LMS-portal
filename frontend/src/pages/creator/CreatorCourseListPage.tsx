@@ -24,7 +24,7 @@ export function CreatorCourseListPage() {
     const res = await api.get('/courses')
     if (res.ok) {
       const data = await res.json()
-      setCourses(Array.isArray(data) ? data : data.courses ?? [])
+      setCourses(Array.isArray(data) ? data : data.items ?? [])
     }
     setLoading(false)
   }
