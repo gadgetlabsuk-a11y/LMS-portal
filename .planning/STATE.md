@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: completed
-last_updated: "2026-05-09T14:57:23Z"
-last_activity: 2026-05-09 — Completed 14-01 — Phase 14 Wave 0 stubs and dependencies
+last_updated: "2026-05-09T17:59:00Z"
+last_activity: 2026-05-09 — Completed 14-02 — SLIDE-11 and SLIDE-12 SSE endpoints GREEN
 progress:
   total_phases: 10
   completed_phases: 5
   total_plans: 31
-  completed_plans: 26
+  completed_plans: 27
 ---
 
 # State
 
 ## Current Position
 
-Phase: 14 (Slide Builder & Slide Editor) — IN PROGRESS (1/6 plans done)
-Last completed: 14-01 — Wave 0: Dependencies installed, 5 frontend RED stubs, 5 backend RED stubs.
-Status: Phase 14 Plan 01 COMPLETE. Ready for Plan 14-02 (implementation).
-Last activity: 2026-05-09 — Completed 14-01 — Phase 14 Wave 0 stubs and dependencies
+Phase: 14 (Slide Builder & Slide Editor) — IN PROGRESS (2/6 plans done)
+Last completed: 14-02 — SLIDE-11 and SLIDE-12 SSE endpoints GREEN (generate-narration, generate-outline).
+Status: Phase 14 Plan 02 COMPLETE. Ready for Plan 14-03 (block CRUD).
+Last activity: 2026-05-09 — Completed 14-02 — SLIDE-11 and SLIDE-12 SSE endpoints GREEN
 
 ## Project Reference
 
@@ -62,8 +62,17 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 13 P04 | 5 | 2 tasks | 3 files |
 | Phase 13 P05 | 5 | 2 tasks | 0 files |
 | Phase 14 P01 | 45min | 3 tasks | 8 files |
+| Phase 14 P02 | 15min | 2 tasks | 2 files |
+| Phase 14 P02 | 15min | 2 tasks | 2 files |
 
 ## Accumulated Context
+
+### Decisions from 14-02
+
+- SSE routes POST /api/slides/{slide_id}/ai/* declared BEFORE GET /api/slides/{slide_id} wildcard — FastAPI declaration-order path matching; same pattern as modules.py from Phase 12-02
+- _get_slide_or_404 helper added to slides.py (logic duplicated from blocks.py) — keeps SSE endpoints self-contained, avoids cross-router import coupling
+- Block content text assembled via `content.get("text") or content.get("html")` — handles both plain-text and TipTap HTML block types
+- Stale test_lms_tmp.db from interrupted prior run blocked first create_all; deleted before running tests (conftest drops/recreates per test, but can't recover from pre-existing tables)
 
 ### Decisions from 14-01
 
