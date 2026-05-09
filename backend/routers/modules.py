@@ -3,7 +3,7 @@ Module CRUD + reorder router.
 Available to creator and admin roles only.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -13,10 +13,15 @@ import logging
 from database import get_db
 from models import Course, Module
 from middleware.auth_middleware import require_creator
+from sse_starlette.sse import EventSourceResponse
+from services.claude_service import ClaudeService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["modules"])
+
+# Module-level singleton (avoids function-local re-instantiation — Phase 12/13 pattern)
+claude_service = ClaudeService()
 
 
 # ---------------------------------------------------------------------------
@@ -61,6 +66,12 @@ class ModuleResponse(BaseModel):
 
 class ReorderRequest(BaseModel):
     module_ids: List[int]
+
+
+class AiModuleDescriptionRequest(BaseModel):
+    prompt: str
+    tone_preset: Optional[str] = "professional"
+    document_url: Optional[str] = None  # pre-uploaded doc URL, passed as context string
 
 
 # ---------------------------------------------------------------------------
@@ -143,6 +154,41 @@ def list_modules(
         .all()
     )
     return modules
+
+
+@router.post("/api/modules/{module_id}/ai/generate-description")
+async def generate_module_description_stream(
+    module_id: int,
+    request: Request,
+    body: AiModuleDescriptionRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_creator),
+):
+    """Stream AI-generated module description tokens via SSE.
+
+    CRITICAL: This route is registered BEFORE /{module_id} routes to prevent
+    FastAPI path collision — /ai/generate-description would otherwise match
+    the /{module_id} wildcard (same fix as Phase 12 SSE routes in courses.py).
+    """
+    module = db.query(Module).filter(Module.id == module_id).first()
+    if not module:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Module not found")
+    _check_course_ownership(module.course, current_user)
+
+    doc_context = f"\nReference document available at: {body.document_url}" if body.document_url else ""
+    full_prompt = (
+        f"Generate a concise, engaging module description for an online course module titled "
+        f"'{module.title}'. Topic context: {body.prompt}.{doc_context} "
+        f"Tone: {body.tone_preset}. Write 2-4 sentences. No headings or bullet points."
+    )
+
+    async def generator():
+        async for token in claude_service._stream_text(full_prompt):
+            if await request.is_disconnected():
+                break
+            yield {"data": token}
+
+    return EventSourceResponse(generator())
 
 
 @router.get(
