@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: completed
-last_updated: "2026-05-09T17:41:10.016Z"
-last_activity: "2026-05-09 — Completed 14-07 — Gap closure: SlideOutlineWizard wired into SlideBuilderPage, SLIDE-12 reachable from UI"
+last_updated: "2026-05-09T21:21:46Z"
+last_activity: "2026-05-09 — Completed 15-01 — Wave 0 TDD stubs for AI-01 through AI-07, PyMuPDF 1.26.0 installed"
 progress:
   total_phases: 10
   completed_phases: 6
-  total_plans: 33
-  completed_plans: 33
+  total_plans: 38
+  completed_plans: 34
 ---
 
 # State
 
 ## Current Position
 
-Phase: 14 (Slide Builder & Slide Editor) — COMPLETE (8/8 plans done, including gap-closure 14-07 and 14-08)
-Last completed: 14-07 — Gap closure: SlideOutlineWizard wired into SlideBuilderPage (AI Outline button, wizardOpen state, fetchSlides(), onCommitted refresh)
-Status: Phase 14 COMPLETE. Ready for Phase 15.
-Last activity: 2026-05-09 — Completed 14-07 — Gap closure: SlideOutlineWizard wired into SlideBuilderPage, SLIDE-12 reachable from UI
+Phase: 15 (AI Generation Infrastructure) — IN PROGRESS (1/7 plans done)
+Last completed: 15-01 — Wave 0 TDD RED stubs: 5 backend pytest.fail() stubs + 3 frontend import-fail stubs + PyMuPDF 1.26.0 installed
+Status: Phase 15 in progress. 15-01 complete. Ready for 15-02 (first GREEN plan).
+Last activity: 2026-05-09 — Completed 15-01 — Wave 0 stubs established for AI-01 through AI-07
 
 ## Project Reference
 
@@ -70,8 +70,17 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 14 P06 | 5min | 2 tasks | 0 files |
 | Phase 14 P08 | 2min | 1 tasks | 1 files |
 | Phase 14 P07 | 9min | 2 tasks | 2 files |
+| Phase 15 P01 | 18min | 2 tasks | 5 files |
+| Phase 15 P01 | 18min | 2 tasks | 5 files |
 
 ## Accumulated Context
+
+### Decisions from 15-01
+
+- Backend Wave 0 stubs use pytest.fail() directly — produces FAILED not ERROR (consistent with Phase 12/13/14 pattern)
+- Frontend Wave 0 stubs import non-existent source files — vitest fails at collection with Cannot find module (consistent with Phase 13-01, 14-01 pattern)
+- reset_sse_state autouse fixture included in test_ai_phase15.py — prevents anyio cross-loop RuntimeError in SSE tests (STATE.md 12-02/13-02 decision)
+- pymupdf==1.26.0 installed in backend venv — import fitz verified at version 1.26.0
 
 ### Decisions from 14-07
 

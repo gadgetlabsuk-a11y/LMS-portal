@@ -71,13 +71,13 @@
 
 ### AI Generation (AI)
 
-- [ ] **AI-01**: All AI generation uses SSE streaming (POST endpoint; `fetch` + `ReadableStream` on client — not `EventSource`)
-- [ ] **AI-02**: A single reusable AI generation drawer (`SideDrawer` + `StreamingTextOutput`) is used across all generation surfaces
-- [ ] **AI-03**: Creator can generate a slide outline from a prompt or uploaded document (document ingestion pipeline)
-- [ ] **AI-04**: Document ingestion supports PDF and DOCX upload → Claude parses → returns module/slide structure
-- [ ] **AI-05**: SSE generator checks `request.is_disconnected()` on every yield to prevent orphaned tokens
-- [ ] **AI-06**: Creator sees AI suggestions rail in Course Builder (proactive completeness nudges: missing descriptions, empty modules, etc.)
-- [ ] **AI-07**: AI tone preset from Modal 1A is passed as context to all AI generation calls for that course
+- [x] **AI-01**: All AI generation uses SSE streaming (POST endpoint; `fetch` + `ReadableStream` on client — not `EventSource`)
+- [x] **AI-02**: A single reusable AI generation drawer (`SideDrawer` + `StreamingTextOutput`) is used across all generation surfaces
+- [x] **AI-03**: Creator can generate a slide outline from a prompt or uploaded document (document ingestion pipeline)
+- [x] **AI-04**: Document ingestion supports PDF and DOCX upload → Claude parses → returns module/slide structure
+- [x] **AI-05**: SSE generator checks `request.is_disconnected()` on every yield to prevent orphaned tokens
+- [x] **AI-06**: Creator sees AI suggestions rail in Course Builder (proactive completeness nudges: missing descriptions, empty modules, etc.)
+- [x] **AI-07**: AI tone preset from Modal 1A is passed as context to all AI generation calls for that course
 
 ### TTS / Narration (TTS)
 
@@ -207,13 +207,13 @@ Explicitly excluded. Documented to prevent scope creep.
 | SLIDE-10 | Phase 14 | Complete |
 | SLIDE-11 | Phase 14 | Complete |
 | SLIDE-12 | Phase 14 | Complete |
-| AI-01 | Phase 15 | Pending |
-| AI-02 | Phase 15 | Pending |
-| AI-03 | Phase 15 | Pending |
-| AI-04 | Phase 15 | Pending |
-| AI-05 | Phase 15 | Pending |
-| AI-06 | Phase 15 | Pending |
-| AI-07 | Phase 15 | Pending |
+| AI-01 | Phase 15 | Complete |
+| AI-02 | Phase 15 | Complete |
+| AI-03 | Phase 15 | Complete |
+| AI-04 | Phase 15 | Complete |
+| AI-05 | Phase 15 | Complete |
+| AI-06 | Phase 15 | Complete |
+| AI-07 | Phase 15 | Complete |
 | QUIZ-01 | Phase 16 | Pending |
 | QUIZ-02 | Phase 16 | Pending |
 | QUIZ-03 | Phase 16 | Pending |
