@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: executing
-last_updated: "2026-05-09T21:55:17.547Z"
-last_activity: 2026-05-09 — Completed 15-02 — Fixed PyMuPDF PDF extraction, BytesIO DOCX fix, document_url on AiOutlineRequest, all 5 AI tests GREEN
+last_updated: "2026-05-09T22:30:54Z"
+last_activity: 2026-05-09 — Completed 15-03 — useSSEStream hook + SideDrawer + StreamingTextOutput created; 4 SSE surfaces refactored; ai_tone_preset propagation for AI-07
 progress:
   total_phases: 10
   completed_phases: 6
   total_plans: 38
-  completed_plans: 35
+  completed_plans: 36
 ---
 
 # State
 
 ## Current Position
 
-Phase: 15 (AI Generation Infrastructure) — IN PROGRESS (2/7 plans done)
-Last completed: 15-02 — Fixed PyMuPDF PDF extraction (fitz.open stream), BytesIO DOCX, document_url on AiOutlineRequest + all 5 AI tests GREEN
-Status: Phase 15 in progress. 15-02 complete. Ready for 15-03.
-Last activity: 2026-05-09 — Completed 15-02 — Fixed PyMuPDF PDF extraction, BytesIO DOCX fix, document_url on AiOutlineRequest, all 5 AI tests GREEN
+Phase: 15 (AI Generation Infrastructure) — IN PROGRESS (3/7 plans done)
+Last completed: 15-03 — useSSEStream hook + SideDrawer + StreamingTextOutput; 4 SSE surfaces refactored; ai_tone_preset propagated (AI-01, AI-02, AI-07)
+Status: Phase 15 in progress. 15-03 complete. Ready for 15-04.
+Last activity: 2026-05-09 — Completed 15-03 — useSSEStream hook + SideDrawer + StreamingTextOutput created; 4 SSE surfaces refactored; ai_tone_preset propagation for AI-07
 
 ## Project Reference
 
@@ -73,8 +73,16 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 15 P01 | 18min | 2 tasks | 5 files |
 | Phase 15 P01 | 18min | 2 tasks | 5 files |
 | Phase 15 P02 | 15min | 2 tasks | 3 files |
+| Phase 15 P03 | 33 | 2 tasks | 11 files |
 
 ## Accumulated Context
+
+### Decisions from 15-03
+
+- useSSEStream encapsulates fetch+ReadableStream+AbortController — single pattern across all AI streaming surfaces (AI-01); setText(prev => prev + t) functional update avoids stale closure on rapid tokens
+- NarrationTab receives courseId prop from SlideEditorPage (which had courseId via useParams); tone preset fetched from GET /api/courses/{id} ai_tone_preset field — AI-07 propagation pattern
+- accumulatedRef pattern used in NarrationTab and SlideOutlineWizard for onToken callbacks — ref persists across renders, avoids stale closure entirely during SSE token accumulation
+- CourseIdentityModal uses two separate useSSEStream instances (description + objectives) — independent isStreaming state per concurrent SSE operation
 
 ### Decisions from 15-02
 
