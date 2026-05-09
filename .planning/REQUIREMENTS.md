@@ -24,7 +24,7 @@
 - [ ] **DATA-05**: Quiz table exists with `pass_score`, `max_attempts`, `show_feedback` settings, linked to Module
 - [ ] **DATA-06**: Question table exists with `type`, `prompt`, `options` (JSON), `correct_answer`, `explanation`, linked to Quiz
 - [ ] **DATA-07**: Resource table exists for uploaded files (URL, mime type, size), linked to Course
-- [ ] **DATA-08**: Alembic migrations set up; all new tables created via migration (not bare `create_all`)
+- [x] **DATA-08**: Alembic migrations set up; all new tables created via migration (not bare `create_all`)
 - [ ] **DATA-09**: `Course.content` JSON column retired; existing course data migrated to new relational structure
 
 ### Backend API (API)
@@ -175,7 +175,7 @@ Explicitly excluded. Documented to prevent scope creep.
 | DATA-05 | Phase 10 | Pending |
 | DATA-06 | Phase 10 | Pending |
 | DATA-07 | Phase 10 | Pending |
-| DATA-08 | Phase 10 | Pending |
+| DATA-08 | Phase 10 | Complete |
 | DATA-09 | Phase 10 | Pending |
 | API-01 | Phase 11 | Pending |
 | API-02 | Phase 11 | Pending |

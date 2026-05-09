@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: completed
-last_updated: "2026-05-08T22:00:34.492Z"
-last_activity: 2026-05-08 — Completed 09-07-PLAN.md (Final Route Wiring + Deploy) — smoke test approved
+last_updated: "2026-05-09T08:00:00.000Z"
+last_activity: 2026-05-09 — Completed 10-01-PLAN.md (Alembic Bootstrap + Test Stubs)
 progress:
   total_phases: 10
   completed_phases: 1
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 11
+  completed_plans: 8
 ---
 
 # State
 
 ## Current Position
 
-Phase: 9 (Vite Migration) — Complete
-Plan: 09-07 complete — all 7 plans done
-Status: Phase 09 fully complete — all 27 monolith components extracted, all routes wired, smoke test passed on buildbench.uk/lms
-Last activity: 2026-05-08 — Completed 09-07-PLAN.md (Final Route Wiring + Deploy) — smoke test approved
+Phase: 10 (Data Models) — In Progress
+Plan: 10-01 complete — Alembic bootstrap and test stubs done
+Status: Phase 10 started — Alembic wired, 18 failing test stubs created (RED phase correct)
+Last activity: 2026-05-09 — Completed 10-01-PLAN.md (Alembic Bootstrap + Test Stubs)
 
 ## Project Reference
 
@@ -43,8 +43,16 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | 09    | 05   | ~4 min   | 2/2   | 6     |
 | 09    | 06   | ~7 min   | 2/2   | 7     |
 | 09    | 07   | ~10 min  | 2/2   | 3     |
+| 10    | 01   | ~15 min  | 2/2   | 6     |
 
 ## Accumulated Context
+
+### Decisions from 10-01
+
+- alembic/env.py uses sys.path.insert(0, parent_dir) so backend package imports (config, models) work without the package being installed
+- render_as_batch=True required in both offline and online configure() calls — SQLite does not support DROP/ALTER COLUMN natively
+- test_data_models.py uses its own module-scoped test_engine fixture — intentionally avoids conftest.py which imports main.py at module level
+- psycopg2-binary in requirements.txt fails on macOS arm64 but builds correctly on Linux (production target)
 
 ### Decisions from 09-07
 
