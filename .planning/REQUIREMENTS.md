@@ -47,12 +47,12 @@
 
 ### Course Builder & Modules (BUILD)
 
-- [ ] **BUILD-01**: Creator sees Course Builder as home base with left-rail tree (modules, videos, quizzes) and module card list
-- [ ] **BUILD-02**: Creator can navigate to Module Detail, Video Detail, Quiz Builder from Course Builder
-- [ ] **BUILD-03**: Creator sees module/video/quiz status pills (draft/published) in Course Builder
-- [ ] **BUILD-04**: Creator can edit module details (title, description, learning outcome, duration estimate, unlock rule)
-- [ ] **BUILD-05**: Creator can generate module description via AI from prompt or uploaded document (streaming)
-- [ ] **BUILD-06**: Creator sees Module Overview with unified drag-drop reorder list (modules, videos, quizzes) and insert-between capability
+- [x] **BUILD-01**: Creator sees Course Builder as home base with left-rail tree (modules, videos, quizzes) and module card list
+- [x] **BUILD-02**: Creator can navigate to Module Detail, Video Detail, Quiz Builder from Course Builder
+- [x] **BUILD-03**: Creator sees module/video/quiz status pills (draft/published) in Course Builder
+- [x] **BUILD-04**: Creator can edit module details (title, description, learning outcome, duration estimate, unlock rule)
+- [x] **BUILD-05**: Creator can generate module description via AI from prompt or uploaded document (streaming)
+- [x] **BUILD-06**: Creator sees Module Overview with unified drag-drop reorder list (modules, videos, quizzes) and insert-between capability
 
 ### Slide Builder & Editor (SLIDE)
 
@@ -189,12 +189,12 @@ Explicitly excluded. Documented to prevent scope creep.
 | COURSE-03 | Phase 12 | Complete |
 | COURSE-04 | Phase 12 | Complete |
 | COURSE-05 | Phase 12 | Complete |
-| BUILD-01 | Phase 13 | Pending |
-| BUILD-02 | Phase 13 | Pending |
-| BUILD-03 | Phase 13 | Pending |
-| BUILD-04 | Phase 13 | Pending |
-| BUILD-05 | Phase 13 | Pending |
-| BUILD-06 | Phase 13 | Pending |
+| BUILD-01 | Phase 13 | Complete |
+| BUILD-02 | Phase 13 | Complete |
+| BUILD-03 | Phase 13 | Complete |
+| BUILD-04 | Phase 13 | Complete |
+| BUILD-05 | Phase 13 | Complete |
+| BUILD-06 | Phase 13 | Complete |
 | SLIDE-01 | Phase 14 | Pending |
 | SLIDE-02 | Phase 14 | Pending |
 | SLIDE-03 | Phase 14 | Pending |

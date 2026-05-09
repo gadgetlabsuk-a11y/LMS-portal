@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: verifying
-last_updated: "2026-05-09T10:46:06.551Z"
-last_activity: 2026-05-09 — Completed 12-05 — Human verification approved; Phase 12 fully complete; ready for Phase 13
+last_updated: "2026-05-09T11:48:13.319Z"
+last_activity: 2026-05-09 — Completed 13-01 — dnd-kit installed, TDD RED stubs created for Phase 13 (CourseBuilderPage, ModuleDetailPage, SSE endpoint)
 progress:
   total_phases: 10
   completed_phases: 4
-  total_plans: 20
-  completed_plans: 20
+  total_plans: 25
+  completed_plans: 21
 ---
 
 # State
 
 ## Current Position
 
-Phase: 12 (Course Identity & Structure) — 5/5 plans complete
-Last completed: 12-05 — Human verification: all 5 browser checks passed (Modal 1A AI streaming, Modal 1B skeleton preview, scaffolding, builder stub navigation, no regressions)
-Status: Phase 12 COMPLETE. All 5 plans done. All COURSE-01 through COURSE-05 requirements met and human-verified.
-Last activity: 2026-05-09 — Completed 12-05 — Human verification approved; Phase 12 fully complete; ready for Phase 13
+Phase: 13 (Course Builder Module Detail) — 1/5 plans complete
+Last completed: 13-01 — Wave 0: dnd-kit installed, TDD RED stubs created (CourseBuilderPage.test.tsx, ModuleDetailPage.test.tsx, test_modules_phase13.py)
+Status: Phase 13 IN PROGRESS. Plan 13-01 done. Ready for 13-02 (CourseBuilderPage implementation).
+Last activity: 2026-05-09 — Completed 13-01 — dnd-kit installed, TDD RED stubs created for Phase 13
 
 ## Project Reference
 
@@ -56,8 +56,15 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 12 P03 | 22min | 1 tasks | 1 files |
 | Phase 12 P04 | 15min | 2 tasks | 4 files |
 | Phase 12 P05 | 5min | 2 tasks | 0 files |
+| Phase 13 P01 | 2min | 3 tasks | 5 files |
 
 ## Accumulated Context
+
+### Decisions from 13-01
+
+- Frontend TDD RED state: import non-existent ../CourseBuilderPage and ../ModuleDetailPage — vitest fails at collection with import resolution error (correct RED state; no test body code needed)
+- Backend TDD RED state: pytest.fail() directly in test functions — produces FAILED not ERROR, consistent with Phase 12 Wave 0 pattern from STATE.md
+- venv activation required for backend pytest — pyotp and other deps not on system path (use `source venv/bin/activate` or `python3 -m pytest` from venv)
 
 ### Decisions from 12-04
 
