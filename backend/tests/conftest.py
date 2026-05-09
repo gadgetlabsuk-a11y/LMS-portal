@@ -8,6 +8,16 @@ from sqlalchemy.orm import sessionmaker
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+# --- Patch: bcrypt 5.0 raises ValueError for passwords > 72 bytes, which breaks
+# passlib's detect_wrap_bug() self-test during backend initialisation.
+# The "wrap bug" only affects bcrypt versions prior to ~2012 — not relevant here.
+# Patch before any passlib import so the backend initialises cleanly.
+try:
+    import passlib.handlers.bcrypt as _pb  # noqa: E402
+    _pb.detect_wrap_bug = lambda *args, **kwargs: False
+except Exception:
+    pass  # passlib not installed; will fail later with a clearer error
+
 from database import get_db
 from main import app
 from models import Base, User, UserRole, Course, CourseStatus
@@ -99,7 +109,6 @@ def published_course(db, admin_user):
         description="Learn Python from scratch.",
         status=CourseStatus.PUBLISHED,
         creator_id=admin_user.id,
-        content={"modules": [{"title": "Intro", "lessons": [{"title": "Hello World"}]}]},
     )
     db.add(course)
     db.commit()
@@ -114,7 +123,6 @@ def draft_course(db, admin_user):
         description="Not published yet.",
         status=CourseStatus.DRAFT,
         creator_id=admin_user.id,
-        content=None,
     )
     db.add(course)
     db.commit()
