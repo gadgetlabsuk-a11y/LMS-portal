@@ -144,14 +144,15 @@ Plans:
   4. A creator can select a layout preset and see the canvas update to match that layout
   5. A creator can open the Narration tab, write a script, trigger AI narration script generation from slide content, and see the generated text stream in
   6. A creator can run the 4-step AI slide outline wizard (source → config → generation → commit) and have the resulting slides added to the strip
-**Plans**: 5 plans
+**Plans**: 6 plans
 
 Plans:
-- [ ] 13-01-PLAN.md — Wave 0: install dnd-kit + failing test stubs (BUILD-01 through BUILD-06)
-- [ ] 13-02-PLAN.md — Backend: SSE endpoint POST /api/modules/:id/ai/generate-description (BUILD-05)
-- [ ] 13-03-PLAN.md — Frontend: CourseBuilderPage + CourseTreeRail + ModuleOverviewList with dnd-kit (BUILD-01, BUILD-02, BUILD-03, BUILD-06)
-- [ ] 13-04-PLAN.md — Frontend: ModuleDetailPage form + AI streaming + App.tsx routes (BUILD-02, BUILD-04, BUILD-05)
-- [ ] 13-05-PLAN.md — Human verify: full browser walkthrough of all 5 success criteria
+- [ ] 14-01-PLAN.md — Wave 0: install react-grid-layout + zustand + @tiptap/react + failing test stubs (SLIDE-01–12)
+- [ ] 14-02-PLAN.md — Backend: two SSE endpoints in slides.py — generate-narration (SLIDE-11) + generate-outline (SLIDE-12)
+- [ ] 14-03-PLAN.md — Frontend: SlideBuilderPage + VideoSlideStrip dnd-kit strip (SLIDE-01, SLIDE-02, SLIDE-03)
+- [ ] 14-04-PLAN.md — Frontend: SlideEditorPage + SlideCanvas + BlockLibraryPalette + LayoutPresetPicker + Zustand store (SLIDE-04–09)
+- [ ] 14-05-PLAN.md — Frontend: NarrationTab + SlideOutlineWizard + App.tsx routes (SLIDE-10, SLIDE-11, SLIDE-12)
+- [ ] 14-06-PLAN.md — Human verify: full browser walkthrough of all 6 success criteria
 
 ### Phase 15: AI Generation Infrastructure
 **Goal**: All AI generation across the platform uses a single SSE streaming infrastructure with a reusable drawer component, document ingestion works for PDF and DOCX, and the AI suggestions rail is live in Course Builder
@@ -166,11 +167,11 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 13-01-PLAN.md — Wave 0: install dnd-kit + failing test stubs (BUILD-01 through BUILD-06)
-- [ ] 13-02-PLAN.md — Backend: SSE endpoint POST /api/modules/:id/ai/generate-description (BUILD-05)
-- [ ] 13-03-PLAN.md — Frontend: CourseBuilderPage + CourseTreeRail + ModuleOverviewList with dnd-kit (BUILD-01, BUILD-02, BUILD-03, BUILD-06)
-- [ ] 13-04-PLAN.md — Frontend: ModuleDetailPage form + AI streaming + App.tsx routes (BUILD-02, BUILD-04, BUILD-05)
-- [ ] 13-05-PLAN.md — Human verify: full browser walkthrough of all 5 success criteria
+- [ ] 15-01-PLAN.md — Wave 0: failing test stubs (AI-01 through AI-07)
+- [ ] 15-02-PLAN.md — Backend: document ingestion pipeline (PDF + DOCX via PyMuPDF) + AI-03
+- [ ] 15-03-PLAN.md — Frontend: SideDrawer + StreamingTextOutput reusable components + AI-01
+- [ ] 15-04-PLAN.md — Frontend: AI suggestions rail in Course Builder + AI-06
+- [ ] 15-05-PLAN.md — Human verify: full AI generation infrastructure walkthrough
 
 ### Phase 16: Quiz Builder
 **Goal**: Creators can build quizzes with four question types, reorder questions by drag-and-drop, and generate a batch of questions via AI from module content
@@ -184,11 +185,11 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 13-01-PLAN.md — Wave 0: install dnd-kit + failing test stubs (BUILD-01 through BUILD-06)
-- [ ] 13-02-PLAN.md — Backend: SSE endpoint POST /api/modules/:id/ai/generate-description (BUILD-05)
-- [ ] 13-03-PLAN.md — Frontend: CourseBuilderPage + CourseTreeRail + ModuleOverviewList with dnd-kit (BUILD-01, BUILD-02, BUILD-03, BUILD-06)
-- [ ] 13-04-PLAN.md — Frontend: ModuleDetailPage form + AI streaming + App.tsx routes (BUILD-02, BUILD-04, BUILD-05)
-- [ ] 13-05-PLAN.md — Human verify: full browser walkthrough of all 5 success criteria
+- [ ] 16-01-PLAN.md — Wave 0: failing test stubs (QUIZ-01 through QUIZ-08)
+- [ ] 16-02-PLAN.md — Backend: quiz AI question generation SSE endpoint
+- [ ] 16-03-PLAN.md — Frontend: QuizBuilderPage + question type forms
+- [ ] 16-04-PLAN.md — Frontend: drag-to-reorder questions + AI question generation streaming
+- [ ] 16-05-PLAN.md — Human verify: full quiz builder walkthrough
 
 ### Phase 17: TTS & Narration
 **Goal**: Creators can generate ElevenLabs narration audio for individual slides or in bulk for an entire video, with rate limiting preventing API storms and caching preventing redundant regeneration
@@ -202,11 +203,11 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 13-01-PLAN.md — Wave 0: install dnd-kit + failing test stubs (BUILD-01 through BUILD-06)
-- [ ] 13-02-PLAN.md — Backend: SSE endpoint POST /api/modules/:id/ai/generate-description (BUILD-05)
-- [ ] 13-03-PLAN.md — Frontend: CourseBuilderPage + CourseTreeRail + ModuleOverviewList with dnd-kit (BUILD-01, BUILD-02, BUILD-03, BUILD-06)
-- [ ] 13-04-PLAN.md — Frontend: ModuleDetailPage form + AI streaming + App.tsx routes (BUILD-02, BUILD-04, BUILD-05)
-- [ ] 13-05-PLAN.md — Human verify: full browser walkthrough of all 5 success criteria
+- [ ] 17-01-PLAN.md — Wave 0: failing test stubs (TTS-01 through TTS-05)
+- [ ] 17-02-PLAN.md — Backend: ElevenLabs TTS service + per-slide audio generation endpoint
+- [ ] 17-03-PLAN.md — Backend: bulk narration endpoint with asyncio.Semaphore(3) + script-hash cache
+- [ ] 17-04-PLAN.md — Frontend: audio player in NarrationTab + bulk narration button wired (SLIDE-03)
+- [ ] 17-05-PLAN.md — Human verify: TTS generation walkthrough
 
 ### Phase 18: Preview & Publish
 **Goal**: Creators can preview the full course as a learner, then publish with confidence using a pre-flight checklist — with version history ensuring enrolled learners are never disrupted
@@ -222,11 +223,11 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 13-01-PLAN.md — Wave 0: install dnd-kit + failing test stubs (BUILD-01 through BUILD-06)
-- [ ] 13-02-PLAN.md — Backend: SSE endpoint POST /api/modules/:id/ai/generate-description (BUILD-05)
-- [ ] 13-03-PLAN.md — Frontend: CourseBuilderPage + CourseTreeRail + ModuleOverviewList with dnd-kit (BUILD-01, BUILD-02, BUILD-03, BUILD-06)
-- [ ] 13-04-PLAN.md — Frontend: ModuleDetailPage form + AI streaming + App.tsx routes (BUILD-02, BUILD-04, BUILD-05)
-- [ ] 13-05-PLAN.md — Human verify: full browser walkthrough of all 5 success criteria
+- [ ] 18-01-PLAN.md — Wave 0: failing test stubs (PREVIEW-01 through PUBLISH-08)
+- [ ] 18-02-PLAN.md — Backend: publish endpoint + version snapshot model
+- [ ] 18-03-PLAN.md — Frontend: PreviewMode in Course Builder + learner view
+- [ ] 18-04-PLAN.md — Frontend: pre-flight checklist + publish flow
+- [ ] 18-05-PLAN.md — Human verify: full preview + publish walkthrough
 
 ---
 
@@ -234,12 +235,12 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 9. Vite Migration | 7/7 | Complete | 2026-05-08 | - |
-| 10. Data Models | 4/4 | Complete | 2026-05-09 | - |
-| 11. Backend CRUD API | 4/4 | Complete    | 2026-05-09 | - |
-| 12. Course Identity & Structure | 5/5 | Complete    | 2026-05-09 | - |
-| 13. Course Builder & Module Detail | 5/5 | Complete    | 2026-05-09 | - |
-| 14. Slide Builder & Slide Editor | v1.0 | 0/TBD | Not started | - |
+| 9. Vite Migration | v1.0 | 7/7 | Complete | 2026-05-08 |
+| 10. Data Models | v1.0 | 4/4 | Complete | 2026-05-09 |
+| 11. Backend CRUD API | v1.0 | 4/4 | Complete | 2026-05-09 |
+| 12. Course Identity & Structure | v1.0 | 5/5 | Complete | 2026-05-09 |
+| 13. Course Builder & Module Detail | v1.0 | 5/5 | Complete | 2026-05-09 |
+| 14. Slide Builder & Slide Editor | v1.0 | 0/6 | Not started | - |
 | 15. AI Generation Infrastructure | v1.0 | 0/TBD | Not started | - |
 | 16. Quiz Builder | v1.0 | 0/TBD | Not started | - |
 | 17. TTS & Narration | v1.0 | 0/TBD | Not started | - |
