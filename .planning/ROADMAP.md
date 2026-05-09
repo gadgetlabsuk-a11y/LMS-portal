@@ -32,7 +32,7 @@ Phases 1–8 were tracked manually before GSD was adopted. What shipped:
 - [x] **Phase 10: Data Models** — Normalise course data from JSON blob to relational tables via Alembic migrations (completed 2026-05-09)
 - [x] **Phase 11: Backend CRUD API** — Add all new creator API endpoints (modules, videos, slides, blocks, quizzes, uploads) (completed 2026-05-09)
 - [x] **Phase 12: Course Identity & Structure** — Course creation Modal 1A (identity + AI assistance) and Modal 1B (structure wizard with live skeleton) (completed 2026-05-09)
-- [ ] **Phase 13: Course Builder & Module Detail** — Home-base Course Builder with left-rail tree, module card list, Module Detail with rich text and drag-drop reorder
+- [x] **Phase 13: Course Builder & Module Detail** — Home-base Course Builder with left-rail tree, module card list, Module Detail with rich text and drag-drop reorder (completed 2026-05-09)
 - [ ] **Phase 14: Slide Builder & Slide Editor** — Full slide authoring: thumbnail strip, 12-column snap-grid canvas, block library, undo/redo, autosave, AI slide outline wizard
 - [ ] **Phase 15: AI Generation Infrastructure** — SSE streaming infrastructure, reusable AI drawer, document ingestion pipeline, AI suggestions rail
 - [ ] **Phase 16: Quiz Builder** — Quiz creation with MCQ/true-false/short-answer questions, drag-to-reorder, AI question generation
@@ -238,7 +238,7 @@ Plans:
 | 10. Data Models | 4/4 | Complete | 2026-05-09 | - |
 | 11. Backend CRUD API | 4/4 | Complete    | 2026-05-09 | - |
 | 12. Course Identity & Structure | 5/5 | Complete    | 2026-05-09 | - |
-| 13. Course Builder & Module Detail | 4/5 | In Progress|  | - |
+| 13. Course Builder & Module Detail | 5/5 | Complete   | 2026-05-09 | - |
 | 14. Slide Builder & Slide Editor | v1.0 | 0/TBD | Not started | - |
 | 15. AI Generation Infrastructure | v1.0 | 0/TBD | Not started | - |
 | 16. Quiz Builder | v1.0 | 0/TBD | Not started | - |
