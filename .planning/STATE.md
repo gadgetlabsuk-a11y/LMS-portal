@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
-status: completed
-last_updated: "2026-05-09T09:47:16.450Z"
-last_activity: 2026-05-09 — Completed 12-01 — Wave 0 test scaffold: 4 backend stubs + 1 frontend stub + sse-starlette declared
+status: executing
+last_updated: "2026-05-09T09:54:54.666Z"
+last_activity: "2026-05-09 — Completed 12-01 — Wave 0 test scaffold: 4 backend stubs + 1 frontend stub + sse-starlette declared"
 progress:
   total_phases: 10
   completed_phases: 3
   total_plans: 20
-  completed_plans: 16
+  completed_plans: 17
 ---
 
 # State
 
 ## Current Position
 
-Phase: 12 (Course Identity & Structure) — 1/4 plans complete
-Last completed: 12-01 — Wave 0 test scaffold: 4 backend stubs (COURSE-01,02,03,05) + 1 frontend stub (COURSE-04) all FAILED, sse-starlette==2.1.3 declared
-Status: Phase 12 IN PROGRESS. Plan 01 (test scaffold) complete. Plans 02-04 (implementation) pending.
-Last activity: 2026-05-09 — Completed 12-01 — Wave 0 test scaffold: 4 backend stubs + 1 frontend stub + sse-starlette declared
+Phase: 12 (Course Identity & Structure) — 2/4 plans complete
+Last completed: 12-02 — Backend API: CourseCreate identity fields + SSE AI endpoints + ClaudeService streaming + 4 GREEN tests (COURSE-01,02,03,05)
+Status: Phase 12 IN PROGRESS. Plans 01-02 complete. Plans 03-04 (frontend) pending.
+Last activity: 2026-05-09 — Completed 12-02 — Extended CourseCreate, added SSE endpoints, streaming ClaudeService methods, all Phase 12 backend tests GREEN
 
 ## Project Reference
 
@@ -52,8 +52,17 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 11 P02 | 2 | 2 tasks | 4 files |
 | Phase 11 P03 | 2min | 2 tasks | 4 files |
 | Phase 12 P01 | 12min | 3 tasks | 3 files |
+| Phase 12 P02 | 18min | 2 tasks | 3 files |
 
 ## Accumulated Context
+
+### Decisions from 12-02
+
+- Module-level `claude_service = ClaudeService()` singleton in courses.py; function-local instantiations in legacy generate handlers left unchanged to avoid regression
+- SSE routes /ai/generate-description and /ai/generate-objectives declared BEFORE /{course_id} routes — FastAPI path collision prevention
+- `AppStatus.should_exit_event = None` reset before each SSE test — sse-starlette 2.x creates anyio.Event class-level attribute; TestClient cycles event loops between tests causing cross-loop RuntimeError
+- CourseResponse extended with audience_level, learning_objectives (Optional[List[str]]), ai_tone_preset — all Optional for backward compatibility
+- test_learn_router.py::test_returns_only_published_courses confirmed pre-existing failure (unrelated to 12-02)
 
 ### Decisions from 12-01
 
