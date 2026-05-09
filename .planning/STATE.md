@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: completed
-last_updated: "2026-05-09T17:59:00Z"
-last_activity: 2026-05-09 — Completed 14-02 — SLIDE-11 and SLIDE-12 SSE endpoints GREEN
+last_updated: "2026-05-09T17:00:00Z"
+last_activity: 2026-05-09 — Completed 14-03 — SlideBuilderPage and VideoSlideStrip
 progress:
   total_phases: 10
   completed_phases: 5
   total_plans: 31
-  completed_plans: 27
+  completed_plans: 28
 ---
 
 # State
 
 ## Current Position
 
-Phase: 14 (Slide Builder & Slide Editor) — IN PROGRESS (2/6 plans done)
-Last completed: 14-02 — SLIDE-11 and SLIDE-12 SSE endpoints GREEN (generate-narration, generate-outline).
-Status: Phase 14 Plan 02 COMPLETE. Ready for Plan 14-03 (block CRUD).
-Last activity: 2026-05-09 — Completed 14-02 — SLIDE-11 and SLIDE-12 SSE endpoints GREEN
+Phase: 14 (Slide Builder & Slide Editor) — IN PROGRESS (3/6 plans done)
+Last completed: 14-03 — SlideBuilderPage with VideoSlideStrip (dnd-kit sortable) and SLIDE-01/02/03 tests GREEN.
+Status: Phase 14 Plan 03 COMPLETE. Ready for Plan 14-04 (SlideEditorPage).
+Last activity: 2026-05-09 — Completed 14-03 — SlideBuilderPage and VideoSlideStrip
 
 ## Project Reference
 
@@ -64,8 +64,16 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 14 P01 | 45min | 3 tasks | 8 files |
 | Phase 14 P02 | 15min | 2 tasks | 2 files |
 | Phase 14 P02 | 15min | 2 tasks | 2 files |
+| Phase 14 P03 | 15min | 2 tasks | 5 files |
 
 ## Accumulated Context
+
+### Decisions from 14-03
+
+- @testing-library/user-event not in package.json — installed as dev dependency (Rule 3 auto-fix); other test files use fireEvent but plan spec used userEvent
+- VideoSlideStrip is a controlled component — parent (SlideBuilderPage) owns slides state via onSlidesChange prop
+- Duplicate slide uses POST /videos/{videoId}/slides with copied title+narration_script (no dedicated duplicate endpoint needed)
+- SortableSlideThumb separates drag handle (⠿ icon) from click-to-navigate area — avoids dnd-kit drag events intercepting navigation clicks
 
 ### Decisions from 14-02
 
