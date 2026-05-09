@@ -58,7 +58,7 @@
 
 - [x] **SLIDE-01**: Creator can access Slide Builder for a video and see a thumbnail strip of slides
 - [x] **SLIDE-02**: Creator can add, reorder, duplicate, and delete slides from the thumbnail strip
-- [x] **SLIDE-03**: Creator can trigger bulk narration audio generation for all slides with populated scripts
+- [ ] **SLIDE-03**: Creator can trigger bulk narration audio generation for all slides with populated scripts _(deferred to Phase 17 — see TTS-02)_
 - [x] **SLIDE-04**: Creator can open Slide Editor for any slide
 - [x] **SLIDE-05**: Creator can drag content blocks (text, heading, image, video embed, code, quote, list, callout, divider) onto a 12-column snap grid canvas
 - [x] **SLIDE-06**: Creator can resize and reposition blocks on the canvas
@@ -197,7 +197,7 @@ Explicitly excluded. Documented to prevent scope creep.
 | BUILD-06 | Phase 13 | Complete |
 | SLIDE-01 | Phase 14 | Complete |
 | SLIDE-02 | Phase 14 | Complete |
-| SLIDE-03 | Phase 14 | Complete |
+| SLIDE-03 | Phase 17 | Deferred (TTS-02) |
 | SLIDE-04 | Phase 14 | Complete |
 | SLIDE-05 | Phase 14 | Complete |
 | SLIDE-06 | Phase 14 | Complete |
