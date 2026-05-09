@@ -124,7 +124,14 @@ Plans:
   3. A creator can open Module Detail and edit title, description, learning outcome, duration estimate, and unlock rule; changes save
   4. A creator can drag modules and videos to reorder them in the Module Overview list; the new order persists after a page reload
   5. A creator can generate a module description via AI from a text prompt or uploaded document and see it stream in
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 13-01-PLAN.md — Wave 0: install dnd-kit + failing test stubs (BUILD-01 through BUILD-06)
+- [ ] 13-02-PLAN.md — Backend: SSE endpoint POST /api/modules/:id/ai/generate-description (BUILD-05)
+- [ ] 13-03-PLAN.md — Frontend: CourseBuilderPage + CourseTreeRail + ModuleOverviewList with dnd-kit (BUILD-01, BUILD-02, BUILD-03, BUILD-06)
+- [ ] 13-04-PLAN.md — Frontend: ModuleDetailPage form + AI streaming + App.tsx routes (BUILD-02, BUILD-04, BUILD-05)
+- [ ] 13-05-PLAN.md — Human verify: full browser walkthrough of all 5 success criteria
 
 ### Phase 14: Slide Builder & Slide Editor
 **Goal**: Creators can build slides visually using a 12-column snap-grid canvas with a full block library, undo/redo, autosave, narration scripting, and an AI-powered slide outline wizard
@@ -137,7 +144,14 @@ Plans:
   4. A creator can select a layout preset and see the canvas update to match that layout
   5. A creator can open the Narration tab, write a script, trigger AI narration script generation from slide content, and see the generated text stream in
   6. A creator can run the 4-step AI slide outline wizard (source → config → generation → commit) and have the resulting slides added to the strip
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 13-01-PLAN.md — Wave 0: install dnd-kit + failing test stubs (BUILD-01 through BUILD-06)
+- [ ] 13-02-PLAN.md — Backend: SSE endpoint POST /api/modules/:id/ai/generate-description (BUILD-05)
+- [ ] 13-03-PLAN.md — Frontend: CourseBuilderPage + CourseTreeRail + ModuleOverviewList with dnd-kit (BUILD-01, BUILD-02, BUILD-03, BUILD-06)
+- [ ] 13-04-PLAN.md — Frontend: ModuleDetailPage form + AI streaming + App.tsx routes (BUILD-02, BUILD-04, BUILD-05)
+- [ ] 13-05-PLAN.md — Human verify: full browser walkthrough of all 5 success criteria
 
 ### Phase 15: AI Generation Infrastructure
 **Goal**: All AI generation across the platform uses a single SSE streaming infrastructure with a reusable drawer component, document ingestion works for PDF and DOCX, and the AI suggestions rail is live in Course Builder
@@ -149,7 +163,14 @@ Plans:
   3. The AI suggestions rail is visible in Course Builder and shows proactive nudges for missing descriptions, empty modules, and other completeness gaps
   4. The AI tone preset set in Modal 1A is visibly reflected in generation output (e.g. formal tone produces different phrasing than casual)
   5. Disconnecting the browser mid-stream stops token generation on the server (no orphaned Claude API calls)
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 13-01-PLAN.md — Wave 0: install dnd-kit + failing test stubs (BUILD-01 through BUILD-06)
+- [ ] 13-02-PLAN.md — Backend: SSE endpoint POST /api/modules/:id/ai/generate-description (BUILD-05)
+- [ ] 13-03-PLAN.md — Frontend: CourseBuilderPage + CourseTreeRail + ModuleOverviewList with dnd-kit (BUILD-01, BUILD-02, BUILD-03, BUILD-06)
+- [ ] 13-04-PLAN.md — Frontend: ModuleDetailPage form + AI streaming + App.tsx routes (BUILD-02, BUILD-04, BUILD-05)
+- [ ] 13-05-PLAN.md — Human verify: full browser walkthrough of all 5 success criteria
 
 ### Phase 16: Quiz Builder
 **Goal**: Creators can build quizzes with four question types, reorder questions by drag-and-drop, and generate a batch of questions via AI from module content
@@ -160,7 +181,14 @@ Plans:
   2. A creator can add MCQ single-answer, MCQ multi-answer, true/false, and short-answer questions with correct answers and explanation text
   3. A creator can drag questions to reorder them; the new order persists after a page reload with no `order_index` drift
   4. A creator can trigger AI question generation from module content and see a batch of questions streamed in, then confirm them to the quiz
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 13-01-PLAN.md — Wave 0: install dnd-kit + failing test stubs (BUILD-01 through BUILD-06)
+- [ ] 13-02-PLAN.md — Backend: SSE endpoint POST /api/modules/:id/ai/generate-description (BUILD-05)
+- [ ] 13-03-PLAN.md — Frontend: CourseBuilderPage + CourseTreeRail + ModuleOverviewList with dnd-kit (BUILD-01, BUILD-02, BUILD-03, BUILD-06)
+- [ ] 13-04-PLAN.md — Frontend: ModuleDetailPage form + AI streaming + App.tsx routes (BUILD-02, BUILD-04, BUILD-05)
+- [ ] 13-05-PLAN.md — Human verify: full browser walkthrough of all 5 success criteria
 
 ### Phase 17: TTS & Narration
 **Goal**: Creators can generate ElevenLabs narration audio for individual slides or in bulk for an entire video, with rate limiting preventing API storms and caching preventing redundant regeneration
@@ -171,7 +199,14 @@ Plans:
   2. A creator can trigger bulk audio generation for all slides in a video; slides with no script are skipped; progress is visible
   3. Running bulk generation twice does not re-call ElevenLabs for slides whose narration script has not changed since the last generation
   4. A creator can select from at least two ElevenLabs voice options before generating
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 13-01-PLAN.md — Wave 0: install dnd-kit + failing test stubs (BUILD-01 through BUILD-06)
+- [ ] 13-02-PLAN.md — Backend: SSE endpoint POST /api/modules/:id/ai/generate-description (BUILD-05)
+- [ ] 13-03-PLAN.md — Frontend: CourseBuilderPage + CourseTreeRail + ModuleOverviewList with dnd-kit (BUILD-01, BUILD-02, BUILD-03, BUILD-06)
+- [ ] 13-04-PLAN.md — Frontend: ModuleDetailPage form + AI streaming + App.tsx routes (BUILD-02, BUILD-04, BUILD-05)
+- [ ] 13-05-PLAN.md — Human verify: full browser walkthrough of all 5 success criteria
 
 ### Phase 18: Preview & Publish
 **Goal**: Creators can preview the full course as a learner, then publish with confidence using a pre-flight checklist — with version history ensuring enrolled learners are never disrupted
@@ -184,7 +219,14 @@ Plans:
   4. A creator can publish a course (draft → published) and the course is visible to learners
   5. A creator can update a published course; a version snapshot is created; learners already enrolled retain their progress on the prior version while new enrolees see the updated version
   6. A creator can archive a published course; it is no longer visible in the public catalogue
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 13-01-PLAN.md — Wave 0: install dnd-kit + failing test stubs (BUILD-01 through BUILD-06)
+- [ ] 13-02-PLAN.md — Backend: SSE endpoint POST /api/modules/:id/ai/generate-description (BUILD-05)
+- [ ] 13-03-PLAN.md — Frontend: CourseBuilderPage + CourseTreeRail + ModuleOverviewList with dnd-kit (BUILD-01, BUILD-02, BUILD-03, BUILD-06)
+- [ ] 13-04-PLAN.md — Frontend: ModuleDetailPage form + AI streaming + App.tsx routes (BUILD-02, BUILD-04, BUILD-05)
+- [ ] 13-05-PLAN.md — Human verify: full browser walkthrough of all 5 success criteria
 
 ---
 
