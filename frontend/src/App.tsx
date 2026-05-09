@@ -21,6 +21,8 @@ import { DevToolsPage } from '@/pages/admin/DevToolsPage'
 import { WhiteLabelPage } from '@/pages/admin/WhiteLabelPage'
 import { CreatorDashboard } from '@/pages/creator/CreatorDashboard'
 import { CreatorCourseListPage } from '@/pages/creator/CreatorCourseListPage'
+import { CourseBuilderPage } from '@/pages/creator/CourseBuilderPage'
+import { ModuleDetailPage } from '@/pages/creator/ModuleDetailPage'
 import { CreatorLearners } from '@/pages/creator/CreatorLearners'
 import { LearnerCatalogue } from '@/pages/learn/LearnerCatalogue'
 import { CourseDetail } from '@/pages/learn/CourseDetail'
@@ -127,10 +129,17 @@ export default function App() {
         element={
           <CreatorLayout>
             <ProtectedRoute creatorRoute>
-              <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
-                <h2>Course Builder</h2>
-                <p>Coming in Phase 13.</p>
-              </div>
+              <CourseBuilderPage />
+            </ProtectedRoute>
+          </CreatorLayout>
+        }
+      />
+      <Route
+        path="/creator/courses/:id/modules/:moduleId"
+        element={
+          <CreatorLayout>
+            <ProtectedRoute creatorRoute>
+              <ModuleDetailPage />
             </ProtectedRoute>
           </CreatorLayout>
         }
