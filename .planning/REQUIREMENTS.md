@@ -30,8 +30,8 @@
 ### Backend API (API)
 
 - [x] **API-01**: Creator can CRUD modules (create, list, update, delete, reorder by `order_index`)
-- [ ] **API-02**: Creator can CRUD videos (create, list, update, delete, reorder by `order_index`)
-- [ ] **API-03**: Creator can CRUD slides (create, list, update, delete, reorder by `order_index`)
+- [x] **API-02**: Creator can CRUD videos (create, list, update, delete, reorder by `order_index`)
+- [x] **API-03**: Creator can CRUD slides (create, list, update, delete, reorder by `order_index`)
 - [ ] **API-04**: Creator can CRUD blocks within a slide (create, list, update, delete)
 - [ ] **API-05**: Creator can CRUD quizzes and questions (including bulk reorder for questions)
 - [x] **API-06**: Creator can upload files and images (stored, URL returned)
@@ -178,8 +178,8 @@ Explicitly excluded. Documented to prevent scope creep.
 | DATA-08 | Phase 10 | Complete |
 | DATA-09 | Phase 10 | Complete |
 | API-01 | Phase 11 | Complete |
-| API-02 | Phase 11 | Pending |
-| API-03 | Phase 11 | Pending |
+| API-02 | Phase 11 | Complete |
+| API-03 | Phase 11 | Complete |
 | API-04 | Phase 11 | Pending |
 | API-05 | Phase 11 | Pending |
 | API-06 | Phase 11 | Complete |

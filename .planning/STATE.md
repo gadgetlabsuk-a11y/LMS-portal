@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: executing
-last_updated: "2026-05-09T08:57:06.173Z"
-last_activity: 2026-05-09 — Completed 11-04 — POST /api/uploads endpoint live with tests
+last_updated: "2026-05-09T09:01:24.293Z"
+last_activity: 2026-05-09 — Completed 11-01 — Module CRUD + reorder router, 7 tests GREEN
 progress:
   total_phases: 10
   completed_phases: 2
   total_plans: 15
-  completed_plans: 13
+  completed_plans: 14
 ---
 
 # State
 
 ## Current Position
 
-Phase: 11 (Backend CRUD API) — Plans 01 and 04 complete (2/4 plans done)
-Last completed: 11-01 (modules router) — 6 module endpoints, reorder atomic, 7 tests GREEN
-Status: Executing Phase 11. Plans 01 (modules), 04 (uploads) complete. Plans 02, 03 pending.
-Last activity: 2026-05-09 — Completed 11-01 — Module CRUD + reorder router, 7 tests GREEN
+Phase: 11 (Backend CRUD API) — Plans 01, 02 and 04 complete (3/4 plans done)
+Last completed: 11-02 (videos + slides routers) — 12 endpoints, reorder atomic, 12 tests GREEN
+Status: Executing Phase 11. Plans 01 (modules), 02 (videos/slides), 04 (uploads) complete. Plan 03 pending.
+Last activity: 2026-05-09 — Completed 11-02 — Video + Slide CRUD + reorder routers, 12 tests GREEN
 
 ## Project Reference
 
@@ -49,8 +49,15 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | 10    | 04   | ~5 min   | 2/2   | 1     |
 | 11    | 04   | ~3 min   | 2/2   | 4     |
 | 11    | 01   | ~3 min   | 2/2   | 4     |
+| Phase 11 P02 | 2 | 2 tasks | 4 files |
 
 ## Accumulated Context
+
+### Decisions from 11-02
+
+- videos.py uses _get_module_or_404 helper (module.join(Course)) for create/list/reorder; get/update/delete use inline join for single-item fetch — consistent with modules.py pattern
+- slides.py uses _get_video_or_404 helper (video.join(Module).join(Course)) for create/list/reorder; four-table Slide.join(Video).join(Module).join(Course) for single-item operations
+- Test fixtures chain via API calls (creator_module → creator_video → creator_slide) for realistic integration coverage; creator_course reused from conftest
 
 ### Decisions from 11-01
 
