@@ -9,6 +9,10 @@ const mockSlides = [
   { id: 2, video_id: 10, title: 'Content Slide', narration_script: 'Hello world', order_index: 1 },
 ]
 
+vi.mock('@/context/AuthContext', () => ({
+  useAuth: () => ({ token: 'test-token' }),
+}))
+
 vi.mock('@/services/api', () => ({
   api: {
     get: vi.fn().mockResolvedValue({ json: async () => mockSlides }),
