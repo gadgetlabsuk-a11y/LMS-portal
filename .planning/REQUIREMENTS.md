@@ -17,15 +17,15 @@
 
 ### Data Models (DATA)
 
-- [ ] **DATA-01**: Module table exists with `order_index`, `unlock_rule`, `status`, `description`, linked to Course
-- [ ] **DATA-02**: Video table exists with `type` (upload/embed/slides), `description`, `order_index`, linked to Module
-- [ ] **DATA-03**: Slide table exists with `order_index`, `status`, `layout`, `narration_script`, linked to Video
-- [ ] **DATA-04**: Block table exists with `type`, `content` (JSON), `position` (row/col/width/height), linked to Slide
-- [ ] **DATA-05**: Quiz table exists with `pass_score`, `max_attempts`, `show_feedback` settings, linked to Module
-- [ ] **DATA-06**: Question table exists with `type`, `prompt`, `options` (JSON), `correct_answer`, `explanation`, linked to Quiz
-- [ ] **DATA-07**: Resource table exists for uploaded files (URL, mime type, size), linked to Course
+- [x] **DATA-01**: Module table exists with `order_index`, `unlock_rule`, `status`, `description`, linked to Course
+- [x] **DATA-02**: Video table exists with `type` (upload/embed/slides), `description`, `order_index`, linked to Module
+- [x] **DATA-03**: Slide table exists with `order_index`, `status`, `layout`, `narration_script`, linked to Video
+- [x] **DATA-04**: Block table exists with `type`, `content` (JSON), `position` (row/col/width/height), linked to Slide
+- [x] **DATA-05**: Quiz table exists with `pass_score`, `max_attempts`, `show_feedback` settings, linked to Module
+- [x] **DATA-06**: Question table exists with `type`, `prompt`, `options` (JSON), `correct_answer`, `explanation`, linked to Quiz
+- [x] **DATA-07**: Resource table exists for uploaded files (URL, mime type, size), linked to Course
 - [x] **DATA-08**: Alembic migrations set up; all new tables created via migration (not bare `create_all`)
-- [ ] **DATA-09**: `Course.content` JSON column retired; existing course data migrated to new relational structure
+- [x] **DATA-09**: `Course.content` JSON column retired; existing course data migrated to new relational structure
 
 ### Backend API (API)
 
@@ -168,15 +168,15 @@ Explicitly excluded. Documented to prevent scope creep.
 | INFRA-03 | Phase 9 | Complete |
 | INFRA-04 | Phase 9 | Complete |
 | INFRA-05 | Phase 9 | Complete |
-| DATA-01 | Phase 10 | Pending |
-| DATA-02 | Phase 10 | Pending |
-| DATA-03 | Phase 10 | Pending |
-| DATA-04 | Phase 10 | Pending |
-| DATA-05 | Phase 10 | Pending |
-| DATA-06 | Phase 10 | Pending |
-| DATA-07 | Phase 10 | Pending |
+| DATA-01 | Phase 10 | Complete |
+| DATA-02 | Phase 10 | Complete |
+| DATA-03 | Phase 10 | Complete |
+| DATA-04 | Phase 10 | Complete |
+| DATA-05 | Phase 10 | Complete |
+| DATA-06 | Phase 10 | Complete |
+| DATA-07 | Phase 10 | Complete |
 | DATA-08 | Phase 10 | Complete |
-| DATA-09 | Phase 10 | Pending |
+| DATA-09 | Phase 10 | Complete |
 | API-01 | Phase 11 | Pending |
 | API-02 | Phase 11 | Pending |
 | API-03 | Phase 11 | Pending |

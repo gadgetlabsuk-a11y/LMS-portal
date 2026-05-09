@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
-status: completed
-last_updated: "2026-05-09T08:00:00.000Z"
-last_activity: 2026-05-09 — Completed 10-01-PLAN.md (Alembic Bootstrap + Test Stubs)
+status: Phase 10 in progress — 7 new model classes added, all 18 DATA test stubs GREEN
+last_updated: "2026-05-09T09:10:00.000Z"
+last_activity: 2026-05-09 — Completed 10-02-PLAN.md (Data Model Classes)
 progress:
   total_phases: 10
   completed_phases: 1
   total_plans: 11
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # State
@@ -17,9 +17,9 @@ progress:
 ## Current Position
 
 Phase: 10 (Data Models) — In Progress
-Plan: 10-01 complete — Alembic bootstrap and test stubs done
-Status: Phase 10 started — Alembic wired, 18 failing test stubs created (RED phase correct)
-Last activity: 2026-05-09 — Completed 10-01-PLAN.md (Alembic Bootstrap + Test Stubs)
+Plan: 10-02 complete — 7 new model classes added, all 18 DATA test stubs GREEN
+Status: Phase 10 in progress — model classes done, Alembic migration generation next
+Last activity: 2026-05-09 — Completed 10-02-PLAN.md (Data Model Classes)
 
 ## Project Reference
 
@@ -44,8 +44,17 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | 09    | 06   | ~7 min   | 2/2   | 7     |
 | 09    | 07   | ~10 min  | 2/2   | 3     |
 | 10    | 01   | ~15 min  | 2/2   | 6     |
+| 10    | 02   | ~12 min  | 2/2   | 2     |
 
 ## Accumulated Context
+
+### Decisions from 10-02
+
+- Course.content column removed cleanly from model class — Alembic migration (Plan 03) handles the DB column drop, no two-code-path handling
+- video_type used instead of type on Video model — avoids collision with Python/SQLAlchemy reserved attribute name
+- Quiz uses pass_rate and attempts_allowed naming per spec (not pass_score/max_attempts)
+- Resource.module_id FK (not course_id) — resources belong to modules per spec, confirmed in research
+- test_creator_router.py and test_learn_router.py errors are pre-existing bcrypt/passlib Python 3.14 incompatibility, not introduced by this plan
 
 ### Decisions from 10-01
 
