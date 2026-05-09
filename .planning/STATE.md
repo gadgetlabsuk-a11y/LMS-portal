@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: executing
-last_updated: "2026-05-09T10:18:10.692Z"
-last_activity: 2026-05-09 — Completed 12-02 — Extended CourseCreate, added SSE endpoints, streaming ClaudeService methods, all Phase 12 backend tests GREEN
+last_updated: "2026-05-09T11:34:00.000Z"
+last_activity: 2026-05-09 — Completed 12-04 — CourseIdentityModal (Modal 1A with AI SSE streaming), CourseStructureModal (Modal 1B + SkeletonTreePreview scaffolding), CreatorCourseListPage, App.tsx routes updated; all COURSE-01 through COURSE-05 requirements met
 progress:
   total_phases: 10
   completed_phases: 3
   total_plans: 20
-  completed_plans: 18
+  completed_plans: 19
 ---
 
 # State
 
 ## Current Position
 
-Phase: 12 (Course Identity & Structure) — 3/4 plans complete
-Last completed: 12-03 — SkeletonTreePreview pure React component; both tests GREEN; all 8 frontend tests pass (COURSE-04)
-Status: Phase 12 IN PROGRESS. Plans 01-03 complete. Plan 04 (Modal 1B) pending.
-Last activity: 2026-05-09 — Completed 12-03 — SkeletonTreePreview pure client-side tree preview component, TDD GREEN, no regressions
+Phase: 12 (Course Identity & Structure) — 4/4 plans complete
+Last completed: 12-04 — CourseIdentityModal, CourseStructureModal, CreatorCourseListPage, App.tsx wired; all COURSE requirements met
+Status: Phase 12 COMPLETE. All 4 plans done.
+Last activity: 2026-05-09 — Completed 12-04 — Full course creation modal flow: Modal 1A (AI SSE streaming) → Modal 1B (scaffolding) → builder route stub
 
 ## Project Reference
 
@@ -54,8 +54,16 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 12 P01 | 12min | 3 tasks | 3 files |
 | Phase 12 P02 | 18min | 2 tasks | 3 files |
 | Phase 12 P03 | 22min | 1 tasks | 1 files |
+| Phase 12 P04 | 15min | 2 tasks | 4 files |
 
 ## Accumulated Context
+
+### Decisions from 12-04
+
+- Select component uses `options` prop (array of `{value, label}`) not JSX children — actual Select.tsx interface; plan showed child `<option>` pseudo-code
+- Objectives SSE streaming accumulates all tokens into local string then parses "- " prefixed lines on completion — avoids partial-line state updates creating malformed objective arrays
+- Builder stub route wrapped in CreatorLayout + ProtectedRoute(creatorRoute) for consistent auth/layout — bare div stub would bypass auth
+- CreatorCourseListPage handles both API response shapes: array or `{courses: []}` — defensive against minor backend format variation
 
 ### Decisions from 12-02
 
