@@ -23,7 +23,7 @@ from models import User, UserRole, WhiteLabelConfig, FeatureFlag, ErrorLog
 from services.auth_service import AuthService
 
 # Import routers
-from routers import admin, auth, users, courses, security, dev_tools, whitelabel, learn, creator, uploads, modules, videos, slides
+from routers import admin, auth, users, courses, security, dev_tools, whitelabel, learn, creator, uploads, modules, videos, slides, blocks, quizzes
 
 # Configure logging
 logging.basicConfig(
@@ -207,6 +207,8 @@ app.include_router(creator.router)
 app.include_router(modules.router)
 app.include_router(videos.router)
 app.include_router(slides.router)
+app.include_router(blocks.router)
+app.include_router(quizzes.router)
 app.include_router(uploads.router)
 
 
