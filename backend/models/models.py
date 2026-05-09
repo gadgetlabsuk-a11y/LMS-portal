@@ -38,6 +38,7 @@ class CourseStatus(str, enum.Enum):
     DRAFT = "draft"
     PUBLISHED = "published"
     ARCHIVED = "archived"
+    HAS_UNPUBLISHED_CHANGES = "has_unpublished_changes"
 
 
 class User(Base):
@@ -97,15 +98,32 @@ class Course(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(500), nullable=False)
     description = Column(Text, nullable=True)
-    content = Column(JSON, nullable=True)
     creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     status = Column(Enum(CourseStatus), default=CourseStatus.DRAFT, nullable=False)
+    slug = Column(String(200), nullable=True, unique=True, index=True)
+    summary = Column(Text, nullable=True)
+    thumbnail_url = Column(String(500), nullable=True)
+    audience_level = Column(String(50), nullable=True)
+    learning_objectives = Column(JSON, nullable=True)
+    category = Column(String(100), nullable=True)
+    tags = Column(JSON, nullable=True)
+    estimated_duration_minutes = Column(Integer, nullable=True)
+    ai_tone_preset = Column(String(50), nullable=True)
+    ai_custom_prompt = Column(Text, nullable=True)
+    navigation_mode = Column(String(20), nullable=True, server_default='sequential')
+    default_pass_rate = Column(Integer, nullable=True, server_default='80')
+    default_quiz_attempts = Column(Integer, nullable=True, server_default='3')
+    default_quiz_time_limit_seconds = Column(Integer, nullable=True)
+    certificate_enabled = Column(Boolean, nullable=True, server_default='1')
+    published_at = Column(DateTime, nullable=True)
+    version = Column(Integer, nullable=True, server_default='1')
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
     creator = relationship("User", back_populates="courses_created")
     enrollments = relationship("Enrollment", back_populates="course", cascade="all, delete-orphan")
+    modules = relationship("Module", back_populates="course", cascade="all, delete-orphan", order_by="Module.order_index")
 
     __table_args__ = (Index("idx_creator_status", "creator_id", "status"),)
 
@@ -122,6 +140,7 @@ class Enrollment(Base):
     completed = Column(Boolean, default=False, nullable=False)
     enrolled_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     completed_at = Column(DateTime, nullable=True)
+    course_version = Column(Integer, nullable=True, default=1)
 
     # Relationships
     user = relationship("User", back_populates="enrollments")
@@ -249,3 +268,180 @@ class IpAllowlist(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     __table_args__ = (Index("idx_ip_address", "ip_address"),)
+
+
+class Module(Base):
+    """Course module — top-level content grouping."""
+    __tablename__ = "modules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    order_index = Column(Integer, nullable=False, server_default="0")
+    title = Column(String(500), nullable=False)
+    description = Column(Text, nullable=True)
+    learning_objectives = Column(JSON, nullable=True)
+    estimated_duration_minutes = Column(Integer, nullable=True)
+    pass_rate_override = Column(Integer, nullable=True)
+    unlock_rule = Column(String(50), nullable=True, server_default="after_previous")
+    unlock_days_after_enrolment = Column(Integer, nullable=True)
+    status = Column(String(20), nullable=True, server_default="draft")
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
+
+    course = relationship("Course", back_populates="modules")
+    videos = relationship("Video", back_populates="module", cascade="all, delete-orphan", order_by="Video.order_index")
+    quizzes = relationship("Quiz", back_populates="module", cascade="all, delete-orphan")
+    resources = relationship("Resource", back_populates="module", cascade="all, delete-orphan")
+
+    __table_args__ = (Index("idx_module_course_order", "course_id", "order_index"),)
+
+
+class Video(Base):
+    """Video lesson within a module."""
+    __tablename__ = "videos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    module_id = Column(Integer, ForeignKey("modules.id", ondelete="CASCADE"), nullable=False)
+    order_index = Column(Integer, nullable=False, server_default="0")
+    title = Column(String(500), nullable=False)
+    description = Column(Text, nullable=True)
+    video_type = Column(String(50), nullable=False, server_default="slideshow_narrated")
+    estimated_duration_seconds = Column(Integer, nullable=True)
+    narration_voice_id = Column(String(100), nullable=True)
+    source_video_url = Column(String(500), nullable=True)
+    status = Column(String(20), nullable=True, server_default="draft")
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
+
+    module = relationship("Module", back_populates="videos")
+    slides = relationship("Slide", back_populates="video", cascade="all, delete-orphan", order_by="Slide.order_index")
+    quizzes = relationship("Quiz", back_populates="video", cascade="all, delete-orphan")
+
+    __table_args__ = (Index("idx_video_module_order", "module_id", "order_index"),)
+
+
+class Slide(Base):
+    """Slide within a video lesson."""
+    __tablename__ = "slides"
+
+    id = Column(Integer, primary_key=True, index=True)
+    video_id = Column(Integer, ForeignKey("videos.id", ondelete="CASCADE"), nullable=False)
+    order_index = Column(Integer, nullable=False, server_default="0")
+    layout_id = Column(String(50), nullable=True)
+    duration_seconds = Column(Integer, nullable=True)
+    narration_script = Column(Text, nullable=True)
+    narration_audio_url = Column(String(500), nullable=True)
+    narration_script_hash = Column(String(64), nullable=True)
+    transition = Column(String(20), nullable=True, server_default="none")
+    status = Column(String(20), nullable=True, server_default="draft")
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
+
+    video = relationship("Video", back_populates="slides")
+    blocks = relationship("Block", back_populates="slide", cascade="all, delete-orphan", order_by="Block.order_index")
+
+    __table_args__ = (Index("idx_slide_video_order", "video_id", "order_index"),)
+
+
+class Block(Base):
+    """Content block on a slide — the drag-drop canvas unit."""
+    __tablename__ = "blocks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    slide_id = Column(Integer, ForeignKey("slides.id", ondelete="CASCADE"), nullable=False)
+    order_index = Column(Integer, nullable=False, server_default="0")
+    type = Column(String(50), nullable=False)
+    content = Column(JSON, nullable=True)
+    style = Column(JSON, nullable=True)
+    alt_text = Column(String(500), nullable=True)
+    grid_position = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
+
+    slide = relationship("Slide", back_populates="blocks")
+
+    __table_args__ = (Index("idx_block_slide_order", "slide_id", "order_index"),)
+
+
+class Quiz(Base):
+    """Quiz — can be attached to a module (assessment) or video (knowledge check)."""
+    __tablename__ = "quizzes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    module_id = Column(Integer, ForeignKey("modules.id", ondelete="CASCADE"), nullable=True)
+    video_id = Column(Integer, ForeignKey("videos.id", ondelete="CASCADE"), nullable=True)
+    order_index = Column(Integer, nullable=False, server_default="0")
+    title = Column(String(500), nullable=False)
+    description = Column(Text, nullable=True)
+    quiz_type = Column(String(50), nullable=False, server_default="knowledge_check")
+    pass_rate = Column(Integer, nullable=False, server_default="80")
+    attempts_allowed = Column(Integer, nullable=False, server_default="3")
+    time_limit_seconds = Column(Integer, nullable=True)
+    shuffle_questions = Column(Boolean, nullable=False, server_default="0")
+    show_feedback = Column(String(20), nullable=False, server_default="immediate")
+    on_fail_action = Column(String(20), nullable=False, server_default="retake")
+    status = Column(String(20), nullable=True, server_default="draft")
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
+
+    module = relationship("Module", back_populates="quizzes")
+    video = relationship("Video", back_populates="quizzes")
+    questions = relationship("Question", back_populates="quiz", cascade="all, delete-orphan", order_by="Question.order_index")
+
+    __table_args__ = (Index("idx_quiz_module", "module_id"),)
+
+
+class Question(Base):
+    """Question within a quiz."""
+    __tablename__ = "questions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    quiz_id = Column(Integer, ForeignKey("quizzes.id", ondelete="CASCADE"), nullable=False)
+    order_index = Column(Integer, nullable=False, server_default="0")
+    type = Column(String(50), nullable=False)
+    prompt = Column(Text, nullable=False)
+    points = Column(Integer, nullable=False, server_default="1")
+    explanation = Column(Text, nullable=True)
+    options = Column(JSON, nullable=True)
+    correct_answer = Column(JSON, nullable=True)
+    linked_objective_id = Column(Integer, nullable=True)
+    difficulty = Column(String(20), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
+
+    quiz = relationship("Quiz", back_populates="questions")
+
+    __table_args__ = (Index("idx_question_quiz_order", "quiz_id", "order_index"),)
+
+
+class Resource(Base):
+    """Downloadable resource attached to a module."""
+    __tablename__ = "resources"
+
+    id = Column(Integer, primary_key=True, index=True)
+    module_id = Column(Integer, ForeignKey("modules.id", ondelete="CASCADE"), nullable=False)
+    type = Column(String(50), nullable=False)
+    title = Column(String(500), nullable=False)
+    url_or_file = Column(String(500), nullable=False)
+    visible_to_learner = Column(Boolean, nullable=False, server_default="1")
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    module = relationship("Module", back_populates="resources")
+
+    __table_args__ = (Index("idx_resource_module", "module_id"),)
+
+
+class AiPromptLog(Base):
+    """Log of all AI generation operations for cost tracking and debugging."""
+    __tablename__ = "ai_prompt_log"
+
+    id = Column(Integer, primary_key=True, index=True)
+    creator_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    operation = Column(String(100), nullable=False)
+    inputs = Column(JSON, nullable=True)
+    output = Column(Text, nullable=True)
+    model_tier = Column(String(50), nullable=True)
+    tokens_used = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    __table_args__ = (Index("idx_ai_log_creator_created", "creator_id", "created_at"),)
