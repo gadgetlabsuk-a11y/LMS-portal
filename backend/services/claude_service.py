@@ -6,7 +6,7 @@ Handles communication with Anthropic Claude API for AI-powered content creation.
 import httpx
 import json
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, AsyncGenerator
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -526,6 +526,68 @@ Create a course that:
             prompt += f"\n\nAdditional Instructions:\n{additional_instructions}"
 
         return prompt
+
+    async def stream_course_description(
+        self, topic: str, tone_preset: Optional[str] = "professional"
+    ) -> AsyncGenerator[str, None]:
+        """Stream a course description for the given topic and tone."""
+        tone_instruction = f"Use a {tone_preset} tone." if tone_preset else ""
+        prompt = (
+            f"Write a compelling course description (2-3 sentences) for a course about: {topic}. "
+            f"{tone_instruction} Be concise and focus on what learners will gain."
+        )
+        async for token in self._stream_text(prompt):
+            yield token
+
+    async def stream_learning_objectives(
+        self,
+        course_title: str,
+        description: Optional[str] = None,
+        tone_preset: Optional[str] = "professional",
+    ) -> AsyncGenerator[str, None]:
+        """Stream learning objectives (one per line) for a course."""
+        tone_instruction = f"Use a {tone_preset} tone." if tone_preset else ""
+        context = f"\nCourse description: {description}" if description else ""
+        prompt = (
+            f"Generate 5 clear, measurable learning objectives for a course titled: {course_title}.{context} "
+            f"{tone_instruction} Output each objective on its own line starting with a dash (- )."
+        )
+        async for token in self._stream_text(prompt):
+            yield token
+
+    async def _stream_text(self, prompt: str) -> AsyncGenerator[str, None]:
+        """Core streaming method: calls Anthropic API with stream=True and yields text deltas."""
+        import json as _json
+
+        headers = {
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+            "x-api-key": self.api_key,
+        }
+        payload = {
+            "model": self.model,
+            "max_tokens": 1024,
+            "stream": True,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        async with httpx.AsyncClient() as client:
+            async with client.stream(
+                "POST",
+                "https://api.anthropic.com/v1/messages",
+                json=payload,
+                headers=headers,
+                timeout=60.0,
+            ) as response:
+                async for line in response.aiter_lines():
+                    if line.startswith("data: "):
+                        try:
+                            data = _json.loads(line[6:])
+                            if data.get("type") == "content_block_delta":
+                                token = data.get("delta", {}).get("text", "")
+                                if token:
+                                    yield token
+                        except _json.JSONDecodeError:
+                            continue
 
     async def validate_api_key(self) -> bool:
         """

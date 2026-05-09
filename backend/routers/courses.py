@@ -13,6 +13,7 @@ from typing import List, Optional, Dict, Any
 from pathlib import Path
 import io
 import logging
+from sse_starlette.sse import EventSourceResponse
 
 from database import get_db
 from models import User, Course, CourseStatus, Enrollment, AuditLog, ApiUsage
@@ -29,12 +30,21 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/courses", tags=["courses"])
 
 
+claude_service = ClaudeService()
+
+
 class CourseCreate(BaseModel):
     """Course creation model."""
 
     title: str
     description: Optional[str] = None
     status: CourseStatus = CourseStatus.DRAFT
+    # Phase 12 identity fields (all optional — backward compatible)
+    audience_level: Optional[str] = None
+    learning_objectives: Optional[List[str]] = None  # max 5; validated client-side
+    ai_tone_preset: Optional[str] = None
+    ai_custom_prompt: Optional[str] = None
+    summary: Optional[str] = None
 
 
 class CourseUpdate(BaseModel):
@@ -60,6 +70,21 @@ class CourseGenerateRequest(BaseModel):
     include_assessment: bool = True
 
 
+class AiDescriptionRequest(BaseModel):
+    """Request body for AI description generation."""
+
+    topic: str
+    tone_preset: Optional[str] = "professional"
+
+
+class AiObjectivesRequest(BaseModel):
+    """Request body for AI objectives generation."""
+
+    course_title: str
+    description: Optional[str] = None
+    tone_preset: Optional[str] = "professional"
+
+
 class CourseResponse(BaseModel):
     """Course response model."""
 
@@ -71,6 +96,10 @@ class CourseResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     has_content: bool = False
+    # Phase 12 additions
+    audience_level: Optional[str] = None
+    learning_objectives: Optional[List[str]] = None
+    ai_tone_preset: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -198,6 +227,11 @@ def create_course(
         status=course_data.status,
         creator_id=current_user.id,
     )
+    course.audience_level = course_data.audience_level
+    course.learning_objectives = course_data.learning_objectives
+    course.ai_tone_preset = course_data.ai_tone_preset
+    course.ai_custom_prompt = course_data.ai_custom_prompt
+    course.summary = course_data.summary
 
     db.add(course)
     db.commit()
@@ -217,6 +251,42 @@ def create_course(
     logger.info(f"Course created: {course.id} by user {current_user.id}")
 
     return course
+
+
+@router.post("/ai/generate-description")
+async def generate_description_stream(
+    request: Request,
+    body: AiDescriptionRequest,
+    current_user: User = Depends(require_creator),
+):
+    """Stream AI-generated course description tokens via SSE."""
+
+    async def generator():
+        async for token in claude_service.stream_course_description(body.topic, body.tone_preset):
+            if await request.is_disconnected():
+                break
+            yield {"data": token}
+
+    return EventSourceResponse(generator())
+
+
+@router.post("/ai/generate-objectives")
+async def generate_objectives_stream(
+    request: Request,
+    body: AiObjectivesRequest,
+    current_user: User = Depends(require_creator),
+):
+    """Stream AI-generated learning objectives tokens via SSE."""
+
+    async def generator():
+        async for token in claude_service.stream_learning_objectives(
+            body.course_title, body.description, body.tone_preset
+        ):
+            if await request.is_disconnected():
+                break
+            yield {"data": token}
+
+    return EventSourceResponse(generator())
 
 
 @router.get("/{course_id}", response_model=CourseDetailResponse)
