@@ -88,7 +88,13 @@ Plans:
   3. A creator can create and manage blocks within a slide, and quizzes with questions, via the API
   4. A creator can upload a file and receive back a stored URL via the upload endpoint
   5. All new endpoints are visible and exercisable in the FastAPI `/docs` UI
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 11-01-PLAN.md — Module CRUD + reorder router, tests, register in main.py
+- [ ] 11-02-PLAN.md — Video + Slide CRUD + reorder routers, tests, register in main.py
+- [ ] 11-03-PLAN.md — Block + Quiz/Question CRUD + question reorder routers, tests, register in main.py
+- [ ] 11-04-PLAN.md — Generic file upload endpoint, tests, register in main.py
 
 ### Phase 12: Course Identity & Structure
 **Goal**: Creators can create a course with a full identity (title, description, objectives, AI tone) and scaffold its module/video/quiz structure before any content authoring begins
@@ -181,7 +187,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 9. Vite Migration | 7/7 | Complete | 2026-05-08 | - |
 | 10. Data Models | 4/4 | Complete | 2026-05-09 | - |
-| 11. Backend CRUD API | v1.0 | 0/TBD | Not started | - |
+| 11. Backend CRUD API | v1.0 | 0/4 | Not started | - |
 | 12. Course Identity & Structure | v1.0 | 0/TBD | Not started | - |
 | 13. Course Builder & Module Detail | v1.0 | 0/TBD | Not started | - |
 | 14. Slide Builder & Slide Editor | v1.0 | 0/TBD | Not started | - |
