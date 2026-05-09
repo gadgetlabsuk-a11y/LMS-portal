@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
-status: completed
-last_updated: "2026-05-09T21:21:46Z"
-last_activity: "2026-05-09 — Completed 15-01 — Wave 0 TDD stubs for AI-01 through AI-07, PyMuPDF 1.26.0 installed"
+status: executing
+last_updated: "2026-05-09T21:55:17.547Z"
+last_activity: 2026-05-09 — Completed 15-02 — Fixed PyMuPDF PDF extraction, BytesIO DOCX fix, document_url on AiOutlineRequest, all 5 AI tests GREEN
 progress:
   total_phases: 10
   completed_phases: 6
   total_plans: 38
-  completed_plans: 34
+  completed_plans: 35
 ---
 
 # State
 
 ## Current Position
 
-Phase: 15 (AI Generation Infrastructure) — IN PROGRESS (1/7 plans done)
-Last completed: 15-01 — Wave 0 TDD RED stubs: 5 backend pytest.fail() stubs + 3 frontend import-fail stubs + PyMuPDF 1.26.0 installed
-Status: Phase 15 in progress. 15-01 complete. Ready for 15-02 (first GREEN plan).
-Last activity: 2026-05-09 — Completed 15-01 — Wave 0 stubs established for AI-01 through AI-07
+Phase: 15 (AI Generation Infrastructure) — IN PROGRESS (2/7 plans done)
+Last completed: 15-02 — Fixed PyMuPDF PDF extraction (fitz.open stream), BytesIO DOCX, document_url on AiOutlineRequest + all 5 AI tests GREEN
+Status: Phase 15 in progress. 15-02 complete. Ready for 15-03.
+Last activity: 2026-05-09 — Completed 15-02 — Fixed PyMuPDF PDF extraction, BytesIO DOCX fix, document_url on AiOutlineRequest, all 5 AI tests GREEN
 
 ## Project Reference
 
@@ -72,8 +72,15 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 14 P07 | 9min | 2 tasks | 2 files |
 | Phase 15 P01 | 18min | 2 tasks | 5 files |
 | Phase 15 P01 | 18min | 2 tasks | 5 files |
+| Phase 15 P02 | 15min | 2 tasks | 3 files |
 
 ## Accumulated Context
+
+### Decisions from 15-02
+
+- extract_text_from_file_sync(file_bytes, content_type) added to DocumentService — uses MIME type for format dispatch; avoids filename dependency in SSE endpoint that receives only content-type from HTTP response headers
+- document_service and httpx imported as module-level singletons in slides.py — enables patch('routers.slides.document_service.extract_text_from_file_sync') and patch('routers.slides.httpx.AsyncClient') in integration tests
+- generate_outline document fetch swallows exceptions with logger.warning — ensures endpoint degrades gracefully if document_url is unreachable rather than returning 500
 
 ### Decisions from 15-01
 
