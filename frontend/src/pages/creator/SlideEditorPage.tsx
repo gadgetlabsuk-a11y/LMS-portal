@@ -5,6 +5,7 @@ import { useSlideEditorStore } from '@/store/slideEditorStore'
 import { SlideCanvas } from '@/components/slide/SlideCanvas'
 import { BlockLibraryPalette } from '@/components/slide/BlockLibraryPalette'
 import { LayoutPresetPicker } from '@/components/slide/LayoutPresetPicker'
+import { NarrationTab } from '@/components/slide/NarrationTab'
 import type { CanvasBlock } from '@/store/slideEditorStore'
 
 type RightTab = 'blocks' | 'layout' | 'narration'
@@ -196,9 +197,7 @@ export function SlideEditorPage() {
               />
             )}
             {activeTab === 'narration' && (
-              <div className="p-3 text-sm text-gray-500">
-                Switch to Narration tab content — implemented in Plan 05.
-              </div>
+              <NarrationTab slideId={Number(slideId)} />
             )}
           </div>
         </div>
