@@ -34,8 +34,8 @@
 - [ ] **API-03**: Creator can CRUD slides (create, list, update, delete, reorder by `order_index`)
 - [ ] **API-04**: Creator can CRUD blocks within a slide (create, list, update, delete)
 - [ ] **API-05**: Creator can CRUD quizzes and questions (including bulk reorder for questions)
-- [ ] **API-06**: Creator can upload files and images (stored, URL returned)
-- [ ] **API-07**: All new endpoints protected by `require_creator` auth guard
+- [x] **API-06**: Creator can upload files and images (stored, URL returned)
+- [x] **API-07**: All new endpoints protected by `require_creator` auth guard
 
 ### Course Identity & Structure (COURSE)
 
@@ -182,8 +182,8 @@ Explicitly excluded. Documented to prevent scope creep.
 | API-03 | Phase 11 | Pending |
 | API-04 | Phase 11 | Pending |
 | API-05 | Phase 11 | Pending |
-| API-06 | Phase 11 | Pending |
-| API-07 | Phase 11 | Pending |
+| API-06 | Phase 11 | Complete |
+| API-07 | Phase 11 | Complete |
 | COURSE-01 | Phase 12 | Pending |
 | COURSE-02 | Phase 12 | Pending |
 | COURSE-03 | Phase 12 | Pending |

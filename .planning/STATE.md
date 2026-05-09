@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
-status: executing
-last_updated: "2026-05-09T10:00:00.000Z"
-last_activity: 2026-05-09 — Completed Phase 10 (Data Models) — all 4 plans done, production at 004 (head)
+status: completed
+last_updated: "2026-05-09T08:56:15.616Z"
+last_activity: 2026-05-09 — Completed Phase 10 — Coolify verified at 004 (head), app loading cleanly
 progress:
   total_phases: 10
   completed_phases: 2
-  total_plans: 11
-  completed_plans: 11
+  total_plans: 15
+  completed_plans: 12
 ---
 
 # State
 
 ## Current Position
 
-Phase: 11 (Backend CRUD API) — Not started
-Last completed: Phase 10 (Data Models) — all 4 plans done, production DB at 004 (head), all 9 DATA requirements satisfied
-Status: Phase 10 complete. Next: plan and execute Phase 11 (Backend CRUD API)
-Last activity: 2026-05-09 — Completed Phase 10 — Coolify verified at 004 (head), app loading cleanly
+Phase: 11 (Backend CRUD API) — Plan 04 complete (4/N plans done)
+Last completed: 11-04 (uploads endpoint) — POST /api/uploads, 6 tests GREEN, bcrypt patch applied
+Status: Executing Phase 11. Plans 01 (modules), 04 (uploads) complete. Plans 02, 03 pending.
+Last activity: 2026-05-09 — Completed 11-04 — POST /api/uploads endpoint live with tests
 
 ## Project Reference
 
@@ -47,8 +47,15 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | 10    | 02   | ~12 min  | 2/2   | 2     |
 | 10    | 03   | ~12 min  | 2/2   | 4     |
 | 10    | 04   | ~5 min   | 2/2   | 1     |
+| 11    | 04   | ~3 min   | 2/2   | 4     |
 
 ## Accumulated Context
+
+### Decisions from 11-04
+
+- No DB record created on upload — Resource table (Plan 03) handles file-to-module URL linking; uploads.py is purely a file storage primitive
+- category form field maps to subfolder: uploads/{category}/{uuid8}_{safe_name} — allows logical separation (thumbnails, slides, documents)
+- conftest.py bcrypt 5.0 Python 3.14 fix: monkey-patch `passlib.handlers.bcrypt.detect_wrap_bug = lambda *a, **k: False` before any passlib import — the wrap bug being tested is >10 year old, not present in modern bcrypt, patch is safe and unblocks all conftest-dependent tests project-wide
 
 ### Decisions from 10-03
 
