@@ -17,6 +17,32 @@ class DocumentService:
     """Service for extracting text from documents."""
 
     @staticmethod
+    def extract_text_from_file_sync(file_bytes: bytes, content_type: str) -> str:
+        """
+        Extract text from document file bytes, using content-type to determine format.
+
+        Args:
+            file_bytes: Raw file bytes
+            content_type: MIME type (e.g. 'application/pdf', 'application/vnd.openxmlformats...')
+
+        Returns:
+            Extracted text content
+        """
+        ct = content_type.lower()
+        if "pdf" in ct:
+            return DocumentService._extract_pdf(file_bytes)
+        elif "wordprocessingml" in ct or "docx" in ct or "msword" in ct:
+            return DocumentService._extract_docx(file_bytes)
+        elif "presentationml" in ct or "pptx" in ct or "powerpoint" in ct:
+            return DocumentService._extract_pptx(file_bytes)
+        else:
+            # Fallback: try PDF, then DOCX
+            try:
+                return DocumentService._extract_pdf(file_bytes)
+            except Exception:
+                return DocumentService._extract_docx(file_bytes)
+
+    @staticmethod
     def extract_text(file_bytes: bytes, filename: str) -> str:
         """
         Extract text from document file bytes.

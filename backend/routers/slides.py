@@ -10,17 +10,21 @@ from datetime import datetime
 from typing import List, Optional
 import logging
 
+import httpx
+
 from database import get_db
 from models import Course, Module, Video, Slide, Block
 from middleware.auth_middleware import require_creator
 from sse_starlette.sse import EventSourceResponse
 from services.claude_service import ClaudeService
+from services.document_service import DocumentService
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["slides"])
 
 claude_service = ClaudeService()
+document_service = DocumentService()
 
 
 # ---------------------------------------------------------------------------
@@ -70,6 +74,7 @@ class AiOutlineRequest(BaseModel):
     prompt: Optional[str] = None
     tone_preset: Optional[str] = "professional"
     slide_count: Optional[int] = 5
+    document_url: Optional[str] = None  # AI-03: optional document context
 
 
 # ---------------------------------------------------------------------------
@@ -212,6 +217,21 @@ async def generate_outline(
     """
     slide = _get_slide_or_404(slide_id, db, current_user)
     source_prompt = body.prompt or "Generate a slide outline"
+
+    # AI-03: fetch document and inject extracted text into prompt
+    if body.document_url:
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(body.document_url)
+                resp.raise_for_status()
+                file_bytes = resp.content
+                content_type = resp.headers.get("content-type", "application/octet-stream")
+                doc_text = document_service.extract_text_from_file_sync(file_bytes, content_type)
+            if doc_text:
+                source_prompt = f"Document content:\n{doc_text[:3000]}\n\nAdditional context: {source_prompt}"
+        except Exception as e:
+            logger.warning(f"Failed to fetch document at {body.document_url}: {e}")
+
     prompt = (
         f"Generate a slide outline as a JSON array with {body.slide_count} slides. "
         f"Each slide has: title (string), blocks (array of objects with type and content). "
