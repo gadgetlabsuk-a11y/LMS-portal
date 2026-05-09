@@ -29,7 +29,7 @@
 
 ### Backend API (API)
 
-- [ ] **API-01**: Creator can CRUD modules (create, list, update, delete, reorder by `order_index`)
+- [x] **API-01**: Creator can CRUD modules (create, list, update, delete, reorder by `order_index`)
 - [ ] **API-02**: Creator can CRUD videos (create, list, update, delete, reorder by `order_index`)
 - [ ] **API-03**: Creator can CRUD slides (create, list, update, delete, reorder by `order_index`)
 - [ ] **API-04**: Creator can CRUD blocks within a slide (create, list, update, delete)
@@ -177,7 +177,7 @@ Explicitly excluded. Documented to prevent scope creep.
 | DATA-07 | Phase 10 | Complete |
 | DATA-08 | Phase 10 | Complete |
 | DATA-09 | Phase 10 | Complete |
-| API-01 | Phase 11 | Pending |
+| API-01 | Phase 11 | Complete |
 | API-02 | Phase 11 | Pending |
 | API-03 | Phase 11 | Pending |
 | API-04 | Phase 11 | Pending |

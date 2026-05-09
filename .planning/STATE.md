@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
-status: completed
-last_updated: "2026-05-09T08:56:15.616Z"
-last_activity: 2026-05-09 — Completed Phase 10 — Coolify verified at 004 (head), app loading cleanly
+status: executing
+last_updated: "2026-05-09T08:57:06.173Z"
+last_activity: 2026-05-09 — Completed 11-04 — POST /api/uploads endpoint live with tests
 progress:
   total_phases: 10
   completed_phases: 2
   total_plans: 15
-  completed_plans: 12
+  completed_plans: 13
 ---
 
 # State
 
 ## Current Position
 
-Phase: 11 (Backend CRUD API) — Plan 04 complete (4/N plans done)
-Last completed: 11-04 (uploads endpoint) — POST /api/uploads, 6 tests GREEN, bcrypt patch applied
+Phase: 11 (Backend CRUD API) — Plans 01 and 04 complete (2/4 plans done)
+Last completed: 11-01 (modules router) — 6 module endpoints, reorder atomic, 7 tests GREEN
 Status: Executing Phase 11. Plans 01 (modules), 04 (uploads) complete. Plans 02, 03 pending.
-Last activity: 2026-05-09 — Completed 11-04 — POST /api/uploads endpoint live with tests
+Last activity: 2026-05-09 — Completed 11-01 — Module CRUD + reorder router, 7 tests GREEN
 
 ## Project Reference
 
@@ -48,8 +48,15 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | 10    | 03   | ~12 min  | 2/2   | 4     |
 | 10    | 04   | ~5 min   | 2/2   | 1     |
 | 11    | 04   | ~3 min   | 2/2   | 4     |
+| 11    | 01   | ~3 min   | 2/2   | 4     |
 
 ## Accumulated Context
+
+### Decisions from 11-01
+
+- Module router uses single APIRouter with no prefix and explicit /api/courses/... and /api/modules/... paths — avoids prefix collision with courses.py which already owns /api/courses prefix
+- Reorder uses single db.commit() after all order_index assignments in loop — atomicity guarantee, prevents drift (State pitfall #3)
+- conftest.py Course fixtures had stale content= kwarg (column removed in Phase 10 migration 003); removed to unblock all conftest-dependent tests
 
 ### Decisions from 11-04
 
