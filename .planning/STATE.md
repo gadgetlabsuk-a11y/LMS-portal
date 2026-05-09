@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
-status: Phase 10 in progress — 7 new model classes added, all 18 DATA test stubs GREEN
-last_updated: "2026-05-09T09:10:00.000Z"
-last_activity: 2026-05-09 — Completed 10-02-PLAN.md (Data Model Classes)
+status: executing
+last_updated: "2026-05-09T09:32:00.000Z"
+last_activity: 2026-05-09 — Completed 10-03-PLAN.md (Alembic Migrations)
 progress:
   total_phases: 10
   completed_phases: 1
   total_plans: 11
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # State
@@ -17,9 +17,9 @@ progress:
 ## Current Position
 
 Phase: 10 (Data Models) — In Progress
-Plan: 10-02 complete — 7 new model classes added, all 18 DATA test stubs GREEN
-Status: Phase 10 in progress — model classes done, Alembic migration generation next
-Last activity: 2026-05-09 — Completed 10-02-PLAN.md (Data Model Classes)
+Plan: 10-03 complete — 4 Alembic migrations written, upgrade/downgrade cycle verified, 18 DATA tests GREEN
+Status: Phase 10 complete — all 3 plans done; Alembic migrations fully normalise schema
+Last activity: 2026-05-09 — Completed 10-03-PLAN.md (Alembic Migrations)
 
 ## Project Reference
 
@@ -45,8 +45,15 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | 09    | 07   | ~10 min  | 2/2   | 3     |
 | 10    | 01   | ~15 min  | 2/2   | 6     |
 | 10    | 02   | ~12 min  | 2/2   | 2     |
+| 10    | 03   | ~12 min  | 2/2   | 4     |
 
 ## Accumulated Context
+
+### Decisions from 10-03
+
+- Migration 003 uses `lessons` key (not `videos`) when parsing existing Course.content JSON — actual data shape is `modules[].lessons[]`, handled via `module_data.get('videos', module_data.get('lessons', []))`
+- Data migration 003 downgrade is intentionally a no-op — content JSON blobs cannot be reconstructed from relational rows; 004 downgrade restores the empty column but data is gone
+- SQLite DROP COLUMN pattern established: always use `op.batch_alter_table` context manager; drop indexes before batch operation to avoid constraint conflict during batch rebuild
 
 ### Decisions from 10-02
 
