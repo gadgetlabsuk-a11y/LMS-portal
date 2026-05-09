@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: completed
-last_updated: "2026-05-09T17:21:10.565Z"
+last_updated: "2026-05-09T17:29:14.534Z"
 last_activity: 2026-05-09 — Completed 14-06 — Phase 14 human verification APPROVED, Phase 14 COMPLETE
 progress:
   total_phases: 10
-  completed_phases: 6
-  total_plans: 31
-  completed_plans: 31
+  completed_phases: 5
+  total_plans: 33
+  completed_plans: 32
 ---
 
 # State
 
 ## Current Position
 
-Phase: 14 (Slide Builder & Slide Editor) — COMPLETE (6/6 plans done)
-Last completed: 14-06 — Human verification: all 8 browser checks approved. SLIDE-01 through SLIDE-12 verified end-to-end.
+Phase: 14 (Slide Builder & Slide Editor) — COMPLETE (8/8 plans done, including gap-closure 14-07 and 14-08)
+Last completed: 14-08 — Gap closure: SLIDE-03 traceability corrected in REQUIREMENTS.md (unchecked, deferred to Phase 17 / TTS-02)
 Status: Phase 14 COMPLETE. Ready for Phase 15.
-Last activity: 2026-05-09 — Completed 14-06 — Phase 14 human verification APPROVED, Phase 14 COMPLETE
+Last activity: 2026-05-09 — Completed 14-08 — REQUIREMENTS.md gap closure: SLIDE-03 checkbox unchecked, annotated Phase 17 / TTS-02
 
 ## Project Reference
 
@@ -68,8 +68,14 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 14 P04 | 3min | 3 tasks | 9 files |
 | Phase 14 P05 | 8min | 2 tasks | 6 files |
 | Phase 14 P06 | 5min | 2 tasks | 0 files |
+| Phase 14 P08 | 2min | 1 tasks | 1 files |
 
 ## Accumulated Context
+
+### Decisions from 14-08
+
+- SLIDE-03 checkbox unchecked in REQUIREMENTS.md — permanently-disabled button in Phase 14 does not constitute completion; bulk narration is Phase 17 (TTS-02) scope
+- Traceability table updated: SLIDE-03 row changed to Phase 17 / Deferred (TTS-02)
 
 ### Decisions from 14-06
 
