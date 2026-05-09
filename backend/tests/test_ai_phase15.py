@@ -8,13 +8,34 @@ def reset_sse_state():
 
 
 def test_pdf_extraction_pymupdf():
-    """AI-04: PyMuPDF extracts text from PDF bytes (not raw UTF-8 decode)."""
-    pytest.fail("Not implemented — AI-04 stub")
+    """AI-04: PyMuPDF extracts text from a real PDF — not raw UTF-8 decode."""
+    import fitz
+    from services.document_service import DocumentService
+    # Create a minimal PDF with known text
+    doc = fitz.open()
+    page = doc.new_page()
+    page.insert_text((72, 72), "Hello PyMuPDF test content")
+    pdf_bytes = doc.tobytes()
+    doc.close()
+    svc = DocumentService()
+    result = svc._extract_pdf(pdf_bytes)
+    assert "Hello PyMuPDF test content" in result
 
 
 def test_docx_extraction_bytesio():
-    """AI-04: DOCX extraction uses io.BytesIO(file_bytes), not raw bytes."""
-    pytest.fail("Not implemented — AI-04 stub")
+    """AI-04: DOCX extraction uses io.BytesIO, not raw bytes."""
+    import io
+    from docx import Document as DocxDocument
+    from services.document_service import DocumentService
+    # Create a minimal DOCX with known text
+    docx_doc = DocxDocument()
+    docx_doc.add_paragraph("Hello DOCX BytesIO test content")
+    buf = io.BytesIO()
+    docx_doc.save(buf)
+    docx_bytes = buf.getvalue()
+    svc = DocumentService()
+    result = svc._extract_docx(docx_bytes)
+    assert "Hello DOCX BytesIO test content" in result
 
 
 def test_outline_from_document():

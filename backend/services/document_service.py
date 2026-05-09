@@ -3,8 +3,10 @@ Document extraction service for various file formats.
 Handles extraction of text from docx, pptx, and pdf files.
 """
 
+import io
 import logging
 from typing import Optional
+import fitz  # pymupdf — PDF extraction
 from docx import Document as DocxDocument
 from pptx import Presentation
 
@@ -55,7 +57,7 @@ class DocumentService:
             Extracted text with structure preserved
         """
         try:
-            doc = DocxDocument(file_bytes)
+            doc = DocxDocument(io.BytesIO(file_bytes))  # BytesIO wraps raw bytes
             content_parts = []
 
             for para in doc.paragraphs:
@@ -119,7 +121,7 @@ class DocumentService:
     @staticmethod
     def _extract_pdf(file_bytes: bytes) -> str:
         """
-        Extract text from PDF file using basic text decoding.
+        Extract text from PDF file using PyMuPDF (fitz).
 
         Args:
             file_bytes: Raw file bytes
@@ -128,36 +130,23 @@ class DocumentService:
             Extracted text (best effort)
 
         Note:
-            This is a simple implementation that works for text-based PDFs.
-            For complex PDFs with images or scanned content, a more
-            sophisticated approach would be needed.
+            Uses fitz.open(stream=...) for reliable text extraction from text-based PDFs.
+            Image-only / scanned PDFs will produce minimal text; a warning is logged.
         """
         try:
-            # Attempt to decode PDF bytes as UTF-8
-            text = file_bytes.decode("utf-8", errors="ignore")
-
-            # Remove non-printable characters but keep line breaks and spaces
-            cleaned_lines = []
-            for line in text.split("\n"):
-                # Keep only printable ASCII and common unicode characters
-                cleaned = "".join(
-                    c for c in line
-                    if c.isprintable() or c.isspace()
-                )
-                if cleaned.strip():
-                    cleaned_lines.append(cleaned)
-
-            extracted_text = "\n".join(cleaned_lines)
-
-            # If we got very little text, the PDF might be scanned/binary
+            doc = fitz.open(stream=file_bytes, filetype="pdf")
+            content_parts = []
+            for page in doc:
+                text = page.get_text()
+                if text.strip():
+                    content_parts.append(text)
+            doc.close()
+            extracted_text = "\n".join(content_parts)
             if len(extracted_text.strip()) < 100:
-                logger.warning(
-                    "PDF extraction produced minimal text - may be scanned or binary format"
-                )
-
-            logger.info(f"Extracted text from PDF: {len(extracted_text)} characters")
+                logger.warning("PDF extraction produced minimal text — may be scanned/image-only")
+            logger.info(f"Extracted {len(extracted_text)} characters from PDF via PyMuPDF")
             return extracted_text
 
         except Exception as e:
             logger.error(f"Error extracting PDF: {str(e)}")
-            raise ValueError(f"Failed to extract text from PDF file: {str(e)}")
+            raise ValueError(f"Failed to extract text from PDF: {str(e)}")
