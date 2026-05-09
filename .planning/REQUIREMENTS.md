@@ -32,8 +32,8 @@
 - [x] **API-01**: Creator can CRUD modules (create, list, update, delete, reorder by `order_index`)
 - [x] **API-02**: Creator can CRUD videos (create, list, update, delete, reorder by `order_index`)
 - [x] **API-03**: Creator can CRUD slides (create, list, update, delete, reorder by `order_index`)
-- [ ] **API-04**: Creator can CRUD blocks within a slide (create, list, update, delete)
-- [ ] **API-05**: Creator can CRUD quizzes and questions (including bulk reorder for questions)
+- [x] **API-04**: Creator can CRUD blocks within a slide (create, list, update, delete)
+- [x] **API-05**: Creator can CRUD quizzes and questions (including bulk reorder for questions)
 - [x] **API-06**: Creator can upload files and images (stored, URL returned)
 - [x] **API-07**: All new endpoints protected by `require_creator` auth guard
 
@@ -180,8 +180,8 @@ Explicitly excluded. Documented to prevent scope creep.
 | API-01 | Phase 11 | Complete |
 | API-02 | Phase 11 | Complete |
 | API-03 | Phase 11 | Complete |
-| API-04 | Phase 11 | Pending |
-| API-05 | Phase 11 | Pending |
+| API-04 | Phase 11 | Complete |
+| API-05 | Phase 11 | Complete |
 | API-06 | Phase 11 | Complete |
 | API-07 | Phase 11 | Complete |
 | COURSE-01 | Phase 12 | Pending |

@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: executing
-last_updated: "2026-05-09T09:01:24.293Z"
-last_activity: 2026-05-09 — Completed 11-01 — Module CRUD + reorder router, 7 tests GREEN
+last_updated: "2026-05-09T09:05:26.287Z"
+last_activity: 2026-05-09 — Completed 11-03 — Block CRUD + Quiz+Question CRUD+reorder routers, 14 tests GREEN
 progress:
   total_phases: 10
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 15
-  completed_plans: 14
+  completed_plans: 15
 ---
 
 # State
 
 ## Current Position
 
-Phase: 11 (Backend CRUD API) — Plans 01, 02 and 04 complete (3/4 plans done)
-Last completed: 11-02 (videos + slides routers) — 12 endpoints, reorder atomic, 12 tests GREEN
-Status: Executing Phase 11. Plans 01 (modules), 02 (videos/slides), 04 (uploads) complete. Plan 03 pending.
-Last activity: 2026-05-09 — Completed 11-02 — Video + Slide CRUD + reorder routers, 12 tests GREEN
+Phase: 11 (Backend CRUD API) — All 4 plans complete (4/4 plans done)
+Last completed: 11-03 (blocks + quiz/question routers) — 16 endpoints, atomic question reorder, 14 tests GREEN
+Status: Phase 11 COMPLETE. Plans 01 (modules), 02 (videos/slides), 03 (blocks/quizzes), 04 (uploads) complete.
+Last activity: 2026-05-09 — Completed 11-03 — Block CRUD + Quiz+Question CRUD+reorder routers, 14 tests GREEN
 
 ## Project Reference
 
@@ -50,8 +50,17 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | 11    | 04   | ~3 min   | 2/2   | 4     |
 | 11    | 01   | ~3 min   | 2/2   | 4     |
 | Phase 11 P02 | 2 | 2 tasks | 4 files |
+| Phase 11 P03 | 2min | 2 tasks | 4 files |
 
 ## Accumulated Context
+
+### Decisions from 11-03
+
+- blocks.py _get_slide_or_404 joins 4 tables (Slide→Video→Module→Course) then uses ORM relationship chain (slide.video.module.course) for ownership check — consistent with the slides.py single-item lookup pattern
+- quizzes.py _get_quiz_or_404 joins Quiz→Module→Course only (Quiz.module_id always set when created via module endpoint); video-linked quiz ownership traversal deferred
+- Question reorder uses identical atomic single-transaction pattern from modules.py — single db.commit() after loop, prevents order_index drift
+- pass_rate and attempts_allowed naming confirmed throughout (not pass_score/max_attempts)
+- setup_hierarchy fixture in test file builds full course→module→video→slide chain via API calls for realistic integration coverage
 
 ### Decisions from 11-02
 

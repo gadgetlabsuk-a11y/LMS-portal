@@ -30,7 +30,7 @@ Phases 1–8 were tracked manually before GSD was adopted. What shipped:
 
 - [x] **Phase 9: Vite Migration** — Replace single-file Babel frontend with a proper Vite + React build; verify all existing features work under `/lms` (completed 2026-05-08)
 - [x] **Phase 10: Data Models** — Normalise course data from JSON blob to relational tables via Alembic migrations (completed 2026-05-09)
-- [ ] **Phase 11: Backend CRUD API** — Add all new creator API endpoints (modules, videos, slides, blocks, quizzes, uploads)
+- [x] **Phase 11: Backend CRUD API** — Add all new creator API endpoints (modules, videos, slides, blocks, quizzes, uploads) (completed 2026-05-09)
 - [ ] **Phase 12: Course Identity & Structure** — Course creation Modal 1A (identity + AI assistance) and Modal 1B (structure wizard with live skeleton)
 - [ ] **Phase 13: Course Builder & Module Detail** — Home-base Course Builder with left-rail tree, module card list, Module Detail with rich text and drag-drop reorder
 - [ ] **Phase 14: Slide Builder & Slide Editor** — Full slide authoring: thumbnail strip, 12-column snap-grid canvas, block library, undo/redo, autosave, AI slide outline wizard
@@ -187,7 +187,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 9. Vite Migration | 7/7 | Complete | 2026-05-08 | - |
 | 10. Data Models | 4/4 | Complete | 2026-05-09 | - |
-| 11. Backend CRUD API | 3/4 | In Progress|  | - |
+| 11. Backend CRUD API | 4/4 | Complete   | 2026-05-09 | - |
 | 12. Course Identity & Structure | v1.0 | 0/TBD | Not started | - |
 | 13. Course Builder & Module Detail | v1.0 | 0/TBD | Not started | - |
 | 14. Slide Builder & Slide Editor | v1.0 | 0/TBD | Not started | - |
