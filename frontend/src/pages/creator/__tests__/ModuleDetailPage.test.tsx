@@ -1,9 +1,27 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { ModuleDetailPage } from '../ModuleDetailPage'
 
-// STUB — fails at import until ModuleDetailPage.tsx is created
+vi.mock('@/services/api', () => ({
+  api: {
+    get: vi.fn().mockResolvedValue({
+      json: async () => ({
+        id: 2,
+        course_id: 1,
+        title: 'Test Module',
+        description: null,
+        learning_objectives: null,
+        estimated_duration_minutes: null,
+        unlock_rule: 'immediate',
+        status: 'draft',
+      }),
+    }),
+    put: vi.fn().mockResolvedValue({ ok: true }),
+  },
+  API_BASE: 'http://localhost:8000',
+}))
+
 describe('ModuleDetailPage', () => {
   const renderPage = () =>
     render(
