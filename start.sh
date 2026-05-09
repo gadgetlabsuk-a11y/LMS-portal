@@ -35,6 +35,15 @@ if [ ! -f "$BACKEND_DIR/.env" ]; then
 fi
 
 echo ""
+echo "Running database migrations..."
+cd "$BACKEND_DIR"
+python3 -m alembic upgrade head
+if [ $? -ne 0 ]; then
+    echo "ERROR: alembic upgrade head failed. Aborting start."
+    exit 1
+fi
+
+echo ""
 echo "Starting server on http://localhost:$PORT"
 echo "Admin login: admin / (see .env or first-run log for password)"
 echo "API docs: http://localhost:$PORT/docs"
