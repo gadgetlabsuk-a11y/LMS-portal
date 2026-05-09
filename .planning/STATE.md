@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: executing
-last_updated: "2026-05-09T11:52:10.082Z"
-last_activity: 2026-05-09 — Completed 13-02 — SSE endpoint + GREEN tests for BUILD-05
+last_updated: "2026-05-09T11:53:00.000Z"
+last_activity: 2026-05-09 — Completed 13-03 — CourseBuilderPage, CourseTreeRail, ModuleOverviewList with dnd-kit drag-drop
 progress:
   total_phases: 10
   completed_phases: 4
   total_plans: 25
-  completed_plans: 22
+  completed_plans: 23
 ---
 
 # State
 
 ## Current Position
 
-Phase: 13 (Course Builder Module Detail) — 2/5 plans complete
-Last completed: 13-02 — SSE endpoint POST /api/modules/:id/ai/generate-description + BUILD-05 GREEN tests
-Status: Phase 13 IN PROGRESS. Plans 13-01 and 13-02 done. Ready for 13-03 (CourseBuilderPage drag-and-drop).
-Last activity: 2026-05-09 — Completed 13-02 — SSE endpoint + GREEN tests for BUILD-05
+Phase: 13 (Course Builder Module Detail) — 3/5 plans complete
+Last completed: 13-03 — CourseBuilderPage (two-panel), CourseTreeRail (left-rail tree), ModuleOverviewList (dnd-kit drag-drop)
+Status: Phase 13 IN PROGRESS. Plans 13-01, 13-02, 13-03 done. Ready for 13-04 (ModuleDetailPage).
+Last activity: 2026-05-09 — Completed 13-03 — CourseBuilderPage, CourseTreeRail, ModuleOverviewList with dnd-kit drag-drop
 
 ## Project Reference
 
@@ -58,8 +58,16 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 12 P05 | 5min | 2 tasks | 0 files |
 | Phase 13 P01 | 2min | 3 tasks | 5 files |
 | Phase 13 P02 | 2min | 2 tasks | 2 files |
+| Phase 13 P03 | 3 | 3 tasks | 5 files |
 
 ## Accumulated Context
+
+### Decisions from 13-03
+
+- Shared builder/types.ts exports BuilderModule, BuilderVideo, BuilderQuiz — avoids TS2719 "two types with same name" error when Module/Video interfaces defined locally in multiple builder files
+- Badge uses `variant` prop ('info'|'success'|'warning'|'danger'), not `className` — status pills wrapped in `<span data-testid="...">` to expose testid to test queries
+- Tests updated with vi.mock('@/services/api') + findByTestId (async) assertions — CourseBuilderPage shows loading state gate until API fetch resolves; synchronous getByTestId fails before resolve
+- SortableModuleRow calls useSensors internally (not via prop) — each module gets its own sensor instance, prevents drag events leaking between module DndContexts
 
 ### Decisions from 13-02
 
