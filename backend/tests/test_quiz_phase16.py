@@ -142,7 +142,34 @@ def test_question_explanation(creator_token, creator_quiz):
 
 def test_reorder_questions(creator_token, creator_quiz):
     """QUIZ-07: POST /api/quizzes/{quiz_id}/questions/reorder persists new order_index."""
-    pytest.fail("QUIZ-07: not implemented")
+    # Create 3 questions
+    ids = []
+    for i in range(3):
+        res = client.post(
+            f"/api/quizzes/{creator_quiz['id']}/questions",
+            json={"type": "mcq_single", "prompt": f"Question {i}", "options": ["A", "B"], "correct_answer": 0},
+            headers={"Authorization": f"Bearer {creator_token}"},
+        )
+        assert res.status_code == 201
+        ids.append(res.json()["id"])
+
+    # Reorder: move last to first [2, 0, 1]
+    new_order = [ids[2], ids[0], ids[1]]
+    res = client.post(
+        f"/api/quizzes/{creator_quiz['id']}/questions/reorder",
+        json={"question_ids": new_order},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert res.status_code == 200
+
+    # Verify persisted order
+    list_res = client.get(
+        f"/api/quizzes/{creator_quiz['id']}/questions",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert list_res.status_code == 200
+    returned_ids = [q["id"] for q in list_res.json()]
+    assert returned_ids == new_order
 
 
 def test_generate_questions_streams_tokens(creator_token, creator_quiz):

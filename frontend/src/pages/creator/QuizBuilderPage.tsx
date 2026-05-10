@@ -1,10 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { api } from '@/services/api'
 import { Button } from '@/components/common/Button'
 import { Input } from '@/components/common/Input'
 import { Select } from '@/components/common/Select'
 import { QuestionForm, type QuestionFormData } from '@/components/quiz/QuestionForm'
+import { DndContext, type DragEndEvent, PointerSensor, KeyboardSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { SortableQuestionRow } from '@/components/quiz/SortableQuestionRow'
+import { SideDrawer } from '@/components/ai/SideDrawer'
+import { useSSEStream } from '@/hooks/useSSEStream'
 
 interface Quiz {
   id: number
@@ -32,6 +37,12 @@ const FEEDBACK_OPTIONS = [
   { value: 'never', label: 'Never' },
 ]
 
+const TONE_OPTIONS = [
+  { value: 'professional', label: 'Professional' },
+  { value: 'casual', label: 'Casual' },
+  { value: 'academic', label: 'Academic' },
+]
+
 export function QuizBuilderPage() {
   const { id: courseId, quizId } = useParams<{ id: string; quizId: string }>()
 
@@ -44,6 +55,17 @@ export function QuizBuilderPage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false)
+  const [generateCount, setGenerateCount] = useState('5')
+  const [tonePreset, setTonePreset] = useState('professional')
+  const [pendingQuestions, setPendingQuestions] = useState<QuestionFormData[]>([])
+  const bufferRef = useRef('')
+  const { startStream, isStreaming } = useSSEStream()
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
 
   useEffect(() => {
     if (!quizId) return
@@ -121,6 +143,49 @@ export function QuizBuilderPage() {
     await loadQuestions()
   }
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = questions.findIndex((q) => q.id === active.id)
+    const newIndex = questions.findIndex((q) => q.id === over.id)
+    const newOrder = arrayMove(questions, oldIndex, newIndex)
+    setQuestions(newOrder) // optimistic update
+    await api.post(`/quizzes/${quizId}/questions/reorder`, {
+      question_ids: newOrder.map((q) => q.id),
+    })
+  }
+
+  const handleGenerate = async () => {
+    bufferRef.current = ''
+    try {
+      await startStream({
+        url: `/quizzes/${quizId}/ai/generate-questions`,
+        body: { count: parseInt(generateCount, 10), tone_preset: tonePreset },
+        onToken: (t) => { bufferRef.current += t },
+      })
+      const parsed: QuestionFormData[] = JSON.parse(bufferRef.current)
+      setPendingQuestions(parsed)
+    } catch (e) {
+      console.error('AI question generation failed:', e)
+    }
+  }
+
+  const handleConfirmAI = async () => {
+    if (!quizId) return
+    for (const q of pendingQuestions) {
+      await api.post(`/quizzes/${quizId}/questions`, {
+        type: q.type,
+        prompt: q.prompt,
+        options: q.options,
+        correct_answer: q.correct_answer,
+        explanation: q.explanation || null,
+      })
+    }
+    setPendingQuestions([])
+    setAiDrawerOpen(false)
+    await loadQuestions()
+  }
+
   if (loading) return <div data-testid="quiz-builder-loading">Loading...</div>
 
   return (
@@ -190,7 +255,7 @@ export function QuizBuilderPage() {
           <div style={{ display: 'flex', gap: '8px' }}>
             <Button
               data-testid="ai-generate-btn"
-              onClick={() => {/* SideDrawer wired in Plan 04 */}}
+              onClick={() => { setPendingQuestions([]); setAiDrawerOpen(true) }}
               variant="secondary"
             >
               Generate with AI
@@ -213,68 +278,130 @@ export function QuizBuilderPage() {
         )}
 
         {/* Question list */}
-        <div data-testid="question-list">
-          {questions.map((q) => (
-            <div
-              key={q.id}
-              data-testid={`question-row-${q.id}`}
-              style={{
-                border: '1px solid #e5e7eb', borderRadius: '6px', padding: '12px',
-                marginBottom: '8px', background: 'white',
-              }}
-            >
-              {editingId === q.id ? (
-                <QuestionForm
-                  initial={{
-                    type: q.type as QuestionFormData['type'],
-                    prompt: q.prompt,
-                    options: q.options,
-                    correct_answer: q.correct_answer,
-                    explanation: q.explanation ?? '',
-                  }}
-                  onSave={(data) => handleUpdateQuestion(q.id, data)}
-                  onCancel={() => setEditingId(null)}
-                />
-              ) : (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <span style={{ fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>
-                      {q.type.replace('_', ' ')}
-                    </span>
-                    <p style={{ fontSize: '14px', color: '#111827', marginTop: '4px' }}>{q.prompt}</p>
-                    {q.explanation && (
-                      <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px', fontStyle: 'italic' }}>
-                        {q.explanation}
-                      </p>
+        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+          <SortableContext items={questions.map((q) => q.id)} strategy={verticalListSortingStrategy}>
+            <div data-testid="question-list" style={{ paddingLeft: '28px' }}>
+              {questions.map((q) => (
+                <SortableQuestionRow key={q.id} id={q.id}>
+                  <div
+                    data-testid={`question-row-${q.id}`}
+                    style={{
+                      border: '1px solid #e5e7eb', borderRadius: '6px', padding: '12px',
+                      marginBottom: '8px', background: 'white',
+                    }}
+                  >
+                    {editingId === q.id ? (
+                      <QuestionForm
+                        initial={{
+                          type: q.type as QuestionFormData['type'],
+                          prompt: q.prompt,
+                          options: q.options,
+                          correct_answer: q.correct_answer,
+                          explanation: q.explanation ?? '',
+                        }}
+                        onSave={(data) => handleUpdateQuestion(q.id, data)}
+                        onCancel={() => setEditingId(null)}
+                      />
+                    ) : (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <span style={{ fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>
+                            {q.type.replace('_', ' ')}
+                          </span>
+                          <p style={{ fontSize: '14px', color: '#111827', marginTop: '4px' }}>{q.prompt}</p>
+                          {q.explanation && (
+                            <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px', fontStyle: 'italic' }}>
+                              {q.explanation}
+                            </p>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', flexShrink: 0, marginLeft: '12px' }}>
+                          <Button
+                            data-testid={`edit-question-${q.id}`}
+                            onClick={() => setEditingId(q.id)}
+                            variant="secondary"
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            data-testid={`delete-question-${q.id}`}
+                            onClick={() => handleDeleteQuestion(q.id)}
+                            variant="danger"
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
                     )}
                   </div>
-                  <div style={{ display: 'flex', gap: '8px', flexShrink: 0, marginLeft: '12px' }}>
-                    <Button
-                      data-testid={`edit-question-${q.id}`}
-                      onClick={() => setEditingId(q.id)}
-                      variant="secondary"
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      data-testid={`delete-question-${q.id}`}
-                      onClick={() => handleDeleteQuestion(q.id)}
-                      variant="danger"
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </div>
+                </SortableQuestionRow>
+              ))}
+              {questions.length === 0 && !showAddForm && (
+                <p style={{ fontSize: '13px', color: '#9ca3af', textAlign: 'center', padding: '24px' }}>
+                  No questions yet. Add a question or generate with AI.
+                </p>
               )}
             </div>
-          ))}
-          {questions.length === 0 && !showAddForm && (
-            <p style={{ fontSize: '13px', color: '#9ca3af', textAlign: 'center', padding: '24px' }}>
-              No questions yet. Add a question or generate with AI.
-            </p>
+          </SortableContext>
+        </DndContext>
+      </section>
+
+      <SideDrawer
+        isOpen={aiDrawerOpen}
+        onClose={() => setAiDrawerOpen(false)}
+        title="AI Question Generator"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '4px' }}>
+              Number of questions
+            </label>
+            <Input
+              data-testid="generate-count-input"
+              type="number"
+              value={generateCount}
+              onChange={(e) => setGenerateCount(e.target.value)}
+              min="1"
+              max="20"
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '4px' }}>
+              Tone
+            </label>
+            <Select
+              data-testid="generate-tone-select"
+              value={tonePreset}
+              options={TONE_OPTIONS}
+              onChange={(e) => setTonePreset(e.target.value)}
+            />
+          </div>
+          <Button
+            data-testid="generate-questions-btn"
+            onClick={handleGenerate}
+            disabled={isStreaming}
+          >
+            {isStreaming ? 'Generating...' : 'Generate Questions'}
+          </Button>
+
+          {pendingQuestions.length > 0 && (
+            <div data-testid="pending-questions-preview">
+              <p style={{ fontSize: '13px', fontWeight: 600, marginBottom: '8px' }}>
+                {pendingQuestions.length} questions generated — review below:
+              </p>
+              {pendingQuestions.map((q, i) => (
+                <div key={i} style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: '8px', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '11px', color: '#6b7280', textTransform: 'uppercase' }}>{q.type}</span>
+                  <p style={{ fontSize: '13px', color: '#111827', marginTop: '2px' }}>{q.prompt}</p>
+                </div>
+              ))}
+              <Button data-testid="confirm-ai-questions-btn" onClick={handleConfirmAI}>
+                Add All Questions
+              </Button>
+            </div>
           )}
         </div>
-      </section>
+      </SideDrawer>
     </div>
   )
 }
