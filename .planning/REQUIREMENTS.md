@@ -100,20 +100,20 @@
 
 ### Preview Mode (PREVIEW)
 
-- [ ] **PREVIEW-01**: Creator can preview the full course in learner-view mode (shows draft watermark)
-- [ ] **PREVIEW-02**: Preview renders all block types; narration scripts visible; quiz in answerable form
-- [ ] **PREVIEW-03**: Creator can exit preview and return to where they were in the builder
+- [x] **PREVIEW-01**: Creator can preview the full course in learner-view mode (shows draft watermark)
+- [x] **PREVIEW-02**: Preview renders all block types; narration scripts visible; quiz in answerable form
+- [x] **PREVIEW-03**: Creator can exit preview and return to where they were in the builder
 
 ### Publish Flow & Versioning (PUBLISH)
 
-- [ ] **PUBLISH-01**: Creator can initiate publish flow from Course Builder
-- [ ] **PUBLISH-02**: Creator sees pre-flight validation checklist with pass/warn/fail per rule before publishing
-- [ ] **PUBLISH-03**: Pre-flight rules include: thumbnail uploaded, at least one module with content, each quiz has ≥3 questions
-- [ ] **PUBLISH-04**: Each failed pre-flight rule deep-links to the exact screen needed to fix it
-- [ ] **PUBLISH-05**: Creator can publish a course (draft → published state transition)
-- [ ] **PUBLISH-06**: Creator can update a published course; system creates a version snapshot before replacing
-- [ ] **PUBLISH-07**: Learners enrolled on a prior version retain their progress; new enrolees get the latest version
-- [ ] **PUBLISH-08**: Creator can archive a published course (published → archived)
+- [x] **PUBLISH-01**: Creator can initiate publish flow from Course Builder
+- [x] **PUBLISH-02**: Creator sees pre-flight validation checklist with pass/warn/fail per rule before publishing
+- [x] **PUBLISH-03**: Pre-flight rules include: thumbnail uploaded, at least one module with content, each quiz has ≥3 questions
+- [x] **PUBLISH-04**: Each failed pre-flight rule deep-links to the exact screen needed to fix it
+- [x] **PUBLISH-05**: Creator can publish a course (draft → published state transition)
+- [x] **PUBLISH-06**: Creator can update a published course; system creates a version snapshot before replacing
+- [x] **PUBLISH-07**: Learners enrolled on a prior version retain their progress; new enrolees get the latest version
+- [x] **PUBLISH-08**: Creator can archive a published course (published → archived)
 
 ---
 
@@ -227,17 +227,17 @@ Explicitly excluded. Documented to prevent scope creep.
 | TTS-03 | Phase 17 | Complete |
 | TTS-04 | Phase 17 | Complete |
 | TTS-05 | Phase 17 | Complete |
-| PREVIEW-01 | Phase 18 | Pending |
-| PREVIEW-02 | Phase 18 | Pending |
-| PREVIEW-03 | Phase 18 | Pending |
-| PUBLISH-01 | Phase 18 | Pending |
-| PUBLISH-02 | Phase 18 | Pending |
-| PUBLISH-03 | Phase 18 | Pending |
-| PUBLISH-04 | Phase 18 | Pending |
-| PUBLISH-05 | Phase 18 | Pending |
-| PUBLISH-06 | Phase 18 | Pending |
-| PUBLISH-07 | Phase 18 | Pending |
-| PUBLISH-08 | Phase 18 | Pending |
+| PREVIEW-01 | Phase 18 | Complete |
+| PREVIEW-02 | Phase 18 | Complete |
+| PREVIEW-03 | Phase 18 | Complete |
+| PUBLISH-01 | Phase 18 | Complete |
+| PUBLISH-02 | Phase 18 | Complete |
+| PUBLISH-03 | Phase 18 | Complete |
+| PUBLISH-04 | Phase 18 | Complete |
+| PUBLISH-05 | Phase 18 | Complete |
+| PUBLISH-06 | Phase 18 | Complete |
+| PUBLISH-07 | Phase 18 | Complete |
+| PUBLISH-08 | Phase 18 | Complete |
 
 **Coverage:**
 - v1 requirements: 75 total

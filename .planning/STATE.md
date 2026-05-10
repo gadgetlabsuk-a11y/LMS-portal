@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: completed
-last_updated: "2026-05-10T21:25:32.183Z"
-last_activity: 2026-05-10 — Completed 17-06 — conftest.py test fixture gap closure. All 7 TTS tests pass under pytest-randomly.
+last_updated: "2026-05-10T22:39:13.859Z"
+last_activity: 2026-05-10 — Completed 18-01 — TDD Wave 0 stubs for Phase 18 Preview/Publish. 9 backend + 3 frontend RED stubs created.
 progress:
   total_phases: 10
   completed_phases: 9
-  total_plans: 50
-  completed_plans: 50
+  total_plans: 55
+  completed_plans: 51
 ---
 
 # State
 
 ## Current Position
 
-Phase: 17 (TTS and Narration) — COMPLETE (6/6 plans done, incl. gap closure 17-06)
-Last completed: 17-06 (gap closure) — All 7 TTS tests pass under pytest-randomly seeds 12345 and 99999. setup_test_db made idempotent. TTS-01 through TTS-05 requirements fully verified.
-Status: Phase 17 COMPLETE. All plans 17-01 through 17-06 done. Next: Phase 18.
-Last activity: 2026-05-10 — Completed 17-06 — conftest.py test fixture gap closure. All 7 TTS tests pass under pytest-randomly.
+Phase: 18 (Preview and Publish) — IN PROGRESS (1/5 plans done)
+Last completed: 18-01 — TDD Wave 0 stubs. 9 backend pytest.fail() stubs + 3 frontend import-error stubs created. RED state established for all Phase 18 requirements.
+Status: Phase 18 IN PROGRESS. Plan 18-01 done. Next: Phase 18 Plan 02 (publish backend endpoints).
+Last activity: 2026-05-10 — Completed 18-01 — TDD Wave 0 stubs for Phase 18 Preview/Publish.
 
 ## Project Reference
 
@@ -90,8 +90,16 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 17 P04 | 7min | 2 tasks | 4 files |
 | Phase 17 P05 | 5min | 2 tasks | 0 files |
 | Phase 17 P06 | 15min | 2 tasks | 2 files |
+| Phase 18 P01 | ~6 min | 2 tasks | 2 files |
 
 ## Accumulated Context
+
+### Decisions from 18-01
+
+- No top-level import of `routers.courses` (or any non-existent publish/archive/preflight routers) in `test_publish_phase18.py` — module-level import would cause ImportError (ERROR not FAILED), breaking TDD RED state; `pytest.fail()` inside function body produces clean FAILED
+- `creator_course` fixture reused from conftest.py (line 214) — no file-local duplicate needed; chain fixtures only needed when more context is required
+- `CoursePreviewPage` import is intentionally broken in `PreviewMode.test.tsx` — vitest fails at collection with import resolution error; `CoursePreviewPage.tsx` must NOT be created until Plan 18-03
+- Backend venv TimeoutError (`[Errno 60]`) during pytest verification is a transient iCloud Drive I/O issue — pre-existing environment limitation, not introduced by this plan
 
 ### Decisions from 17-06
 

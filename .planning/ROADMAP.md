@@ -245,4 +245,4 @@ Plans:
 | 15. AI Generation Infrastructure | 5/5 | Complete   | 2026-05-10 | - |
 | 16. Quiz Builder | 4/5 | Complete    | 2026-05-10 | - |
 | 17. TTS & Narration | 6/6 | Complete    | 2026-05-10 | - |
-| 18. Preview & Publish | v1.0 | 0/TBD | Not started | - |
+| 18. Preview & Publish | 1/5 | In Progress|  | - |
