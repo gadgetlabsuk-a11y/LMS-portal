@@ -1,8 +1,11 @@
+import asyncio
+import hashlib
 import pytest
 from unittest.mock import patch, AsyncMock
 from fastapi.testclient import TestClient
 from main import app
 from routers.tts import tts_service as tts_service_module
+from models import Slide
 
 client = TestClient(app)
 
@@ -167,15 +170,73 @@ def test_generate_slide_audio_no_key(creator_token, creator_slide):
 
 
 # ---------------------------------------------------------------------------
+# Shared helper fixture: module + video (no slides) for bulk tests
+# ---------------------------------------------------------------------------
+@pytest.fixture
+def creator_video(creator_token, creator_course):
+    """Build: module → video, return video_id for bulk TTS tests."""
+    headers = {"Authorization": f"Bearer {creator_token}"}
+
+    mod_res = client.post(
+        f"/api/courses/{creator_course.id}/modules",
+        json={"title": "Bulk TTS Module", "order_index": 10},
+        headers=headers,
+    )
+    assert mod_res.status_code == 201, f"module create failed: {mod_res.text}"
+    module_id = mod_res.json()["id"]
+
+    vid_res = client.post(
+        f"/api/modules/{module_id}/videos",
+        json={"title": "Bulk TTS Video", "order_index": 1, "video_type": "slideshow_narrated"},
+        headers=headers,
+    )
+    assert vid_res.status_code == 201, f"video create failed: {vid_res.text}"
+    return vid_res.json()["id"]
+
+
+# ---------------------------------------------------------------------------
 # TTS-02: Bulk audio generation endpoint
 # ---------------------------------------------------------------------------
-def test_bulk_generate():
+def test_bulk_generate(creator_token, creator_video):
     """
     POST /api/videos/{video_id}/tts/bulk-generate
     Should process all slides with narration scripts and return counts:
     {generated, skipped_no_script, skipped_cached, errors}.
     """
-    pytest.fail("TTS-02 not implemented")
+    headers = {"Authorization": f"Bearer {creator_token}"}
+    video_id = creator_video
+
+    # Create 2 slides with narration scripts
+    for i in range(2):
+        slide_res = client.post(
+            f"/api/videos/{video_id}/slides",
+            json={"title": f"Bulk Slide {i}", "order_index": i + 1},
+            headers=headers,
+        )
+        assert slide_res.status_code == 201
+        slide_id = slide_res.json()["id"]
+        put_res = client.put(
+            f"/api/slides/{slide_id}",
+            json={"narration_script": f"Slide {i} narration text."},
+            headers=headers,
+        )
+        assert put_res.status_code in (200, 201)
+
+    with patch("routers.tts.tts_service.api_key", "fake-api-key"), \
+         patch("routers.tts.tts_service._call_elevenlabs", new_callable=AsyncMock) as mock_el:
+        mock_el.return_value = b"fake_mp3"
+        res = client.post(
+            f"/api/videos/{video_id}/tts/bulk-generate",
+            json={},
+            headers=headers,
+        )
+
+    assert res.status_code == 200, f"Expected 200, got {res.status_code}: {res.text}"
+    data = res.json()
+    assert data["generated"] == 2
+    assert data["skipped_no_script"] == 0
+    assert data["skipped_cached"] == 0
+    assert data["errors"] == 0
 
 
 # ---------------------------------------------------------------------------
@@ -183,20 +244,75 @@ def test_bulk_generate():
 # ---------------------------------------------------------------------------
 def test_semaphore_limits_concurrency():
     """
-    asyncio.Semaphore(3) declared at module level in tts.py must limit
+    asyncio.Semaphore(3) declared at module level in tts_service.py must limit
     concurrent ElevenLabs calls to 3 during bulk generation.
-    Verify semaphore acquire count with AsyncMock.
+    Verify _bulk_semaphore is an asyncio.Semaphore instance at module level.
     """
-    pytest.fail("TTS-03 not implemented")
+    from services.tts_service import _bulk_semaphore
+    assert isinstance(_bulk_semaphore, asyncio.Semaphore)
+
+    # Verify it is NOT re-created inside tts.py (should be imported, not defined)
+    import routers.tts as tts_router
+    import inspect, ast, textwrap
+    src = inspect.getsource(tts_router)
+    # Should contain import of _bulk_semaphore (from services.tts_service)
+    assert "_bulk_semaphore" in src
+    # Should NOT contain asyncio.Semaphore( in the module body outside of imports
+    tree = ast.parse(src)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            # Check that no module-level assignment creates a new Semaphore
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "_bulk_semaphore":
+                    pytest.fail("_bulk_semaphore must not be re-created inside tts.py")
 
 
 # ---------------------------------------------------------------------------
 # TTS-04: Bulk generation skips slides with cached (unchanged) scripts
 # ---------------------------------------------------------------------------
-def test_bulk_skips_cached_slides():
+def test_bulk_skips_cached_slides(creator_token, creator_video, db):
     """
     Slide with narration_script_hash matching sha256(narration_script) and
     a non-null narration_audio_url must be skipped (skipped_cached += 1).
     ElevenLabs must NOT be called for that slide.
     """
-    pytest.fail("TTS-04 not implemented")
+    headers = {"Authorization": f"Bearer {creator_token}"}
+    video_id = creator_video
+    script = "Hello world. This is a cached narration."
+
+    # Create one slide with narration script
+    slide_res = client.post(
+        f"/api/videos/{video_id}/slides",
+        json={"title": "Cached Slide", "order_index": 1},
+        headers=headers,
+    )
+    assert slide_res.status_code == 201
+    slide_id = slide_res.json()["id"]
+
+    put_res = client.put(
+        f"/api/slides/{slide_id}",
+        json={"narration_script": script},
+        headers=headers,
+    )
+    assert put_res.status_code in (200, 201)
+
+    # Manually set narration_script_hash + narration_audio_url to simulate a cached state
+    slide_obj = db.query(Slide).filter(Slide.id == slide_id).first()
+    slide_obj.narration_script_hash = hashlib.sha256(script.encode()).hexdigest()
+    slide_obj.narration_audio_url = f"/uploads/audio/slide_{slide_id}.mp3"
+    db.commit()
+
+    with patch("routers.tts.tts_service.api_key", "fake-api-key"), \
+         patch("routers.tts.tts_service._call_elevenlabs", new_callable=AsyncMock) as mock_el:
+        mock_el.return_value = b"fake_mp3"
+        res = client.post(
+            f"/api/videos/{video_id}/tts/bulk-generate",
+            json={},
+            headers=headers,
+        )
+
+    assert res.status_code == 200, f"Expected 200, got {res.status_code}: {res.text}"
+    data = res.json()
+    assert data["skipped_cached"] == 1
+    assert data["generated"] == 0
+    mock_el.assert_not_called()
