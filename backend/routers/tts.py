@@ -3,6 +3,8 @@ TTS narration audio generation endpoints.
 - POST /api/slides/{slide_id}/tts/generate    — per-slide (TTS-01, TTS-05)
 - POST /api/videos/{video_id}/tts/bulk-generate — bulk (TTS-02, TTS-03, TTS-04)
 """
+import asyncio
+import hashlib
 import logging
 from typing import Optional
 
@@ -90,4 +92,46 @@ async def generate_slide_audio(
     return {"audio_url": audio_url, "slide_id": slide_id}
 
 
-# TODO: bulk endpoint added in Plan 03
+@router.post("/api/videos/{video_id}/tts/bulk-generate")
+async def bulk_generate_audio(
+    video_id: int,
+    body: TTSGenerateRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_creator),
+):
+    """Bulk generate ElevenLabs narration for all slides in a video."""
+    if not tts_service.api_key:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="TTS not configured — set ELEVENLABS_API_KEY",
+        )
+
+    video = _get_video_or_404(video_id, db, current_user)
+    slides = (
+        db.query(Slide)
+        .filter(Slide.video_id == video_id)
+        .order_by(Slide.order_index)
+        .all()
+    )
+
+    voice_id = body.voice_id or video.narration_voice_id or TTSService.DEFAULT_VOICE_ID
+    results = {"generated": 0, "skipped_no_script": 0, "skipped_cached": 0, "errors": 0}
+
+    async def process_slide(slide):
+        if not slide.narration_script:
+            results["skipped_no_script"] += 1
+            return
+        new_hash = hashlib.sha256(slide.narration_script.encode()).hexdigest()
+        if slide.narration_script_hash == new_hash and slide.narration_audio_url:
+            results["skipped_cached"] += 1
+            return
+        async with _bulk_semaphore:
+            try:
+                await tts_service.generate_for_slide(slide, voice_id, db)
+                results["generated"] += 1
+            except Exception as e:
+                logger.error(f"Bulk TTS failed for slide {slide.id}: {e}")
+                results["errors"] += 1
+
+    await asyncio.gather(*[process_slide(s) for s in slides])
+    return results
