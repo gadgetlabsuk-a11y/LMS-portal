@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
-status: verifying
-last_updated: "2026-05-10T16:53:46.332Z"
-last_activity: 2026-05-10 — Completed 16-05 — all 6 browser checks approved. Phase 16 Quiz Builder fully verified end-to-end.
+status: executing
+last_updated: "2026-05-10T16:58:08.004Z"
+last_activity: "2026-05-10 — Completed 17-01 — Wave 0 RED baseline: 5 backend + 2 frontend TTS failing stubs established."
 progress:
   total_phases: 10
   completed_phases: 8
   total_plans: 49
-  completed_plans: 45
+  completed_plans: 46
 ---
 
 # State
 
 ## Current Position
 
-Phase: 17 (TTS and Narration) — IN PROGRESS (1/5 plans done)
-Last completed: 17-01 — Wave 0 RED baseline. 5 backend pytest.fail() stubs + 2 frontend NarrationTab vitest stubs. TTS-01 through TTS-05 RED state established.
-Status: Phase 17 IN PROGRESS. Plan 17-01 (Wave 0 stubs) done. Next: 17-02 (TTSService rewrite + tts.py router + test bodies).
-Last activity: 2026-05-10 — Completed 17-01 — Wave 0 RED baseline: 5 backend + 2 frontend TTS failing stubs established.
+Phase: 17 (TTS and Narration) — IN PROGRESS (2/5 plans done)
+Last completed: 17-02 — TTSService rewritten for per-slide generation. tts.py router created with POST /api/slides/{id}/tts/generate. TTS-01 and TTS-05 GREEN (4 tests pass). Bulk stubs still FAILED — Plan 03 scope.
+Status: Phase 17 IN PROGRESS. Plan 17-02 done. Next: 17-03 (bulk endpoint + semaphore + cache).
+Last activity: 2026-05-10 — Completed 17-02 — Per-slide TTS endpoint + 4 passing tests for TTS-01/TTS-05.
 
 ## Project Reference
 
@@ -85,8 +85,16 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 16 P04 | 2min | 2 tasks | 6 files |
 | Phase 17 P01 | 5min | 2 tasks | 2 files |
 | Phase 17 P01 | 5min | 2 tasks | 2 files |
+| Phase 17 P02 | 3min | 2 tasks | 4 files |
 
 ## Accumulated Context
+
+### Decisions from 17-02
+
+- TTSService.__init__ defers key check to generate_for_slide() — no startup crash when ELEVENLABS_API_KEY unset (research pitfall #3)
+- `tts_service = TTSService()` module-level singleton in tts.py enables `patch("routers.tts.tts_service._call_elevenlabs")` in tests
+- creator_slide fixture uses HTTP 201 status codes for POST creates (modules/videos/slides all return 201_CREATED); PUT returns 200
+- _call_elevenlabs signature is `(text, voice_id)` — test asserts `call_args[0][1] == voice_id` for TTS-05 verification
 
 ### Decisions from 17-01
 
