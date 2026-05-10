@@ -445,3 +445,19 @@ class AiPromptLog(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
 
     __table_args__ = (Index("idx_ai_log_creator_created", "creator_id", "created_at"),)
+
+
+class CourseVersion(Base):
+    """Immutable snapshot of a course at publish time, used for learner version pinning."""
+    __tablename__ = "course_versions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    version_number = Column(Integer, nullable=False)
+    snapshot = Column(JSON, nullable=False)
+    published_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("course_id", "version_number", name="uq_course_version"),
+        Index("idx_course_version", "course_id", "version_number"),
+    )
