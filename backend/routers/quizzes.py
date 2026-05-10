@@ -3,9 +3,10 @@ Quiz CRUD + Question CRUD + question reorder router.
 Available to creator and admin roles only.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
+from starlette.requests import Request
 from datetime import datetime
 from typing import Any, List, Optional
 import logging
@@ -13,8 +14,11 @@ import logging
 from database import get_db
 from models import Course, Module, Quiz, Question
 from middleware.auth_middleware import require_creator
+from sse_starlette.sse import EventSourceResponse
+from services.claude_service import ClaudeService
 
 logger = logging.getLogger(__name__)
+claude_service = ClaudeService()
 
 router = APIRouter(tags=["quizzes"])
 
@@ -105,6 +109,11 @@ class QuestionResponse(BaseModel):
 
 class QuestionReorderRequest(BaseModel):
     question_ids: List[int]
+
+
+class AiQuestionRequest(BaseModel):
+    count: Optional[int] = 5
+    tone_preset: Optional[str] = "professional"
 
 
 # ---------------------------------------------------------------------------
@@ -208,6 +217,41 @@ def list_quizzes(
         .all()
     )
     return quizzes
+
+
+@router.post("/api/quizzes/{quiz_id}/ai/generate-questions")
+async def generate_questions(
+    quiz_id: int,
+    body: AiQuestionRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_creator),
+):
+    """Stream AI-generated quiz questions from module content. QUIZ-08.
+
+    ROUTE ORDER: Declared before GET /api/quizzes/{quiz_id} to prevent FastAPI
+    path collision (same rule as slides.py — STATE.md decision 14-02).
+    """
+    quiz = _get_quiz_or_404(quiz_id, db, current_user)
+    module = quiz.module
+    prompt = (
+        f"Generate {body.count} quiz questions for a module titled '{module.title}'. "
+        f"Description: {module.description or 'no description provided'}. "
+        f"Return ONLY a valid JSON array with no extra text. Each element must have: "
+        f"type ('mcq_single'|'mcq_multi'|'true_false'|'short_answer'), "
+        f"prompt (string), options (string array or null), "
+        f"correct_answer (int index for mcq_single, int array for mcq_multi, "
+        f"'True'/'False' string for true_false, string or null for short_answer), "
+        f"explanation (string). Tone: {body.tone_preset}."
+    )
+
+    async def event_generator():
+        async for token in claude_service._stream_text(prompt):
+            if await request.is_disconnected():
+                break
+            yield {"data": token}
+
+    return EventSourceResponse(event_generator())
 
 
 @router.get(
