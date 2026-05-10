@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: executing
-last_updated: "2026-05-10T23:17:32.195Z"
-last_activity: 2026-05-10 — Completed 18-01 — TDD Wave 0 stubs for Phase 18 Preview/Publish.
+last_updated: "2026-05-10T23:57:22.405Z"
+last_activity: 2026-05-11 — Completed 18-03 — CoursePreviewPage frontend. PREVIEW-01/02/03 all GREEN.
 progress:
   total_phases: 10
   completed_phases: 9
   total_plans: 55
-  completed_plans: 52
+  completed_plans: 53
 ---
 
 # State
 
 ## Current Position
 
-Phase: 18 (Preview and Publish) — IN PROGRESS (2/5 plans done)
-Last completed: 18-02 — Backend publish/preview/preflight endpoints. CourseVersion model + migration 005. All 9 phase 18 tests GREEN.
-Status: Phase 18 IN PROGRESS. Plan 18-02 done. Next: Phase 18 Plan 03 (frontend preview).
-Last activity: 2026-05-11 — Completed 18-02 — Backend publish endpoints. PREVIEW-01/02 + PUBLISH-02-08 all GREEN.
+Phase: 18 (Preview and Publish) — IN PROGRESS (3/5 plans done)
+Last completed: 18-03 — CoursePreviewPage frontend. PREVIEW-01/02/03 all GREEN.
+Status: Phase 18 IN PROGRESS. Plan 18-03 done. Next: Phase 18 Plan 04 (publish flow frontend).
+Last activity: 2026-05-11 — Completed 18-03 — CoursePreviewPage frontend. PREVIEW-01/02/03 all GREEN.
 
 ## Project Reference
 
@@ -92,8 +92,17 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 17 P06 | 15min | 2 tasks | 2 files |
 | Phase 18 P01 | ~6 min | 2 tasks | 2 files |
 | Phase 18 P02 | 36min | 2 tasks | 10 files |
+| Phase 18 P03 | ~33min | 2 tasks | 5 files |
 
 ## Accumulated Context
+
+### Decisions from 18-03
+
+- `CoursePreviewPage` renders the backend player iframe directly (not by wrapping `CourseViewerPage`) — wrapping would nest two iframes; replicating the iframe pattern with a fixed watermark overlay is correct
+- `decodeURIComponent` required on returnTo when reading from `useSearchParams().get()` — the caller uses `encodeURIComponent`; raw get() without decode corrupts paths containing slashes
+- Fixed amber watermark uses `z-index: 1000` with `position: fixed` — ensures banner always sits above iframe regardless of iframe scroll/pointer events
+- Preview button uses inline styles (consistent with CourseBuilderPage's existing inline style layout approach)
+- React Router v6 `act()` warning from MemoryRouter in PREVIEW-03 test is benign — test passes and navigation outcome is verified; pre-existing pattern in this codebase
 
 ### Decisions from 18-02
 
