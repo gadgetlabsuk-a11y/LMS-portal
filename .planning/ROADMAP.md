@@ -200,7 +200,7 @@ Plans:
   2. A creator can trigger bulk audio generation for all slides in a video; slides with no script are skipped; progress is visible
   3. Running bulk generation twice does not re-call ElevenLabs for slides whose narration script has not changed since the last generation
   4. A creator can select from at least two ElevenLabs voice options before generating
-**Plans**: 5 plans
+**Plans**: 6 plans
 
 Plans:
 - [ ] 17-01-PLAN.md — Wave 0: failing test stubs (TTS-01 through TTS-05)
@@ -208,6 +208,7 @@ Plans:
 - [ ] 17-03-PLAN.md — Backend: bulk narration endpoint with asyncio.Semaphore(3) + script-hash cache
 - [ ] 17-04-PLAN.md — Frontend: audio player in NarrationTab + bulk narration button wired (SLIDE-03)
 - [ ] 17-05-PLAN.md — Human verify: TTS generation walkthrough
+- [ ] 17-06-PLAN.md — Gap closure: test fixture isolation for order-independent TTS tests
 
 ### Phase 18: Preview & Publish
 **Goal**: Creators can preview the full course as a learner, then publish with confidence using a pre-flight checklist — with version history ensuring enrolled learners are never disrupted
