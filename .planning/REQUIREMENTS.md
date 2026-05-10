@@ -81,11 +81,11 @@
 
 ### TTS / Narration (TTS)
 
-- [ ] **TTS-01**: Creator can generate narration audio for a slide from its narration script (ElevenLabs)
-- [ ] **TTS-02**: Creator can bulk generate narration audio for all slides in a video with populated scripts
-- [ ] **TTS-03**: TTS service uses a semaphore to rate-limit concurrent requests and prevent 429s on bulk generation
-- [ ] **TTS-04**: Generated narration audio is cached; bulk re-generate only reprocesses slides with changed scripts
-- [ ] **TTS-05**: Creator can select from available ElevenLabs voice options
+- [x] **TTS-01**: Creator can generate narration audio for a slide from its narration script (ElevenLabs)
+- [x] **TTS-02**: Creator can bulk generate narration audio for all slides in a video with populated scripts
+- [x] **TTS-03**: TTS service uses a semaphore to rate-limit concurrent requests and prevent 429s on bulk generation
+- [x] **TTS-04**: Generated narration audio is cached; bulk re-generate only reprocesses slides with changed scripts
+- [x] **TTS-05**: Creator can select from available ElevenLabs voice options
 
 ### Quiz Builder (QUIZ)
 
@@ -222,11 +222,11 @@ Explicitly excluded. Documented to prevent scope creep.
 | QUIZ-06 | Phase 16 | Complete |
 | QUIZ-07 | Phase 16 | Complete |
 | QUIZ-08 | Phase 16 | Complete |
-| TTS-01 | Phase 17 | Pending |
-| TTS-02 | Phase 17 | Pending |
-| TTS-03 | Phase 17 | Pending |
-| TTS-04 | Phase 17 | Pending |
-| TTS-05 | Phase 17 | Pending |
+| TTS-01 | Phase 17 | Complete |
+| TTS-02 | Phase 17 | Complete |
+| TTS-03 | Phase 17 | Complete |
+| TTS-04 | Phase 17 | Complete |
+| TTS-05 | Phase 17 | Complete |
 | PREVIEW-01 | Phase 18 | Pending |
 | PREVIEW-02 | Phase 18 | Pending |
 | PREVIEW-03 | Phase 18 | Pending |

@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: verifying
-last_updated: "2026-05-10T16:27:50.940Z"
+last_updated: "2026-05-10T16:53:46.332Z"
 last_activity: 2026-05-10 — Completed 16-05 — all 6 browser checks approved. Phase 16 Quiz Builder fully verified end-to-end.
 progress:
   total_phases: 10
   completed_phases: 8
-  total_plans: 44
-  completed_plans: 44
+  total_plans: 49
+  completed_plans: 45
 ---
 
 # State
 
 ## Current Position
 
-Phase: 16 (Quiz Builder) — COMPLETE (5/5 plans done)
-Last completed: 16-05 — human verification. All 6 browser checks approved. QUIZ-01 through QUIZ-08 confirmed in browser.
-Status: Phase 16 COMPLETE. All 5 plans done. QUIZ-01 through QUIZ-08 verified in browser. Next: Phase 17 (TTS and Narration).
-Last activity: 2026-05-10 — Completed 16-05 — all 6 browser checks approved. Phase 16 Quiz Builder fully verified end-to-end.
+Phase: 17 (TTS and Narration) — IN PROGRESS (1/5 plans done)
+Last completed: 17-01 — Wave 0 RED baseline. 5 backend pytest.fail() stubs + 2 frontend NarrationTab vitest stubs. TTS-01 through TTS-05 RED state established.
+Status: Phase 17 IN PROGRESS. Plan 17-01 (Wave 0 stubs) done. Next: 17-02 (TTSService rewrite + tts.py router + test bodies).
+Last activity: 2026-05-10 — Completed 17-01 — Wave 0 RED baseline: 5 backend + 2 frontend TTS failing stubs established.
 
 ## Project Reference
 
@@ -83,8 +83,17 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 16-quiz-builder P02 | 8min | 2 tasks | 2 files |
 | Phase 16 P04 | 2min | 2 tasks | 6 files |
 | Phase 16 P04 | 2min | 2 tasks | 6 files |
+| Phase 17 P01 | 5min | 2 tasks | 2 files |
+| Phase 17 P01 | 5min | 2 tasks | 2 files |
 
 ## Accumulated Context
+
+### Decisions from 17-01
+
+- No import from `routers.tts` in `test_tts_phase17.py` — file does not exist yet; import would cause ERROR not FAILED (consistent Phase 12-16 Wave 0 pattern)
+- `creator_slide` fixture chain commented out in test file — only needed once Plan 02 test bodies are written; uncommented would cause collection error since route imports don't exist yet
+- `api.post` mock added to `vi.mock('@/services/api')` block in NarrationTab tests now so Plan 04 doesn't need to touch the mock section
+- Frontend TTS-01 stubs use `getByTestId` for non-existent elements — clean FAILED at execution time (not collection error), consistent with Phase 14-16 Wave 0 frontend pattern
 
 ### Decisions from 16-05
 
