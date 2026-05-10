@@ -38,33 +38,106 @@ def creator_quiz(creator_token, creator_course):
 
 
 def test_create_quiz_settings(creator_token, creator_quiz):
-    """QUIZ-01: create quiz with pass_rate, attempts_allowed, show_feedback."""
-    pytest.fail("QUIZ-01: not implemented")
+    """QUIZ-01: update pass_rate, attempts_allowed, show_feedback."""
+    res = client.put(
+        f"/api/quizzes/{creator_quiz['id']}",
+        json={"pass_rate": 70, "attempts_allowed": 2, "show_feedback": "on_completion"},
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["pass_rate"] == 70
+    assert data["attempts_allowed"] == 2
+    assert data["show_feedback"] == "on_completion"
 
 
 def test_create_mcq_single_question(creator_token, creator_quiz):
-    """QUIZ-02: create MCQ single-answer question with correct_answer as int index."""
-    pytest.fail("QUIZ-02: not implemented")
+    """QUIZ-02: create MCQ single question — correct_answer is int index."""
+    res = client.post(
+        f"/api/quizzes/{creator_quiz['id']}/questions",
+        json={
+            "type": "mcq_single",
+            "prompt": "Which is a programming language?",
+            "options": ["Python", "HTML", "CSS"],
+            "correct_answer": 0,
+        },
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert res.status_code == 201
+    data = res.json()
+    assert data["type"] == "mcq_single"
+    assert data["correct_answer"] == 0
 
 
 def test_create_mcq_multi_question(creator_token, creator_quiz):
-    """QUIZ-03: create MCQ multi-answer question with correct_answer as int array."""
-    pytest.fail("QUIZ-03: not implemented")
+    """QUIZ-03: create MCQ multi question — correct_answer is int array."""
+    res = client.post(
+        f"/api/quizzes/{creator_quiz['id']}/questions",
+        json={
+            "type": "mcq_multi",
+            "prompt": "Which are programming languages?",
+            "options": ["Python", "HTML", "JavaScript", "CSS"],
+            "correct_answer": [0, 2],
+        },
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert res.status_code == 201
+    data = res.json()
+    assert data["type"] == "mcq_multi"
+    assert data["correct_answer"] == [0, 2]
 
 
 def test_create_true_false_question(creator_token, creator_quiz):
-    """QUIZ-04: create true/false question with correct_answer as 'True' or 'False' string."""
-    pytest.fail("QUIZ-04: not implemented")
+    """QUIZ-04: create true/false question — correct_answer is 'True' or 'False' string."""
+    res = client.post(
+        f"/api/quizzes/{creator_quiz['id']}/questions",
+        json={
+            "type": "true_false",
+            "prompt": "Python is a programming language.",
+            "options": ["True", "False"],
+            "correct_answer": "True",
+        },
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert res.status_code == 201
+    data = res.json()
+    assert data["type"] == "true_false"
+    assert data["correct_answer"] == "True"
 
 
 def test_create_short_answer_question(creator_token, creator_quiz):
-    """QUIZ-05: create short answer question."""
-    pytest.fail("QUIZ-05: not implemented")
+    """QUIZ-05: create short answer question — correct_answer is string or null."""
+    res = client.post(
+        f"/api/quizzes/{creator_quiz['id']}/questions",
+        json={
+            "type": "short_answer",
+            "prompt": "What does HTTP stand for?",
+            "correct_answer": "HyperText Transfer Protocol",
+        },
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert res.status_code == 201
+    data = res.json()
+    assert data["type"] == "short_answer"
+    assert "HyperText" in (data["correct_answer"] or "")
 
 
 def test_question_explanation(creator_token, creator_quiz):
     """QUIZ-06: explanation text saved and returned with question."""
-    pytest.fail("QUIZ-06: not implemented")
+    res = client.post(
+        f"/api/quizzes/{creator_quiz['id']}/questions",
+        json={
+            "type": "mcq_single",
+            "prompt": "Test question?",
+            "options": ["A", "B"],
+            "correct_answer": 0,
+            "explanation": "Because A is correct.",
+        },
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert res.status_code == 201
+    data = res.json()
+    assert data["explanation"] == "Because A is correct."
 
 
 def test_reorder_questions(creator_token, creator_quiz):
