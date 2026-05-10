@@ -91,6 +91,12 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 - QuizBuilderPage not wired to App.tsx router yet — route connection is Plan 04 scope
 - AI Generate button renders as visual placeholder with no-op onClick — SideDrawer integration is Plan 04
 
+### Decisions from 16-02
+
+- POST /api/quizzes/{quiz_id}/ai/generate-questions declared BEFORE GET /api/quizzes/{quiz_id} — FastAPI first-match-wins path-order safety (line 223 vs 261); same pattern as slides.py (STATE.md decision 14-02)
+- Module-level claude_service = ClaudeService() singleton in quizzes.py — enables patch('routers.quizzes.claude_service._stream_text') in SSE integration tests
+- starlette.requests.Request imported in quizzes.py (not fastapi.Request) — consistent with slides.py SSE endpoint pattern
+
 ### Decisions from 16-01
 
 - creator_quiz fixture is file-local (NOT conftest.py) — consistent with creator_slide pattern from Phase 14; each phase owns its own chain fixtures
