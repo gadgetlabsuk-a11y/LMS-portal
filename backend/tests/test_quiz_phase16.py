@@ -73,5 +73,29 @@ def test_reorder_questions(creator_token, creator_quiz):
 
 
 def test_generate_questions_streams_tokens(creator_token, creator_quiz):
-    """QUIZ-08: POST /api/quizzes/{quiz_id}/ai/generate-questions returns 200 SSE stream."""
-    pytest.fail("QUIZ-08: not implemented")
+    """QUIZ-08: POST /api/quizzes/{quiz_id}/ai/generate-questions returns 200 SSE."""
+    AppStatus.should_exit_event = None
+
+    mock_tokens = ['[', '{"type":"mcq_single","prompt":"What is Python?","options":["A lang","A snake"],"correct_answer":0,"explanation":"Python is a programming language."}', ']']
+
+    async def mock_stream(prompt):
+        for token in mock_tokens:
+            yield token
+
+    with patch("routers.quizzes.claude_service._stream_text", side_effect=mock_stream):
+        res = client.post(
+            f"/api/quizzes/{creator_quiz['id']}/ai/generate-questions",
+            json={"count": 1, "tone_preset": "professional"},
+            headers={"Authorization": f"Bearer {creator_token}"},
+        )
+    assert res.status_code == 200
+    assert "data:" in res.text
+
+
+def test_generate_questions_requires_auth(creator_quiz):
+    """QUIZ-08: unauthenticated request is rejected."""
+    res = client.post(
+        f"/api/quizzes/{creator_quiz['id']}/ai/generate-questions",
+        json={"count": 1},
+    )
+    assert res.status_code in (401, 403)
