@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
-status: completed
-last_updated: "2026-05-10T22:39:13.859Z"
-last_activity: 2026-05-10 — Completed 18-01 — TDD Wave 0 stubs for Phase 18 Preview/Publish. 9 backend + 3 frontend RED stubs created.
+status: executing
+last_updated: "2026-05-10T23:17:32.195Z"
+last_activity: 2026-05-10 — Completed 18-01 — TDD Wave 0 stubs for Phase 18 Preview/Publish.
 progress:
   total_phases: 10
   completed_phases: 9
   total_plans: 55
-  completed_plans: 51
+  completed_plans: 52
 ---
 
 # State
 
 ## Current Position
 
-Phase: 18 (Preview and Publish) — IN PROGRESS (1/5 plans done)
-Last completed: 18-01 — TDD Wave 0 stubs. 9 backend pytest.fail() stubs + 3 frontend import-error stubs created. RED state established for all Phase 18 requirements.
-Status: Phase 18 IN PROGRESS. Plan 18-01 done. Next: Phase 18 Plan 02 (publish backend endpoints).
-Last activity: 2026-05-10 — Completed 18-01 — TDD Wave 0 stubs for Phase 18 Preview/Publish.
+Phase: 18 (Preview and Publish) — IN PROGRESS (2/5 plans done)
+Last completed: 18-02 — Backend publish/preview/preflight endpoints. CourseVersion model + migration 005. All 9 phase 18 tests GREEN.
+Status: Phase 18 IN PROGRESS. Plan 18-02 done. Next: Phase 18 Plan 03 (frontend preview).
+Last activity: 2026-05-11 — Completed 18-02 — Backend publish endpoints. PREVIEW-01/02 + PUBLISH-02-08 all GREEN.
 
 ## Project Reference
 
@@ -91,8 +91,17 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 17 P05 | 5min | 2 tasks | 0 files |
 | Phase 17 P06 | 15min | 2 tasks | 2 files |
 | Phase 18 P01 | ~6 min | 2 tasks | 2 files |
+| Phase 18 P02 | 36min | 2 tasks | 10 files |
 
 ## Accumulated Context
+
+### Decisions from 18-02
+
+- `_mark_course_changed` defined locally in each child router (modules, videos, slides, blocks, quizzes) — avoids circular import from courses.py; identical 8-line helper per router is acceptable given the constraint
+- `draft_creator_course` local fixture in test_publish_phase18.py — conftest `creator_course` is PUBLISHED but publish tests need DRAFT starting state; local fixture provides correct status
+- `learn.py` `has_content` hardcoded to `False` (list) / served from snapshot (detail with version pin) — `course.content` column was removed in migration 004; pre-existing AttributeError fixed as Rule 1 deviation
+- Concurrent background pytest processes sharing SQLite test DB cause `OperationalError` — run phase 18 tests in isolation; pre-existing known limitation (iCloud Drive + SQLite test DB)
+- `test_has_content_true_when_content_set` in test_learn_router.py was already failing before 18-02 (confirmed with git stash test) — pre-existing, not introduced here
 
 ### Decisions from 18-01
 
