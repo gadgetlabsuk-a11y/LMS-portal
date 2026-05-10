@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
-status: executing
-last_updated: "2026-05-10T19:41:39.089Z"
-last_activity: "2026-05-10 — Completed 17-04 — TTS frontend: NarrationTab audio player + generate button + voice selector. SlideBuilderPage bulk narration wired."
+status: completed
+last_updated: "2026-05-10T22:09:00.000Z"
+last_activity: "2026-05-10 — Completed 17-06 (gap closure) — All 7 TTS tests pass under pytest-randomly seeds 12345 and 99999. conftest.py setup_test_db made idempotent with drop_all before create_all."
 progress:
   total_phases: 10
   completed_phases: 9
-  total_plans: 49
-  completed_plans: 49
+  total_plans: 50
+  completed_plans: 50
 ---
 
 # State
 
 ## Current Position
 
-Phase: 17 (TTS and Narration) — COMPLETE (5/5 plans done)
-Last completed: 17-05 — Human verification complete. All 5 TTS/Narration browser checks approved: per-slide generation (TTS-01), bulk generation (TTS-02), semaphore rate limiting (TTS-03), script-hash caching (TTS-04), voice selection Rachel/Josh (TTS-05). SLIDE-03 confirmed closed. Phase 17 COMPLETE.
-Status: Phase 17 COMPLETE. All plans 17-01 through 17-05 done. Next: Phase 18.
-Last activity: 2026-05-10 — Completed 17-05 — Browser verification: all 5 TTS checks approved with live ElevenLabs API. Phase 17 TTS & Narration complete.
+Phase: 17 (TTS and Narration) — COMPLETE (6/6 plans done, incl. gap closure 17-06)
+Last completed: 17-06 (gap closure) — All 7 TTS tests pass under pytest-randomly seeds 12345 and 99999. setup_test_db made idempotent. TTS-01 through TTS-05 requirements fully verified.
+Status: Phase 17 COMPLETE. All plans 17-01 through 17-06 done. Next: Phase 18.
+Last activity: 2026-05-10 — Completed 17-06 — conftest.py test fixture gap closure. All 7 TTS tests pass under pytest-randomly.
 
 ## Project Reference
 
@@ -89,8 +89,15 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 17 P03 | 2min | 2 tasks | 2 files |
 | Phase 17 P04 | 7min | 2 tasks | 4 files |
 | Phase 17 P05 | 5min | 2 tasks | 0 files |
+| Phase 17 P06 | 15min | 2 tasks | 2 files |
 
 ## Accumulated Context
+
+### Decisions from 17-06
+
+- setup_test_db must call drop_all before create_all for idempotency — rollback-based db fixture leaves SQLite tables intact at teardown, causing "table already exists" OperationalError when pytest-randomly reorders tests and the next test's create_all runs on a non-empty DB
+- pytest-randomly 4.1.0 installed (current release); plan specified 3.16.0 but 4.1.0 is the same API
+- db fixture with connection+SAVEPOINT+rollback+event.listens_for pattern was already correct; the additional drop_all line in setup_test_db was the only missing piece
 
 ### Decisions from 17-05
 
