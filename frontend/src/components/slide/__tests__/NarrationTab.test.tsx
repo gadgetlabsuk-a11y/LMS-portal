@@ -8,6 +8,7 @@ vi.mock('@/services/api', () => ({
   api: {
     get: vi.fn().mockResolvedValue({ json: async () => ({}) }),
     put: vi.fn().mockResolvedValue({ ok: true }),
+    post: vi.fn().mockResolvedValue({ json: async () => ({ audio_url: '/uploads/audio/slide_5.mp3' }) }),
   },
   API_BASE: 'http://localhost:8000',
 }))
@@ -35,5 +36,15 @@ describe('NarrationTab', () => {
   it('SLIDE-11: generate narration button is present', () => {
     render(<NarrationTab slideId={5} courseId={1} />)
     expect(screen.getByTestId('generate-narration-btn')).toBeInTheDocument()
+  })
+
+  it('TTS-01: renders generate-audio-btn button', () => {
+    render(<NarrationTab slideId={5} courseId={1} />)
+    expect(screen.getByTestId('generate-audio-btn')).toBeInTheDocument()
+  })
+
+  it('TTS-01: renders narration-audio-player when audioUrl is set', () => {
+    render(<NarrationTab slideId={5} courseId={1} />)
+    expect(screen.getByTestId('narration-audio-player')).toBeInTheDocument()
   })
 })
