@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: executing
-last_updated: "2026-05-10T17:02:04.741Z"
-last_activity: 2026-05-10 — Completed 17-03 — Bulk TTS endpoint + all 5 TTS backend tests green (TTS-01 through TTS-05).
+last_updated: "2026-05-10T19:41:39.089Z"
+last_activity: "2026-05-10 — Completed 17-04 — TTS frontend: NarrationTab audio player + generate button + voice selector. SlideBuilderPage bulk narration wired."
 progress:
   total_phases: 10
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 49
-  completed_plans: 48
+  completed_plans: 49
 ---
 
 # State
 
 ## Current Position
 
-Phase: 17 (TTS and Narration) — IN PROGRESS (4/5 plans done)
-Last completed: 17-04 — TTS frontend complete. NarrationTab gains voice selector (Rachel/Josh), generate-audio-btn, and narration-audio-player. SlideBuilderPage bulk-narration-btn wired to POST /videos/{id}/tts/bulk-generate with result summary banner. 5 NarrationTab tests pass. SLIDE-03 test updated: button is now enabled. TTS-01, TTS-02, TTS-05 frontend requirements closed.
-Status: Phase 17 IN PROGRESS. Plan 17-04 done. Next: 17-05 (browser verification).
-Last activity: 2026-05-10 — Completed 17-04 — TTS frontend: NarrationTab audio player + generate button + voice selector. SlideBuilderPage bulk narration wired.
+Phase: 17 (TTS and Narration) — COMPLETE (5/5 plans done)
+Last completed: 17-05 — Human verification complete. All 5 TTS/Narration browser checks approved: per-slide generation (TTS-01), bulk generation (TTS-02), semaphore rate limiting (TTS-03), script-hash caching (TTS-04), voice selection Rachel/Josh (TTS-05). SLIDE-03 confirmed closed. Phase 17 COMPLETE.
+Status: Phase 17 COMPLETE. All plans 17-01 through 17-05 done. Next: Phase 18.
+Last activity: 2026-05-10 — Completed 17-05 — Browser verification: all 5 TTS checks approved with live ElevenLabs API. Phase 17 TTS & Narration complete.
 
 ## Project Reference
 
@@ -88,8 +88,15 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 17 P02 | 3min | 2 tasks | 4 files |
 | Phase 17 P03 | 2min | 2 tasks | 2 files |
 | Phase 17 P04 | 7min | 2 tasks | 4 files |
+| Phase 17 P05 | 5min | 2 tasks | 0 files |
 
 ## Accumulated Context
+
+### Decisions from 17-05
+
+- All 5 browser checks approved on first attempt — no rework required after human verification
+- Phase 17 COMPLETE: TTS-01 through TTS-05 all verified end-to-end in browser with live ElevenLabs API
+- SLIDE-03 confirmed closed: bulk narration button wired in Phase 17 Plan 04 after being disabled since Phase 14
 
 ### Decisions from 17-04
 

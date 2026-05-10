@@ -36,7 +36,7 @@ Phases 1–8 were tracked manually before GSD was adopted. What shipped:
 - [x] **Phase 14: Slide Builder & Slide Editor** — Full slide authoring: thumbnail strip, 12-column snap-grid canvas, block library, undo/redo, autosave, AI slide outline wizard (completed 2026-05-09)
 - [x] **Phase 15: AI Generation Infrastructure** — SSE streaming infrastructure, reusable AI drawer, document ingestion pipeline, AI suggestions rail (completed 2026-05-10)
 - [x] **Phase 16: Quiz Builder** — Quiz creation with MCQ/true-false/short-answer questions, drag-to-reorder, AI question generation
-- [ ] **Phase 17: TTS & Narration** — ElevenLabs narration audio generation (per-slide and bulk) with rate limiting and script-hash caching
+- [x] **Phase 17: TTS & Narration** — ElevenLabs narration audio generation (per-slide and bulk) with rate limiting and script-hash caching (completed 2026-05-10)
 - [ ] **Phase 18: Preview & Publish** — Full-course preview in learner view, pre-flight publish checklist, version history, archive
 
 ## Phase Details
@@ -243,5 +243,5 @@ Plans:
 | 14. Slide Builder & Slide Editor | 8/8 | Complete    | 2026-05-09 | - |
 | 15. AI Generation Infrastructure | 5/5 | Complete   | 2026-05-10 | - |
 | 16. Quiz Builder | 4/5 | Complete    | 2026-05-10 | - |
-| 17. TTS & Narration | 4/5 | In Progress|  | - |
+| 17. TTS & Narration | 5/5 | Complete   | 2026-05-10 | - |
 | 18. Preview & Publish | v1.0 | 0/TBD | Not started | - |
