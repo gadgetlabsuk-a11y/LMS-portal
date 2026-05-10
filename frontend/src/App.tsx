@@ -30,6 +30,7 @@ import { CreatorLearners } from '@/pages/creator/CreatorLearners'
 import { LearnerCatalogue } from '@/pages/learn/LearnerCatalogue'
 import { CourseDetail } from '@/pages/learn/CourseDetail'
 import { CourseViewerPage } from '@/pages/CourseViewerPage'
+import { CoursePreviewPage } from '@/pages/creator/CoursePreviewPage'
 
 export default function App() {
   const navigate = useNavigate()
@@ -185,6 +186,16 @@ export default function App() {
               <CreatorLearners />
             </ProtectedRoute>
           </CreatorLayout>
+        }
+      />
+
+      {/* Course preview (no layout wrapper — full-screen, creator-only) */}
+      <Route
+        path="/creator/courses/:id/preview"
+        element={
+          <ProtectedRoute creatorRoute>
+            <CoursePreviewPage />
+          </ProtectedRoute>
         }
       />
 

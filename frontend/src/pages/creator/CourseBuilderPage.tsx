@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '@/services/api'
 import { CourseTreeRail } from '@/components/builder/CourseTreeRail'
 import { ModuleOverviewList } from '@/components/builder/ModuleOverviewList'
@@ -8,6 +8,7 @@ import type { BuilderModule as Module, BuilderVideo as Video, BuilderQuiz as Qui
 
 export function CourseBuilderPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const [modules, setModules] = useState<Module[]>([])
   const [videos, setVideos] = useState<Record<number, Video[]>>({})
   const [quizzes, setQuizzes] = useState<Record<number, Quiz[]>>({})
@@ -45,6 +46,12 @@ export function CourseBuilderPage() {
     fetchTree()
   }, [id])
 
+  const handlePreview = () => {
+    navigate(
+      `/creator/courses/${id}/preview?returnTo=${encodeURIComponent(`/creator/courses/${id}/builder`)}`
+    )
+  }
+
   const handleModulesReorder = (reordered: Module[]) => {
     setModules(reordered)
   }
@@ -73,11 +80,29 @@ export function CourseBuilderPage() {
         quizzes={quizzes}
       />
       <main style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
-        <h1 style={{
-          fontSize: '20px', fontWeight: 700, color: '#111827', marginBottom: '24px',
-        }}>
-          Course Builder
-        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+          <h1 style={{
+            fontSize: '20px', fontWeight: 700, color: '#111827', margin: 0,
+          }}>
+            Course Builder
+          </h1>
+          <button
+            data-testid="preview-mode-btn"
+            onClick={handlePreview}
+            style={{
+              padding: '6px 14px',
+              background: '#f59e0b',
+              color: 'white',
+              borderRadius: '4px',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+            }}
+          >
+            Preview
+          </button>
+        </div>
         <ModuleOverviewList
           courseId={Number(id)}
           modules={modules}

@@ -49,4 +49,10 @@ describe('CourseBuilderPage', () => {
     renderPage()
     expect(await screen.findByTestId('module-overview-list')).toBeInTheDocument()
   })
+
+  it('renders preview button (PREVIEW-01)', async () => {
+    mockGet.mockResolvedValue({ json: async () => [] })
+    renderPage()
+    expect(await screen.findByTestId('preview-mode-btn')).toBeInTheDocument()
+  })
 })
