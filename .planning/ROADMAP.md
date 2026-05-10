@@ -242,6 +242,6 @@ Plans:
 | 13. Course Builder & Module Detail | v1.0 | 5/5 | Complete | 2026-05-09 |
 | 14. Slide Builder & Slide Editor | 8/8 | Complete    | 2026-05-09 | - |
 | 15. AI Generation Infrastructure | 5/5 | Complete   | 2026-05-10 | - |
-| 16. Quiz Builder | 1/5 | In Progress|  | - |
+| 16. Quiz Builder | 3/5 | In Progress|  | - |
 | 17. TTS & Narration | v1.0 | 0/TBD | Not started | - |
 | 18. Preview & Publish | v1.0 | 0/TBD | Not started | - |

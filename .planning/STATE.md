@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
-status: executing
-last_updated: "2026-05-10T16:12:00.000Z"
+status: Phase 16 started. Wave 0 RED state confirmed for QUIZ-01 through QUIZ-08. Ready for 16-02.
+last_updated: "2026-05-10T16:14:47.522Z"
 last_activity: 2026-05-10 — Completed 16-01 — Wave 0 TDD stubs for QUIZ-01 through QUIZ-08
 progress:
   total_phases: 10
   completed_phases: 7
   total_plans: 44
-  completed_plans: 40
+  completed_plans: 42
 ---
 
 # State
 
 ## Current Position
 
-Phase: 16 (Quiz Builder) — IN PROGRESS (1/5 plans done)
-Last completed: 16-01 — Wave 0 TDD stubs: test_quiz_phase16.py (8 pytest.fail stubs), QuizBuilderPage.test.tsx, QuestionForm.test.tsx
-Status: Phase 16 started. Wave 0 RED state confirmed for QUIZ-01 through QUIZ-08. Ready for 16-02.
-Last activity: 2026-05-10 — Completed 16-01 — Wave 0 TDD stubs for QUIZ-01 through QUIZ-08
+Phase: 16 (Quiz Builder) — IN PROGRESS (3/5 plans done)
+Last completed: 16-03 — QuizBuilderPage + QuestionForm (4 types), QUIZ-01 through QUIZ-06 GREEN frontend + backend
+Status: 16-03 complete. QuizBuilderPage and QuestionForm built. QUIZ-01 through QUIZ-06 all GREEN. Ready for 16-04.
+Last activity: 2026-05-10 — Completed 16-03 — QuizBuilderPage + QuestionForm, QUIZ-01 through QUIZ-06 GREEN
 
 ## Project Reference
 
@@ -78,8 +78,18 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 15 P05 | 5min | 2 tasks | 0 files |
 | Phase 15 P06 (gap) | ~20min | 1 task | 6 files |
 | Phase 16 P01 | 5min | 2 tasks | 3 files |
+| Phase 16 P03 | 2min | 2 tasks | 5 files |
+| Phase 16 P03 | 2min | 2 tasks | 5 files |
+| Phase 16-quiz-builder P02 | 8min | 2 tasks | 2 files |
 
 ## Accumulated Context
+
+### Decisions from 16-03
+
+- QuestionForm is fully self-contained with type-switching via useState(type) — parent owns no question state, all state is internal to the form
+- correct_answer shape enforced per type: int index (mcq_single), int array (mcq_multi), 'True'/'False' string (true_false), string|null (short_answer)
+- QuizBuilderPage not wired to App.tsx router yet — route connection is Plan 04 scope
+- AI Generate button renders as visual placeholder with no-op onClick — SideDrawer integration is Plan 04
 
 ### Decisions from 16-01
 
