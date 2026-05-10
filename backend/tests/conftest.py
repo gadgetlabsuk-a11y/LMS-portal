@@ -1,7 +1,7 @@
 """Pytest fixtures shared across all backend tests."""
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 
 # Change to backend/ dir so relative imports work the same as the app
@@ -42,7 +42,17 @@ def override_get_db():
 
 @pytest.fixture(autouse=True)
 def setup_test_db():
-    """Create all tables before each test, drop after."""
+    """Create all tables before each test, drop after.
+
+    Sets override_get_db as fallback for tests that don't use the `db` fixture.
+    Tests that DO use the `db` fixture will have override_get_db replaced with
+    a same-connection override inside that fixture.
+
+    drop_all before create_all ensures idempotency when a previous test's
+    rollback-based `db` fixture left tables in place (e.g. under randomised
+    test ordering via pytest-randomly).
+    """
+    Base.metadata.drop_all(bind=test_engine)
     Base.metadata.create_all(bind=test_engine)
     app.dependency_overrides[get_db] = override_get_db
     yield
@@ -57,9 +67,44 @@ def client():
 
 @pytest.fixture
 def db():
-    db = TestingSessionLocal()
-    yield db
-    db.close()
+    """Per-test DB session. All writes are rolled back at teardown.
+
+    Uses a connection-level outer transaction + SAVEPOINT so that even
+    explicit db.commit() calls inside fixtures are undone after each test.
+    This prevents state bleed between tests when pytest randomises order.
+
+    Also overrides the FastAPI get_db dependency to use the SAME connection,
+    so TestClient API calls and direct db queries share the same transaction
+    scope — ensuring committed rows are visible across both within one test.
+
+    Note: Session(bind=connection) is deprecated in SA 2.0 but still
+    functional — removal is planned for SA 2.1. Suppress the warning with
+    filterwarnings if needed.
+    """
+    connection = test_engine.connect()
+    outer_tx = connection.begin()
+    nested = connection.begin_nested()  # SAVEPOINT
+    session = TestingSessionLocal(bind=connection)
+
+    @event.listens_for(session, "after_transaction_end")
+    def restart_savepoint(session, transaction):
+        """Re-open SAVEPOINT after each commit so the outer rollback still works."""
+        nonlocal nested
+        if transaction.nested and not transaction._parent.nested:
+            nested = connection.begin_nested()
+
+    # Override the FastAPI dependency to use the SAME connection so that
+    # TestClient API calls see rows committed by direct db writes in the test.
+    def override():
+        yield session
+
+    app.dependency_overrides[get_db] = override
+
+    yield session
+
+    session.close()
+    outer_tx.rollback()
+    connection.close()
 
 
 @pytest.fixture
