@@ -6,17 +6,18 @@ Provides CRUD operations for courses and enrollment management.
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, UploadFile, File, Form
 from fastapi.responses import StreamingResponse, HTMLResponse
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.orm.attributes import flag_modified
 from datetime import datetime, timezone
-from typing import List, Optional, Dict, Any
+from typing import List, Literal, Optional, Dict, Any
 from pathlib import Path
 import io
 import logging
 from sse_starlette.sse import EventSourceResponse
 
 from database import get_db
-from models import User, Course, CourseStatus, Enrollment, AuditLog, ApiUsage
+from models import User, Course, CourseStatus, Enrollment, AuditLog, ApiUsage, Module, Quiz, Question
+from models.models import CourseVersion
 from middleware.auth_middleware import require_creator, get_current_active_user, get_client_ip
 from services.claude_service import ClaudeService
 from services.document_service import DocumentService
@@ -133,6 +134,204 @@ class CourseListResponse(BaseModel):
     page: int
     page_size: int
     items: List[CourseResponse]
+
+
+class PreflightResult(BaseModel):
+    """Single preflight check result."""
+    rule: str
+    status: Literal["pass", "warn", "fail"]
+    message: str
+    fix_url: Optional[str] = None
+
+
+class PreflightResponse(BaseModel):
+    """Preflight check response."""
+    can_publish: bool
+    results: List[PreflightResult]
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _get_owned_course_or_404(course_id: int, current_user, db: Session) -> Course:
+    """Fetch course, raise 404 if missing, 403 if not owner."""
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
+    if current_user.role.value != "admin" and course.creator_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    return course
+
+
+def _run_preflight(course: Course, db: Session) -> List[PreflightResult]:
+    """Run publish readiness checks; return list of PreflightResult."""
+    results = []
+
+    # Rule: course_has_title
+    if not course.title or not course.title.strip():
+        results.append(PreflightResult(
+            rule="course_has_title",
+            status="fail",
+            message="Course title is required.",
+            fix_url=f"/creator/courses/{course.id}/builder",
+        ))
+    else:
+        results.append(PreflightResult(
+            rule="course_has_title",
+            status="pass",
+            message="Course has a title.",
+        ))
+
+    # Rule: thumbnail_uploaded
+    if not course.thumbnail_url:
+        results.append(PreflightResult(
+            rule="thumbnail_uploaded",
+            status="warn",
+            message="No thumbnail uploaded. Learners will see a placeholder.",
+            fix_url=f"/creator/courses/{course.id}/builder",
+        ))
+    else:
+        results.append(PreflightResult(
+            rule="thumbnail_uploaded",
+            status="pass",
+            message="Thumbnail uploaded.",
+        ))
+
+    # Rule: has_at_least_one_module
+    modules = db.query(Module).filter(Module.course_id == course.id).all()
+    if not modules:
+        results.append(PreflightResult(
+            rule="has_at_least_one_module",
+            status="fail",
+            message="Course must have at least one module.",
+            fix_url=f"/creator/courses/{course.id}/builder",
+        ))
+    else:
+        results.append(PreflightResult(
+            rule="has_at_least_one_module",
+            status="pass",
+            message=f"Course has {len(modules)} module(s).",
+        ))
+
+    # Rule: each_quiz_has_minimum_questions
+    quizzes = (
+        db.query(Quiz)
+        .join(Module, Quiz.module_id == Module.id)
+        .filter(Module.course_id == course.id)
+        .all()
+    )
+    for quiz in quizzes:
+        q_count = db.query(Question).filter(Question.quiz_id == quiz.id).count()
+        if q_count < 3:
+            results.append(PreflightResult(
+                rule="each_quiz_has_minimum_questions",
+                status="fail",
+                message=f"Quiz '{quiz.title}' has {q_count} question(s). Minimum is 3.",
+                fix_url=f"/creator/courses/{course.id}/quizzes/{quiz.id}",
+            ))
+        else:
+            results.append(PreflightResult(
+                rule="each_quiz_has_minimum_questions",
+                status="pass",
+                message=f"Quiz '{quiz.title}' has {q_count} questions.",
+            ))
+
+    return results
+
+
+def _serialize_course_tree(course_id: int, db: Session) -> dict:
+    """Eager-load full course tree and return as serialisable dict."""
+    from models import Video, Slide, Block
+    course = (
+        db.query(Course)
+        .options(
+            selectinload(Course.modules).selectinload(Module.videos).selectinload(
+                Video.slides
+            ).selectinload(Slide.blocks),
+            selectinload(Course.modules).selectinload(Module.quizzes).selectinload(
+                Quiz.questions
+            ),
+        )
+        .filter(Course.id == course_id)
+        .first()
+    )
+    if not course:
+        return {}
+
+    modules_data = []
+    for mod in course.modules:
+        videos_data = []
+        for vid in mod.videos:
+            slides_data = []
+            for slide in vid.slides:
+                blocks_data = [
+                    {
+                        "id": b.id,
+                        "type": b.type,
+                        "content": b.content,
+                        "order_index": b.order_index,
+                    }
+                    for b in slide.blocks
+                ]
+                slides_data.append({
+                    "id": slide.id,
+                    "order_index": slide.order_index,
+                    "narration_script": slide.narration_script,
+                    "narration_audio_url": slide.narration_audio_url,
+                    "layout_id": slide.layout_id,
+                    "blocks": blocks_data,
+                })
+            videos_data.append({
+                "id": vid.id,
+                "title": vid.title,
+                "order_index": vid.order_index,
+                "slides": slides_data,
+            })
+        quizzes_data = []
+        for quiz in mod.quizzes:
+            questions_data = [
+                {
+                    "id": q.id,
+                    "type": q.type,
+                    "prompt": q.prompt,
+                    "options": q.options,
+                    "correct_answer": q.correct_answer,
+                    "order_index": q.order_index,
+                }
+                for q in quiz.questions
+            ]
+            quizzes_data.append({
+                "id": quiz.id,
+                "title": quiz.title,
+                "questions": questions_data,
+            })
+        modules_data.append({
+            "id": mod.id,
+            "title": mod.title,
+            "order_index": mod.order_index,
+            "videos": videos_data,
+            "quizzes": quizzes_data,
+        })
+
+    return {
+        "id": course.id,
+        "title": course.title,
+        "description": course.description,
+        "modules": modules_data,
+    }
+
+
+def _mark_course_changed(course_id: int, db: Session) -> None:
+    """Set HAS_UNPUBLISHED_CHANGES on a PUBLISHED course.
+
+    Only transitions when status == PUBLISHED — no-op for DRAFT or ARCHIVED.
+    Caller is responsible for db.commit().
+    """
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if course and course.status == CourseStatus.PUBLISHED:
+        course.status = CourseStatus.HAS_UNPUBLISHED_CHANGES
+        db.add(course)
 
 
 @router.get("", response_model=CourseListResponse)
@@ -287,6 +486,89 @@ async def generate_objectives_stream(
             yield {"data": token}
 
     return EventSourceResponse(generator())
+
+
+@router.get("/{course_id}/preview")
+def preview_course(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_creator),
+) -> dict:
+    """Return full course tree for creator preview — bypasses PUBLISHED filter (PREVIEW-01, PREVIEW-02)."""
+    _get_owned_course_or_404(course_id, current_user, db)
+    tree = _serialize_course_tree(course_id, db)
+    return tree
+
+
+@router.get("/{course_id}/preflight", response_model=PreflightResponse)
+def preflight_course(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_creator),
+) -> PreflightResponse:
+    """Run publish readiness checks and return structured results (PUBLISH-02, PUBLISH-03, PUBLISH-04)."""
+    course = _get_owned_course_or_404(course_id, current_user, db)
+    results = _run_preflight(course, db)
+    can_publish = all(r.status != "fail" for r in results)
+    return PreflightResponse(can_publish=can_publish, results=results)
+
+
+@router.post("/{course_id}/publish", response_model=CourseResponse)
+def publish_course(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_creator),
+) -> Course:
+    """Transition course DRAFT→PUBLISHED, create CourseVersion snapshot (PUBLISH-05, PUBLISH-06)."""
+    course = _get_owned_course_or_404(course_id, current_user, db)
+    results = _run_preflight(course, db)
+    fail_results = [r for r in results if r.status == "fail"]
+    if fail_results:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Preflight failed: {fail_results[0].message}",
+        )
+
+    # Build snapshot
+    snapshot = _serialize_course_tree(course_id, db)
+
+    # Create version row
+    version_number = course.version or 1
+    version_row = CourseVersion(
+        course_id=course.id,
+        version_number=version_number,
+        snapshot=snapshot,
+        published_at=datetime.now(timezone.utc),
+    )
+    db.add(version_row)
+
+    # Update course
+    course.version = version_number + 1
+    course.status = CourseStatus.PUBLISHED
+    course.published_at = datetime.now(timezone.utc)
+    db.add(course)
+    db.commit()
+    db.refresh(course)
+
+    logger.info(f"Course published: {course.id} v{version_number} by user {current_user.id}")
+    return course
+
+
+@router.post("/{course_id}/archive", response_model=CourseResponse)
+def archive_course(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_creator),
+) -> Course:
+    """Transition course to ARCHIVED status (PUBLISH-08)."""
+    course = _get_owned_course_or_404(course_id, current_user, db)
+    course.status = CourseStatus.ARCHIVED
+    db.add(course)
+    db.commit()
+    db.refresh(course)
+
+    logger.info(f"Course archived: {course.id} by user {current_user.id}")
+    return course
 
 
 @router.get("/{course_id}", response_model=CourseDetailResponse)

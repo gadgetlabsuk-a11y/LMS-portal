@@ -11,7 +11,7 @@ from typing import List, Optional
 import logging
 
 from database import get_db
-from models import Course, Module
+from models import Course, Module, CourseStatus
 from middleware.auth_middleware import require_creator
 from sse_starlette.sse import EventSourceResponse
 from services.claude_service import ClaudeService
@@ -87,6 +87,17 @@ def _get_course_or_404(course_id: int, db: Session, current_user) -> Course:
     return course
 
 
+def _mark_course_changed(course_id: int, db: Session) -> None:
+    """Set HAS_UNPUBLISHED_CHANGES on a PUBLISHED course.
+
+    Only transitions when status == PUBLISHED. Caller is responsible for db.commit().
+    """
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if course and course.status == CourseStatus.PUBLISHED:
+        course.status = CourseStatus.HAS_UNPUBLISHED_CHANGES
+        db.add(course)
+
+
 def _check_course_ownership(course: Course, current_user) -> None:
     """Raise 403 if the current_user is not the course owner (admin bypasses)."""
     if current_user.role.value != "admin" and course.creator_id != current_user.id:
@@ -129,6 +140,7 @@ def create_module(
         status=body.status or "draft",
     )
     db.add(module)
+    _mark_course_changed(course_id, db)
     db.commit()
     db.refresh(module)
 
@@ -229,6 +241,7 @@ def update_module(
         setattr(module, field, value)
 
     module.updated_at = datetime.utcnow()
+    _mark_course_changed(module.course_id, db)
     db.commit()
     db.refresh(module)
 
@@ -248,7 +261,9 @@ def delete_module(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Module not found")
     _check_course_ownership(module.course, current_user)
 
+    course_id = module.course_id
     db.delete(module)
+    _mark_course_changed(course_id, db)
     db.commit()
 
     logger.info(f"Module deleted: {module_id} by user {current_user.id}")

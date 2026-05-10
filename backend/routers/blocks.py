@@ -12,7 +12,7 @@ from typing import List, Optional
 import logging
 
 from database import get_db
-from models import Course, Module, Video, Slide, Block
+from models import Course, Module, Video, Slide, Block, CourseStatus
 from middleware.auth_middleware import require_creator
 
 logger = logging.getLogger(__name__)
@@ -99,6 +99,17 @@ def _get_block_or_404(block_id: int, db: Session, current_user) -> Block:
     return block
 
 
+def _mark_course_changed(course_id: int, db: Session) -> None:
+    """Set HAS_UNPUBLISHED_CHANGES on a PUBLISHED course.
+
+    Only transitions when status == PUBLISHED. Caller is responsible for db.commit().
+    """
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if course and course.status == CourseStatus.PUBLISHED:
+        course.status = CourseStatus.HAS_UNPUBLISHED_CHANGES
+        db.add(course)
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -127,6 +138,7 @@ def create_block(
         grid_position=body.grid_position,
     )
     db.add(block)
+    _mark_course_changed(slide.video.module.course_id, db)
     db.commit()
     db.refresh(block)
 
@@ -185,6 +197,7 @@ def update_block(
         setattr(block, field, value)
 
     block.updated_at = datetime.utcnow()
+    _mark_course_changed(block.slide.video.module.course_id, db)
     db.commit()
     db.refresh(block)
 
@@ -201,7 +214,9 @@ def delete_block(
     """Delete a block."""
     block = _get_block_or_404(block_id, db, current_user)
 
+    course_id = block.slide.video.module.course_id
     db.delete(block)
+    _mark_course_changed(course_id, db)
     db.commit()
 
     logger.info(f"Block deleted: {block_id} by user {current_user.id}")

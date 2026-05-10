@@ -11,7 +11,7 @@ from typing import List, Optional
 import logging
 
 from database import get_db
-from models import Course, Module, Video
+from models import Course, Module, Video, CourseStatus
 from middleware.auth_middleware import require_creator
 
 logger = logging.getLogger(__name__)
@@ -76,6 +76,17 @@ def _get_module_or_404(module_id: int, db: Session, current_user) -> Module:
     return module
 
 
+def _mark_course_changed(course_id: int, db: Session) -> None:
+    """Set HAS_UNPUBLISHED_CHANGES on a PUBLISHED course.
+
+    Only transitions when status == PUBLISHED. Caller is responsible for db.commit().
+    """
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if course and course.status == CourseStatus.PUBLISHED:
+        course.status = CourseStatus.HAS_UNPUBLISHED_CHANGES
+        db.add(course)
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -112,6 +123,7 @@ def create_video(
         status=body.status or "draft",
     )
     db.add(video)
+    _mark_course_changed(module.course_id, db)
     db.commit()
     db.refresh(video)
 
@@ -179,6 +191,7 @@ def update_video(
         setattr(video, field, value)
 
     video.updated_at = datetime.utcnow()
+    _mark_course_changed(video.module.course_id, db)
     db.commit()
     db.refresh(video)
 
@@ -199,7 +212,9 @@ def delete_video(
     if current_user.role.value != "admin" and video.module.course.creator_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
+    course_id = video.module.course_id
     db.delete(video)
+    _mark_course_changed(course_id, db)
     db.commit()
 
     logger.info(f"Video deleted: {video_id} by user {current_user.id}")

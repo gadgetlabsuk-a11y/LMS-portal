@@ -11,7 +11,8 @@ from typing import List, Optional, Dict, Any
 import logging
 
 from database import get_db
-from models import User, Course, CourseStatus
+from models import User, Course, CourseStatus, Enrollment
+from models.models import CourseVersion
 from middleware.auth_middleware import get_current_active_user
 
 logger = logging.getLogger(__name__)
@@ -70,7 +71,7 @@ def list_learn_courses(
             id=c.id,
             title=c.title,
             description=c.description,
-            has_content=bool(c.content),
+            has_content=False,
             created_at=c.created_at,
         )
         for c in courses
@@ -86,7 +87,12 @@ def get_learn_course(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> LearnCourseDetailResponse:
-    """Get a single published course for learners."""
+    """Get a single published course for learners.
+
+    If learner has a course_version pin from enrollment, serve the snapshot
+    from CourseVersion table (PUBLISH-07). Falls back to live course if no
+    version row found (Pitfall 6).
+    """
     course = db.query(Course).filter(
         Course.id == course_id,
         Course.status == CourseStatus.PUBLISHED,
@@ -95,12 +101,39 @@ def get_learn_course(
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
 
+    # Version pinning: check if the learner has a specific version enrolled
+    enrollment = db.query(Enrollment).filter(
+        Enrollment.user_id == current_user.id,
+        Enrollment.course_id == course_id,
+    ).first()
+
+    if enrollment and enrollment.course_version is not None:
+        version_row = db.query(CourseVersion).filter(
+            CourseVersion.course_id == course_id,
+            CourseVersion.version_number == enrollment.course_version,
+        ).first()
+        if version_row:
+            snapshot = version_row.snapshot
+            logger.info(
+                f"Learner course detail (versioned): user={current_user.id}, "
+                f"course={course_id}, version={enrollment.course_version}"
+            )
+            return LearnCourseDetailResponse(
+                id=course.id,
+                title=snapshot.get("title", course.title),
+                description=snapshot.get("description", course.description),
+                has_content=True,
+                content=snapshot,
+                created_at=course.created_at,
+            )
+        # Pitfall 6: no row found — fall through to live course
+
     logger.info(f"Learner course detail: user={current_user.id}, course={course_id}")
     return LearnCourseDetailResponse(
         id=course.id,
         title=course.title,
         description=course.description,
-        has_content=bool(course.content),
-        content=course.content,
+        has_content=False,
+        content=None,
         created_at=course.created_at,
     )

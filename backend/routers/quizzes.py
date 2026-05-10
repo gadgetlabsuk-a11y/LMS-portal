@@ -12,7 +12,7 @@ from typing import Any, List, Optional
 import logging
 
 from database import get_db
-from models import Course, Module, Quiz, Question
+from models import Course, Module, Quiz, Question, CourseStatus
 from middleware.auth_middleware import require_creator
 from sse_starlette.sse import EventSourceResponse
 from services.claude_service import ClaudeService
@@ -157,6 +157,17 @@ def _get_question_or_404(question_id: int, db: Session, current_user) -> Questio
     return question
 
 
+def _mark_course_changed(course_id: int, db: Session) -> None:
+    """Set HAS_UNPUBLISHED_CHANGES on a PUBLISHED course.
+
+    Only transitions when status == PUBLISHED. Caller is responsible for db.commit().
+    """
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if course and course.status == CourseStatus.PUBLISHED:
+        course.status = CourseStatus.HAS_UNPUBLISHED_CHANGES
+        db.add(course)
+
+
 # ---------------------------------------------------------------------------
 # Quiz endpoints
 # ---------------------------------------------------------------------------
@@ -192,6 +203,7 @@ def create_quiz(
         status=body.status or "draft",
     )
     db.add(quiz)
+    _mark_course_changed(module.course_id, db)
     db.commit()
     db.refresh(quiz)
 
@@ -285,6 +297,7 @@ def update_quiz(
         setattr(quiz, field, value)
 
     quiz.updated_at = datetime.utcnow()
+    _mark_course_changed(quiz.module.course_id, db)
     db.commit()
     db.refresh(quiz)
 
@@ -301,7 +314,9 @@ def delete_quiz(
     """Delete a quiz (cascade deletes questions)."""
     quiz = _get_quiz_or_404(quiz_id, db, current_user)
 
+    course_id = quiz.module.course_id
     db.delete(quiz)
+    _mark_course_changed(course_id, db)
     db.commit()
 
     logger.info(f"Quiz deleted: {quiz_id} by user {current_user.id}")
@@ -340,6 +355,7 @@ def create_question(
         difficulty=body.difficulty,
     )
     db.add(question)
+    _mark_course_changed(quiz.module.course_id, db)
     db.commit()
     db.refresh(question)
 
@@ -398,6 +414,7 @@ def update_question(
         setattr(question, field, value)
 
     question.updated_at = datetime.utcnow()
+    _mark_course_changed(question.quiz.module.course_id, db)
     db.commit()
     db.refresh(question)
 
@@ -414,7 +431,9 @@ def delete_question(
     """Delete a question."""
     question = _get_question_or_404(question_id, db, current_user)
 
+    course_id = question.quiz.module.course_id
     db.delete(question)
+    _mark_course_changed(course_id, db)
     db.commit()
 
     logger.info(f"Question deleted: {question_id} by user {current_user.id}")

@@ -13,7 +13,7 @@ import logging
 import httpx
 
 from database import get_db
-from models import Course, Module, Video, Slide, Block
+from models import Course, Module, Video, Slide, Block, CourseStatus
 from middleware.auth_middleware import require_creator
 from sse_starlette.sse import EventSourceResponse
 from services.claude_service import ClaudeService
@@ -109,6 +109,17 @@ def _get_video_or_404(video_id: int, db: Session, current_user) -> Video:
     return video
 
 
+def _mark_course_changed(course_id: int, db: Session) -> None:
+    """Set HAS_UNPUBLISHED_CHANGES on a PUBLISHED course.
+
+    Only transitions when status == PUBLISHED. Caller is responsible for db.commit().
+    """
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if course and course.status == CourseStatus.PUBLISHED:
+        course.status = CourseStatus.HAS_UNPUBLISHED_CHANGES
+        db.add(course)
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -144,6 +155,7 @@ def create_slide(
         duration_seconds=body.duration_seconds,
     )
     db.add(slide)
+    _mark_course_changed(video.module.course_id, db)
     db.commit()
     db.refresh(slide)
 
@@ -303,6 +315,7 @@ def update_slide(
         setattr(slide, field, value)
 
     slide.updated_at = datetime.utcnow()
+    _mark_course_changed(slide.video.module.course_id, db)
     db.commit()
     db.refresh(slide)
 
@@ -330,7 +343,9 @@ def delete_slide(
     if current_user.role.value != "admin" and slide.video.module.course.creator_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
+    course_id = slide.video.module.course_id
     db.delete(slide)
+    _mark_course_changed(course_id, db)
     db.commit()
 
     logger.info(f"Slide deleted: {slide_id} by user {current_user.id}")

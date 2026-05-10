@@ -25,6 +25,7 @@ from .models import (
     Question,
     Resource,
     AiPromptLog,
+    CourseVersion,
 )
 
 __all__ = [
@@ -50,4 +51,5 @@ __all__ = [
     "Question",
     "Resource",
     "AiPromptLog",
+    "CourseVersion",
 ]
