@@ -39,12 +39,15 @@ describe('NarrationTab', () => {
   })
 
   it('TTS-01: renders generate-audio-btn button', () => {
+    useSlideEditorStore.setState({ narrationScript: 'Hello world' })
     render(<NarrationTab slideId={5} courseId={1} />)
     expect(screen.getByTestId('generate-audio-btn')).toBeInTheDocument()
   })
 
-  it('TTS-01: renders narration-audio-player when audioUrl is set', () => {
+  it('TTS-01: narration-audio-player appears after clicking generate-audio-btn', async () => {
+    useSlideEditorStore.setState({ narrationScript: 'Hello world' })
     render(<NarrationTab slideId={5} courseId={1} />)
-    expect(screen.getByTestId('narration-audio-player')).toBeInTheDocument()
+    await userEvent.click(screen.getByTestId('generate-audio-btn'))
+    expect(await screen.findByTestId('narration-audio-player')).toBeInTheDocument()
   })
 })

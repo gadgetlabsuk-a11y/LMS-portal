@@ -1,9 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { api } from '@/services/api'
+import { api, API_BASE } from '@/services/api'
 import { useSlideEditorStore } from '@/store/slideEditorStore'
 import { useSSEStream } from '@/hooks/useSSEStream'
 import { SideDrawer } from '@/components/ai/SideDrawer'
 import { StreamingTextOutput } from '@/components/ai/StreamingTextOutput'
+
+const VOICE_OPTIONS = [
+  { voice_id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel' },
+  { voice_id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Josh' },
+]
 
 interface Props {
   slideId: number
@@ -15,6 +20,9 @@ export function NarrationTab({ slideId, courseId }: Props) {
   const setNarration = useSlideEditorStore(s => s.setNarration)
   const [error, setError] = useState<string | null>(null)
   const [tonePreset, setTonePreset] = useState('professional')
+  const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  const [audioGenerating, setAudioGenerating] = useState(false)
+  const [selectedVoiceId, setSelectedVoiceId] = useState('21m00Tcm4TlvDq8ikWAM')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const { startStream, isStreaming: generating } = useSSEStream()
   const accumulatedRef = useRef('')
@@ -45,6 +53,19 @@ export function NarrationTab({ slideId, courseId }: Props) {
         setNarration(accumulatedRef.current)
       },
     })
+  }
+
+  const handleGenerateAudio = async () => {
+    setAudioGenerating(true)
+    try {
+      const res = await api.post(`/slides/${slideId}/tts/generate`, { voice_id: selectedVoiceId })
+      const data = await res.json()
+      setAudioUrl(data.audio_url)
+    } catch {
+      setError('Audio generation failed. Check ELEVENLABS_API_KEY is configured.')
+    } finally {
+      setAudioGenerating(false)
+    }
   }
 
   const handleOpenDrawer = () => {
@@ -101,6 +122,37 @@ export function NarrationTab({ slideId, courseId }: Props) {
         placeholder="Write the narration script for this slide, or click Generate to create one with AI..."
         className="flex-1 resize-none text-sm p-2 border rounded font-sans leading-relaxed"
       />
+
+      {/* TTS Audio Generation */}
+      <div className="flex items-center gap-2">
+        <select
+          data-testid="voice-selector"
+          value={selectedVoiceId}
+          onChange={(e) => setSelectedVoiceId(e.target.value)}
+          className="text-xs border rounded px-2 py-1 flex-1"
+        >
+          {VOICE_OPTIONS.map(v => (
+            <option key={v.voice_id} value={v.voice_id}>{v.name}</option>
+          ))}
+        </select>
+        <button
+          data-testid="generate-audio-btn"
+          onClick={handleGenerateAudio}
+          disabled={!narrationScript || audioGenerating}
+          className="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+        >
+          {audioGenerating ? 'Generating...' : 'Generate audio'}
+        </button>
+      </div>
+
+      {audioUrl && (
+        <audio
+          data-testid="narration-audio-player"
+          controls
+          src={`${API_BASE}${audioUrl}`}
+          className="w-full mt-1"
+        />
+      )}
 
       <button
         onClick={handleSaveScript}
