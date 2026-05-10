@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: executing
-last_updated: "2026-05-10T16:58:08.004Z"
-last_activity: "2026-05-10 — Completed 17-01 — Wave 0 RED baseline: 5 backend + 2 frontend TTS failing stubs established."
+last_updated: "2026-05-10T17:02:04.741Z"
+last_activity: 2026-05-10 — Completed 17-03 — Bulk TTS endpoint + all 5 TTS backend tests green (TTS-01 through TTS-05).
 progress:
   total_phases: 10
   completed_phases: 8
   total_plans: 49
-  completed_plans: 46
+  completed_plans: 48
 ---
 
 # State
 
 ## Current Position
 
-Phase: 17 (TTS and Narration) — IN PROGRESS (2/5 plans done)
-Last completed: 17-02 — TTSService rewritten for per-slide generation. tts.py router created with POST /api/slides/{id}/tts/generate. TTS-01 and TTS-05 GREEN (4 tests pass). Bulk stubs still FAILED — Plan 03 scope.
-Status: Phase 17 IN PROGRESS. Plan 17-02 done. Next: 17-03 (bulk endpoint + semaphore + cache).
-Last activity: 2026-05-10 — Completed 17-02 — Per-slide TTS endpoint + 4 passing tests for TTS-01/TTS-05.
+Phase: 17 (TTS and Narration) — IN PROGRESS (3/5 plans done)
+Last completed: 17-03 — Bulk TTS endpoint added to tts.py. asyncio.Semaphore(3) bounds ElevenLabs concurrency. sha256 script-hash caching skips unchanged slides. All 5 TTS backend tests GREEN (TTS-01 through TTS-05).
+Status: Phase 17 IN PROGRESS. Plan 17-03 done. Next: 17-04 (frontend NarrationTab wiring).
+Last activity: 2026-05-10 — Completed 17-03 — Bulk TTS endpoint + all 5 TTS backend tests green (TTS-01 through TTS-05).
 
 ## Project Reference
 
@@ -86,8 +86,17 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 17 P01 | 5min | 2 tasks | 2 files |
 | Phase 17 P01 | 5min | 2 tasks | 2 files |
 | Phase 17 P02 | 3min | 2 tasks | 4 files |
+| Phase 17 P03 | 2min | 2 tasks | 2 files |
+| Phase 17 P04 | 7min | 2 tasks | 4 files |
 
 ## Accumulated Context
+
+### Decisions from 17-03
+
+- `bulk_generate_audio` uses `asyncio.gather` + `process_slide` coroutine — all slides dispatched concurrently; `async with _bulk_semaphore` inside coroutine limits actual ElevenLabs calls to 3
+- Cache check requires both `narration_script_hash == sha256(script)` AND `narration_audio_url` set — both conditions required to skip regeneration
+- `test_semaphore_limits_concurrency` uses Python `ast` module to verify `_bulk_semaphore` has no module-level assignment in `tts.py` — structural verification
+- `creator_video` fixture is file-local in `test_tts_phase17.py` (consistent with `creator_slide`/`creator_quiz` pattern from prior phases)
 
 ### Decisions from 17-02
 

@@ -243,5 +243,5 @@ Plans:
 | 14. Slide Builder & Slide Editor | 8/8 | Complete    | 2026-05-09 | - |
 | 15. AI Generation Infrastructure | 5/5 | Complete   | 2026-05-10 | - |
 | 16. Quiz Builder | 4/5 | Complete    | 2026-05-10 | - |
-| 17. TTS & Narration | 2/5 | In Progress|  | - |
+| 17. TTS & Narration | 4/5 | In Progress|  | - |
 | 18. Preview & Publish | v1.0 | 0/TBD | Not started | - |
