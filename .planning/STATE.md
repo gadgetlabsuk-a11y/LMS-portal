@@ -16,10 +16,10 @@ progress:
 
 ## Current Position
 
-Phase: 17 (TTS and Narration) — IN PROGRESS (3/5 plans done)
-Last completed: 17-03 — Bulk TTS endpoint added to tts.py. asyncio.Semaphore(3) bounds ElevenLabs concurrency. sha256 script-hash caching skips unchanged slides. All 5 TTS backend tests GREEN (TTS-01 through TTS-05).
-Status: Phase 17 IN PROGRESS. Plan 17-03 done. Next: 17-04 (frontend NarrationTab wiring).
-Last activity: 2026-05-10 — Completed 17-03 — Bulk TTS endpoint + all 5 TTS backend tests green (TTS-01 through TTS-05).
+Phase: 17 (TTS and Narration) — IN PROGRESS (4/5 plans done)
+Last completed: 17-04 — TTS frontend complete. NarrationTab gains voice selector (Rachel/Josh), generate-audio-btn, and narration-audio-player. SlideBuilderPage bulk-narration-btn wired to POST /videos/{id}/tts/bulk-generate with result summary banner. 5 NarrationTab tests pass. SLIDE-03 test updated: button is now enabled. TTS-01, TTS-02, TTS-05 frontend requirements closed.
+Status: Phase 17 IN PROGRESS. Plan 17-04 done. Next: 17-05 (browser verification).
+Last activity: 2026-05-10 — Completed 17-04 — TTS frontend: NarrationTab audio player + generate button + voice selector. SlideBuilderPage bulk narration wired.
 
 ## Project Reference
 
@@ -90,6 +90,13 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 17 P04 | 7min | 2 tasks | 4 files |
 
 ## Accumulated Context
+
+### Decisions from 17-04
+
+- `narration_audio_url` added as optional field (`?`) in SlideBuilderPage's Slide interface — required field caused TS2322 incompatibility with `setSlides` passed as `onSlidesChange` to VideoSlideStrip (two Slide types with same name but different shapes); optional is semantically correct since field is "for future use" per plan note
+- `VOICE_OPTIONS` const defined outside NarrationTab component — stable reference, not recreated on each render
+- Audio player only renders after successful generate click (`audioUrl` state set from API response) — not rendered on initial mount; consistent with progressive disclosure UX
+- `handleBulkGenerate` silently catches errors — prevents crash; creator sees 0 generated count in result banner; error logging deferred to observability phase
 
 ### Decisions from 17-03
 
