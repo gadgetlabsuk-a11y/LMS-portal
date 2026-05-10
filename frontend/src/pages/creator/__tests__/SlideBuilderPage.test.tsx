@@ -56,11 +56,10 @@ describe('SlideBuilderPage', () => {
     )
   })
 
-  it('SLIDE-03: bulk narration button is visible but disabled', async () => {
+  it('SLIDE-03: bulk narration button is enabled and wired', async () => {
     renderPage()
     await screen.findByTestId('slide-thumb-1')
     const btn = screen.getByTestId('bulk-narration-btn')
-    expect(btn).toBeDisabled()
-    expect(btn).toHaveAttribute('title', 'Audio generation available in a future update')
+    expect(btn).not.toBeDisabled()
   })
 })

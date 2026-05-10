@@ -9,6 +9,7 @@ interface Slide {
   video_id: number
   title: string
   narration_script: string | null
+  narration_audio_url?: string | null
   order_index: number
 }
 
@@ -18,6 +19,8 @@ export function SlideBuilderPage() {
   const [slides, setSlides] = useState<Slide[]>([])
   const [loading, setLoading] = useState(true)
   const [wizardOpen, setWizardOpen] = useState(false)
+  const [bulkGenerating, setBulkGenerating] = useState(false)
+  const [bulkResult, setBulkResult] = useState<{ generated: number; skipped_no_script: number; skipped_cached: number; errors: number } | null>(null)
 
   const fetchSlides = () => {
     if (!videoId) return
@@ -31,6 +34,23 @@ export function SlideBuilderPage() {
   useEffect(() => {
     fetchSlides()
   }, [videoId])
+
+  const handleBulkGenerate = async () => {
+    if (!videoId) return
+    setBulkGenerating(true)
+    setBulkResult(null)
+    try {
+      const res = await api.post(`/videos/${videoId}/tts/bulk-generate`, {
+        voice_id: '21m00Tcm4TlvDq8ikWAM',
+      })
+      const data = await res.json()
+      setBulkResult(data)
+    } catch {
+      // Silent error — creator will see 0 generated
+    } finally {
+      setBulkGenerating(false)
+    }
+  }
 
   const handleAddSlide = async () => {
     const res = await api.post(`/videos/${videoId}/slides`, {
@@ -70,14 +90,23 @@ export function SlideBuilderPage() {
           </button>
           <button
             data-testid="bulk-narration-btn"
-            disabled
-            title="Audio generation available in a future update"
-            className="px-3 py-1.5 bg-gray-100 text-gray-400 text-sm rounded cursor-not-allowed"
+            onClick={handleBulkGenerate}
+            disabled={bulkGenerating}
+            className="px-3 py-1.5 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 disabled:opacity-50"
           >
-            Generate Narration
+            {bulkGenerating ? 'Generating...' : 'Generate Narration'}
           </button>
         </div>
       </div>
+
+      {bulkResult && (
+        <div data-testid="bulk-result-banner" className="px-6 py-2 bg-green-50 border-b text-sm text-green-800">
+          Generated {bulkResult.generated} audio file{bulkResult.generated !== 1 ? 's' : ''}.
+          {bulkResult.skipped_no_script > 0 && ` Skipped ${bulkResult.skipped_no_script} (no script).`}
+          {bulkResult.skipped_cached > 0 && ` Cached ${bulkResult.skipped_cached} (unchanged).`}
+          {bulkResult.errors > 0 && ` ${bulkResult.errors} error(s).`}
+        </div>
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         <div className="w-72 border-r bg-gray-50 p-4 overflow-y-auto">
