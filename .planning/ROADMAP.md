@@ -35,7 +35,7 @@ Phases 1–8 were tracked manually before GSD was adopted. What shipped:
 - [x] **Phase 13: Course Builder & Module Detail** — Home-base Course Builder with left-rail tree, module card list, Module Detail with rich text and drag-drop reorder (completed 2026-05-09)
 - [x] **Phase 14: Slide Builder & Slide Editor** — Full slide authoring: thumbnail strip, 12-column snap-grid canvas, block library, undo/redo, autosave, AI slide outline wizard (completed 2026-05-09)
 - [x] **Phase 15: AI Generation Infrastructure** — SSE streaming infrastructure, reusable AI drawer, document ingestion pipeline, AI suggestions rail (completed 2026-05-10)
-- [ ] **Phase 16: Quiz Builder** — Quiz creation with MCQ/true-false/short-answer questions, drag-to-reorder, AI question generation
+- [x] **Phase 16: Quiz Builder** — Quiz creation with MCQ/true-false/short-answer questions, drag-to-reorder, AI question generation
 - [ ] **Phase 17: TTS & Narration** — ElevenLabs narration audio generation (per-slide and bulk) with rate limiting and script-hash caching
 - [ ] **Phase 18: Preview & Publish** — Full-course preview in learner view, pre-flight publish checklist, version history, archive
 
@@ -185,11 +185,11 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 16-01-PLAN.md — Wave 0: failing test stubs (QUIZ-01 through QUIZ-08)
-- [ ] 16-02-PLAN.md — Backend: quiz AI question generation SSE endpoint
-- [ ] 16-03-PLAN.md — Frontend: QuizBuilderPage + question type forms
-- [ ] 16-04-PLAN.md — Frontend: drag-to-reorder questions + AI question generation streaming
-- [ ] 16-05-PLAN.md — Human verify: full quiz builder walkthrough
+- [x] 16-01-PLAN.md — Wave 0: failing test stubs (QUIZ-01 through QUIZ-08)
+- [x] 16-02-PLAN.md — Backend: quiz AI question generation SSE endpoint
+- [x] 16-03-PLAN.md — Frontend: QuizBuilderPage + question type forms
+- [x] 16-04-PLAN.md — Frontend: drag-to-reorder questions + AI question generation streaming
+- [x] 16-05-PLAN.md — Human verify: full quiz builder walkthrough
 
 ### Phase 17: TTS & Narration
 **Goal**: Creators can generate ElevenLabs narration audio for individual slides or in bulk for an entire video, with rate limiting preventing API storms and caching preventing redundant regeneration

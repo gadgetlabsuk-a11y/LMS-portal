@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
-status: Phase 16 in progress. 4/5 plans done. QUIZ-01 through QUIZ-08 all GREEN. Ready for 16-05.
-last_updated: "2026-05-10T16:19:49.247Z"
-last_activity: 2026-05-10 — Completed 16-04 — drag-to-reorder + AI SideDrawer + CourseTreeRail nav + App.tsx route. QUIZ-07 and QUIZ-08 GREEN.
+status: Phase 16 COMPLETE. 5/5 plans done. QUIZ-01 through QUIZ-08 all verified in browser. Next: Phase 17.
+last_updated: "2026-05-10T17:00:00.000Z"
+last_activity: 2026-05-10 — Completed 16-05 — all 6 browser checks approved. Phase 16 Quiz Builder complete.
 progress:
   total_phases: 10
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 44
-  completed_plans: 43
+  completed_plans: 44
 ---
 
 # State
 
 ## Current Position
 
-Phase: 16 (Quiz Builder) — IN PROGRESS (4/5 plans done)
-Last completed: 16-04 — drag-to-reorder + AI SideDrawer + CourseTreeRail nav + App.tsx route. QUIZ-07 and QUIZ-08 GREEN.
-Status: 16-04 complete. QuizBuilderPage feature set complete: settings, CRUD (4 types), drag-to-reorder, AI generation. QUIZ-01 through QUIZ-08 all GREEN. Ready for 16-05.
-Last activity: 2026-05-10 — Completed 16-04 — drag-to-reorder + AI SideDrawer + CourseTreeRail nav + App.tsx route. QUIZ-07 and QUIZ-08 GREEN.
+Phase: 16 (Quiz Builder) — COMPLETE (5/5 plans done)
+Last completed: 16-05 — human verification. All 6 browser checks approved. QUIZ-01 through QUIZ-08 confirmed in browser.
+Status: Phase 16 COMPLETE. All 5 plans done. QUIZ-01 through QUIZ-08 verified in browser. Next: Phase 17 (TTS and Narration).
+Last activity: 2026-05-10 — Completed 16-05 — all 6 browser checks approved. Phase 16 Quiz Builder fully verified end-to-end.
 
 ## Project Reference
 
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 
 ## Performance Metrics
 
-- Phases complete: 0/10 (v1.0)
-- Plans complete: 1/TBD (09-01 done)
+- Phases complete: 8/10 (v1.0)
+- Plans complete: 44/44 (through Phase 16)
 - Requirements mapped: 75/75
 
 | Phase | Plan | Duration | Tasks | Files |
@@ -85,6 +85,11 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 16 P04 | 2min | 2 tasks | 6 files |
 
 ## Accumulated Context
+
+### Decisions from 16-05
+
+- All 6 browser checks approved on first attempt — no rework required after human verification
+- Phase 16 COMPLETE: QUIZ-01 through QUIZ-08 all verified end-to-end in browser
 
 ### Decisions from 16-04
 
@@ -389,4 +394,4 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 
 ## Session Continuity
 
-Phase 09 complete. All 7 plans (09-01 through 09-07) done. All 27 monolith components extracted, integrated, and deployed. Smoke test passed on buildbench.uk/lms. Next: Phase 10.
+Phase 16 complete. All 5 plans (16-01 through 16-05) done. Quiz Builder fully verified in browser: settings, all 4 question types, explanation persistence, drag-to-reorder persistence, AI generation. QUIZ-01 through QUIZ-08 all GREEN. Next: Phase 17 (TTS and Narration).
