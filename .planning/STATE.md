@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
-status: Phase 16 started. Wave 0 RED state confirmed for QUIZ-01 through QUIZ-08. Ready for 16-02.
-last_updated: "2026-05-10T16:14:47.522Z"
-last_activity: 2026-05-10 — Completed 16-01 — Wave 0 TDD stubs for QUIZ-01 through QUIZ-08
+status: Phase 16 in progress. 4/5 plans done. QUIZ-01 through QUIZ-08 all GREEN. Ready for 16-05.
+last_updated: "2026-05-10T16:19:49.247Z"
+last_activity: 2026-05-10 — Completed 16-04 — drag-to-reorder + AI SideDrawer + CourseTreeRail nav + App.tsx route. QUIZ-07 and QUIZ-08 GREEN.
 progress:
   total_phases: 10
   completed_phases: 7
   total_plans: 44
-  completed_plans: 42
+  completed_plans: 43
 ---
 
 # State
 
 ## Current Position
 
-Phase: 16 (Quiz Builder) — IN PROGRESS (3/5 plans done)
-Last completed: 16-03 — QuizBuilderPage + QuestionForm (4 types), QUIZ-01 through QUIZ-06 GREEN frontend + backend
-Status: 16-03 complete. QuizBuilderPage and QuestionForm built. QUIZ-01 through QUIZ-06 all GREEN. Ready for 16-04.
-Last activity: 2026-05-10 — Completed 16-03 — QuizBuilderPage + QuestionForm, QUIZ-01 through QUIZ-06 GREEN
+Phase: 16 (Quiz Builder) — IN PROGRESS (4/5 plans done)
+Last completed: 16-04 — drag-to-reorder + AI SideDrawer + CourseTreeRail nav + App.tsx route. QUIZ-07 and QUIZ-08 GREEN.
+Status: 16-04 complete. QuizBuilderPage feature set complete: settings, CRUD (4 types), drag-to-reorder, AI generation. QUIZ-01 through QUIZ-08 all GREEN. Ready for 16-05.
+Last activity: 2026-05-10 — Completed 16-04 — drag-to-reorder + AI SideDrawer + CourseTreeRail nav + App.tsx route. QUIZ-07 and QUIZ-08 GREEN.
 
 ## Project Reference
 
@@ -81,8 +81,18 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 16 P03 | 2min | 2 tasks | 5 files |
 | Phase 16 P03 | 2min | 2 tasks | 5 files |
 | Phase 16-quiz-builder P02 | 8min | 2 tasks | 2 files |
+| Phase 16 P04 | 2min | 2 tasks | 6 files |
+| Phase 16 P04 | 2min | 2 tasks | 6 files |
 
 ## Accumulated Context
+
+### Decisions from 16-04
+
+- vi.mock('@dnd-kit/core') + vi.mock('@dnd-kit/sortable') required in QuizBuilderPage tests — dnd-kit uses browser pointer events (PointerEvent) unavailable in jsdom; passthrough JSX wrappers keep component tree intact
+- React import required in test files that use JSX in vi.mock() factory functions (for SortableContext/DndContext passthrough mocks)
+- bufferRef SSE accumulation: bufferRef.current = '' reset before startStream(), += in onToken callback, JSON.parse only after await resolves — same pattern as SlideOutlineWizard (STATE.md 14-05)
+- QuizBuilderPage feature set complete in 4 plans: settings (02), question CRUD + 4 types (03), reorder + AI generation + routing (04)
+- useSSEStream cancel() pre-existing test failure confirmed out of scope (STATE.md 15-04) — not introduced by 16-04
 
 ### Decisions from 16-03
 
