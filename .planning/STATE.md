@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: executing
-last_updated: "2026-05-09T23:09:36.411Z"
+last_updated: "2026-05-10T15:31:25.702Z"
 last_activity: 2026-05-10 — Completed 15-04 — AISuggestionsRail component + 7 tests GREEN + wired into CourseBuilderPage (AI-06)
 progress:
   total_phases: 10
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 38
-  completed_plans: 37
+  completed_plans: 38
 ---
 
 # State
 
 ## Current Position
 
-Phase: 15 (AI Generation Infrastructure) — IN PROGRESS (4/7 plans done)
-Last completed: 15-04 — AISuggestionsRail component with completeness nudges; 7 unit tests GREEN; wired into CourseBuilderPage right panel (AI-06)
-Status: Phase 15 in progress. 15-04 complete. Ready for 15-05.
-Last activity: 2026-05-10 — Completed 15-04 — AISuggestionsRail component + 7 tests GREEN + wired into CourseBuilderPage (AI-06)
+Phase: 15 (AI Generation Infrastructure) — COMPLETE (5/5 plans done)
+Last completed: 15-05 — Human verification of all Phase 15 AI infrastructure; all 6 browser checks approved; AI-01 through AI-07 verified end-to-end
+Status: Phase 15 COMPLETE. All AI generation infrastructure delivered and browser-verified. Ready for Phase 16.
+Last activity: 2026-05-10 — Completed 15-05 — All 6 browser checks approved, Phase 15 COMPLETE (AI-01 through AI-07)
 
 ## Project Reference
 
@@ -75,8 +75,14 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 15 P02 | 15min | 2 tasks | 3 files |
 | Phase 15 P03 | 33 | 2 tasks | 11 files |
 | Phase 15 P04 | 30min | 2 tasks | 3 files |
+| Phase 15 P05 | 5min | 2 tasks | 0 files |
 
 ## Accumulated Context
+
+### Decisions from 15-05
+
+- All 6 browser checks approved on first attempt — no rework required after human verification
+- Phase 15 COMPLETE: AI-01 through AI-07 all verified end-to-end in browser
 
 ### Decisions from 15-04
 
