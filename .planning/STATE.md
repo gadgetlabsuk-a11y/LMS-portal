@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: executing
-last_updated: "2026-05-10T15:31:25.702Z"
-last_activity: 2026-05-10 — Completed 15-04 — AISuggestionsRail component + 7 tests GREEN + wired into CourseBuilderPage (AI-06)
+last_updated: "2026-05-10T17:00:00.000Z"
+last_activity: 2026-05-10 — Completed 15-06 gap closure — SideDrawer wired into all generation surfaces; AI-02 verified; Phase 15 VERIFIED 7/7
 progress:
   total_phases: 10
   completed_phases: 7
-  total_plans: 38
-  completed_plans: 38
+  total_plans: 39
+  completed_plans: 39
 ---
 
 # State
 
 ## Current Position
 
-Phase: 15 (AI Generation Infrastructure) — COMPLETE (5/5 plans done)
-Last completed: 15-05 — Human verification of all Phase 15 AI infrastructure; all 6 browser checks approved; AI-01 through AI-07 verified end-to-end
-Status: Phase 15 COMPLETE. All AI generation infrastructure delivered and browser-verified. Ready for Phase 16.
-Last activity: 2026-05-10 — Completed 15-05 — All 6 browser checks approved, Phase 15 COMPLETE (AI-01 through AI-07)
+Phase: 15 (AI Generation Infrastructure) — VERIFIED ✅ (6 plans + 1 gap closure done, 7/7 requirements)
+Last completed: 15-06 — Gap closure: SideDrawer wired into NarrationTab, ModuleDetailPage, CourseIdentityModal; SlideOutlineWizard documented exception; re-verified 7/7
+Status: Phase 15 COMPLETE. All AI generation infrastructure delivered, verified, and gap-closed. Ready for Phase 16.
+Last activity: 2026-05-10 — Completed 15-06 — AI-02 gap closed, re-verification passed 7/7
 
 ## Project Reference
 
@@ -76,8 +76,17 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 15 P03 | 33 | 2 tasks | 11 files |
 | Phase 15 P04 | 30min | 2 tasks | 3 files |
 | Phase 15 P05 | 5min | 2 tasks | 0 files |
+| Phase 15 P06 (gap) | ~20min | 1 task | 6 files |
 
 ## Accumulated Context
+
+### Decisions from 15-06 (gap closure)
+
+- SideDrawer z-indices raised to z-[55]/z-[60] — Modal uses z-50; drawer must stack above it when triggered from within the modal
+- CourseIdentityModal: SideDrawers rendered OUTSIDE `<Modal>` wrapper (fragment pattern) to keep fixed-positioning stacking clean; each drawer has Apply button to commit streamed text to form field
+- NarrationTab: SideDrawer wraps StreamingTextOutput preview; streaming still writes to zustand store (narration script textarea gets live updates); drawer is a focused preview that doesn't duplicate the textarea
+- ModuleDetailPage: entire AI generation panel moved into SideDrawer; trigger button replaces inline panel; streaming still writes to description state so form field updates in real time
+- SlideOutlineWizard: architectural exception documented with explicit comment — wizard IS the generation surface, not a trigger for a drawer
 
 ### Decisions from 15-05
 
