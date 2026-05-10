@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: completed
-last_updated: "2026-05-10T22:09:00.000Z"
-last_activity: "2026-05-10 — Completed 17-06 (gap closure) — All 7 TTS tests pass under pytest-randomly seeds 12345 and 99999. conftest.py setup_test_db made idempotent with drop_all before create_all."
+last_updated: "2026-05-10T21:25:32.183Z"
+last_activity: 2026-05-10 — Completed 17-06 — conftest.py test fixture gap closure. All 7 TTS tests pass under pytest-randomly.
 progress:
   total_phases: 10
   completed_phases: 9
