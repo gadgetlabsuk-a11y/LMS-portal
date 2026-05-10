@@ -25,6 +25,7 @@ import { CourseBuilderPage } from '@/pages/creator/CourseBuilderPage'
 import { ModuleDetailPage } from '@/pages/creator/ModuleDetailPage'
 import { SlideBuilderPage } from '@/pages/creator/SlideBuilderPage'
 import { SlideEditorPage } from '@/pages/creator/SlideEditorPage'
+import { QuizBuilderPage } from '@/pages/creator/QuizBuilderPage'
 import { CreatorLearners } from '@/pages/creator/CreatorLearners'
 import { LearnerCatalogue } from '@/pages/learn/LearnerCatalogue'
 import { CourseDetail } from '@/pages/learn/CourseDetail'
@@ -162,6 +163,16 @@ export default function App() {
           <CreatorLayout>
             <ProtectedRoute creatorRoute>
               <SlideEditorPage />
+            </ProtectedRoute>
+          </CreatorLayout>
+        }
+      />
+      <Route
+        path="/creator/courses/:id/quizzes/:quizId"
+        element={
+          <CreatorLayout>
+            <ProtectedRoute creatorRoute>
+              <QuizBuilderPage />
             </ProtectedRoute>
           </CreatorLayout>
         }

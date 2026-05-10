@@ -84,20 +84,21 @@ export function CourseTreeRail({ courseId, modules, videos, quizzes }: CourseTre
             </div>
           ))}
 
-          {/* Quiz rows — non-draggable, Phase 16 will add full quiz builder nav */}
+          {/* Quiz rows — navigate to quiz builder */}
           {(quizzes[mod.id] || []).map((quiz) => (
             <div
               key={quiz.id}
               data-testid="tree-quiz-row"
+              onClick={() => navigate(`/creator/courses/${courseId}/quizzes/${quiz.id}`)}
               style={{
                 display: 'flex', alignItems: 'center', gap: '6px',
                 padding: '4px 8px 4px 20px', borderRadius: '4px',
-                marginTop: '2px', color: '#9ca3af', cursor: 'default',
+                marginTop: '2px', cursor: 'pointer',
               }}
             >
-              <span style={{ fontSize: '11px' }}>Quiz</span>
+              <span style={{ fontSize: '11px', color: '#6b7280' }}>Quiz</span>
               <span style={{
-                fontSize: '12px', color: '#6b7280',
+                fontSize: '12px', color: '#374151',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px',
               }}>
                 {quiz.title}

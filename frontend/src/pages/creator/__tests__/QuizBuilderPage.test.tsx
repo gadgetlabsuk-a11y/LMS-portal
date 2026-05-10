@@ -1,3 +1,4 @@
+import React from 'react'
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -24,6 +25,45 @@ vi.mock('@/services/api', () => ({
 
 vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({ user: { role: 'creator' }, isAuthenticated: true }),
+}))
+
+vi.mock('@/hooks/useSSEStream', () => ({
+  useSSEStream: () => ({
+    text: '',
+    isStreaming: false,
+    startStream: vi.fn(),
+    cancel: vi.fn(),
+    reset: vi.fn(),
+    setText: vi.fn(),
+  }),
+}))
+
+vi.mock('@dnd-kit/sortable', () => ({
+  SortableContext: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useSortable: () => ({
+    attributes: {},
+    listeners: {},
+    setNodeRef: vi.fn(),
+    transform: null,
+    transition: undefined,
+    isDragging: false,
+  }),
+  arrayMove: vi.fn((arr: unknown[], from: number, to: number) => {
+    const result = [...(arr as unknown[])]
+    const [removed] = result.splice(from, 1)
+    result.splice(to, 0, removed)
+    return result
+  }),
+  sortableKeyboardCoordinates: vi.fn(),
+  verticalListSortingStrategy: 'vertical',
+}))
+
+vi.mock('@dnd-kit/core', () => ({
+  DndContext: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  PointerSensor: class {},
+  KeyboardSensor: class {},
+  useSensor: vi.fn(),
+  useSensors: vi.fn(() => []),
 }))
 
 const renderPage = () =>
@@ -55,5 +95,15 @@ describe('QuizBuilderPage', () => {
   it('renders AI Generate Questions button', async () => {
     renderPage()
     expect(await screen.findByTestId('ai-generate-btn')).toBeDefined()
+  })
+
+  it('opens SideDrawer when AI Generate button is clicked', async () => {
+    renderPage()
+    await screen.findByTestId('ai-generate-btn')
+    // SideDrawer not shown yet (isOpen=false returns null per SideDrawer contract)
+    expect(screen.queryByTestId('side-drawer')).toBeNull()
+    screen.getByTestId('ai-generate-btn').click()
+    expect(await screen.findByTestId('side-drawer')).toBeDefined()
+    expect(screen.getByTestId('generate-questions-btn')).toBeDefined()
   })
 })
