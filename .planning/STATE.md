@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: executing
-last_updated: "2026-05-10T17:00:00.000Z"
-last_activity: 2026-05-10 — Completed 15-06 gap closure — SideDrawer wired into all generation surfaces; AI-02 verified; Phase 15 VERIFIED 7/7
+last_updated: "2026-05-10T16:12:00.000Z"
+last_activity: 2026-05-10 — Completed 16-01 — Wave 0 TDD stubs for QUIZ-01 through QUIZ-08
 progress:
   total_phases: 10
   completed_phases: 7
-  total_plans: 39
-  completed_plans: 39
+  total_plans: 44
+  completed_plans: 40
 ---
 
 # State
 
 ## Current Position
 
-Phase: 15 (AI Generation Infrastructure) — VERIFIED ✅ (6 plans + 1 gap closure done, 7/7 requirements)
-Last completed: 15-06 — Gap closure: SideDrawer wired into NarrationTab, ModuleDetailPage, CourseIdentityModal; SlideOutlineWizard documented exception; re-verified 7/7
-Status: Phase 15 COMPLETE. All AI generation infrastructure delivered, verified, and gap-closed. Ready for Phase 16.
-Last activity: 2026-05-10 — Completed 15-06 — AI-02 gap closed, re-verification passed 7/7
+Phase: 16 (Quiz Builder) — IN PROGRESS (1/5 plans done)
+Last completed: 16-01 — Wave 0 TDD stubs: test_quiz_phase16.py (8 pytest.fail stubs), QuizBuilderPage.test.tsx, QuestionForm.test.tsx
+Status: Phase 16 started. Wave 0 RED state confirmed for QUIZ-01 through QUIZ-08. Ready for 16-02.
+Last activity: 2026-05-10 — Completed 16-01 — Wave 0 TDD stubs for QUIZ-01 through QUIZ-08
 
 ## Project Reference
 
@@ -77,8 +77,15 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 15 P04 | 30min | 2 tasks | 3 files |
 | Phase 15 P05 | 5min | 2 tasks | 0 files |
 | Phase 15 P06 (gap) | ~20min | 1 task | 6 files |
+| Phase 16 P01 | 5min | 2 tasks | 3 files |
 
 ## Accumulated Context
+
+### Decisions from 16-01
+
+- creator_quiz fixture is file-local (NOT conftest.py) — consistent with creator_slide pattern from Phase 14; each phase owns its own chain fixtures
+- reset_sse_state autouse fixture included in test_quiz_phase16.py — QUIZ-08 tests SSE endpoint, prevents anyio cross-loop RuntimeError (established pattern from Phase 12 onward)
+- Frontend Wave 0 vitest failure is "Failed to resolve import" message (not "Cannot find module") — same semantic RED state, different vitest version wording
 
 ### Decisions from 15-06 (gap closure)
 

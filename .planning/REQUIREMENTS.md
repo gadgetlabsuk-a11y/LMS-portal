@@ -89,14 +89,14 @@
 
 ### Quiz Builder (QUIZ)
 
-- [ ] **QUIZ-01**: Creator can create a quiz linked to a module with pass score, max attempts, and feedback settings
-- [ ] **QUIZ-02**: Creator can add MCQ single-answer questions
-- [ ] **QUIZ-03**: Creator can add MCQ multi-answer questions
-- [ ] **QUIZ-04**: Creator can add true/false questions
-- [ ] **QUIZ-05**: Creator can add short answer questions
-- [ ] **QUIZ-06**: Creator can add explanation text to each question (shown to learner after answering)
-- [ ] **QUIZ-07**: Creator can reorder questions via drag-and-drop (atomic `order_index` update, no drift)
-- [ ] **QUIZ-08**: Creator can generate a batch of quiz questions via AI from module content (streaming)
+- [x] **QUIZ-01**: Creator can create a quiz linked to a module with pass score, max attempts, and feedback settings
+- [x] **QUIZ-02**: Creator can add MCQ single-answer questions
+- [x] **QUIZ-03**: Creator can add MCQ multi-answer questions
+- [x] **QUIZ-04**: Creator can add true/false questions
+- [x] **QUIZ-05**: Creator can add short answer questions
+- [x] **QUIZ-06**: Creator can add explanation text to each question (shown to learner after answering)
+- [x] **QUIZ-07**: Creator can reorder questions via drag-and-drop (atomic `order_index` update, no drift)
+- [x] **QUIZ-08**: Creator can generate a batch of quiz questions via AI from module content (streaming)
 
 ### Preview Mode (PREVIEW)
 
@@ -214,14 +214,14 @@ Explicitly excluded. Documented to prevent scope creep.
 | AI-05 | Phase 15 | Complete |
 | AI-06 | Phase 15 | Complete |
 | AI-07 | Phase 15 | Complete |
-| QUIZ-01 | Phase 16 | Pending |
-| QUIZ-02 | Phase 16 | Pending |
-| QUIZ-03 | Phase 16 | Pending |
-| QUIZ-04 | Phase 16 | Pending |
-| QUIZ-05 | Phase 16 | Pending |
-| QUIZ-06 | Phase 16 | Pending |
-| QUIZ-07 | Phase 16 | Pending |
-| QUIZ-08 | Phase 16 | Pending |
+| QUIZ-01 | Phase 16 | Complete |
+| QUIZ-02 | Phase 16 | Complete |
+| QUIZ-03 | Phase 16 | Complete |
+| QUIZ-04 | Phase 16 | Complete |
+| QUIZ-05 | Phase 16 | Complete |
+| QUIZ-06 | Phase 16 | Complete |
+| QUIZ-07 | Phase 16 | Complete |
+| QUIZ-08 | Phase 16 | Complete |
 | TTS-01 | Phase 17 | Pending |
 | TTS-02 | Phase 17 | Pending |
 | TTS-03 | Phase 17 | Pending |
