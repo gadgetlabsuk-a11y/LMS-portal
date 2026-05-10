@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react'
 import { api } from '@/services/api'
 import { useSlideEditorStore } from '@/store/slideEditorStore'
 import { useSSEStream } from '@/hooks/useSSEStream'
+import { SideDrawer } from '@/components/ai/SideDrawer'
+import { StreamingTextOutput } from '@/components/ai/StreamingTextOutput'
 
 interface Props {
   slideId: number
@@ -13,6 +15,7 @@ export function NarrationTab({ slideId, courseId }: Props) {
   const setNarration = useSlideEditorStore(s => s.setNarration)
   const [error, setError] = useState<string | null>(null)
   const [tonePreset, setTonePreset] = useState('professional')
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const { startStream, isStreaming: generating } = useSSEStream()
   const accumulatedRef = useRef('')
 
@@ -44,13 +47,43 @@ export function NarrationTab({ slideId, courseId }: Props) {
     })
   }
 
+  const handleOpenDrawer = () => {
+    setDrawerOpen(true)
+    handleGenerate()
+  }
+
   return (
     <div className="flex flex-col h-full p-3 gap-3">
+      <SideDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title="Generate Narration"
+      >
+        <div className="flex flex-col gap-3">
+          <StreamingTextOutput
+            text={narrationScript}
+            isStreaming={generating}
+            placeholder="AI narration will stream here..."
+          />
+          {!generating && (
+            <button
+              onClick={handleGenerate}
+              className="text-sm px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Regenerate
+            </button>
+          )}
+          <p className="text-xs text-gray-400">
+            Close this drawer to edit the narration script directly.
+          </p>
+        </div>
+      </SideDrawer>
+
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Narration Script</p>
         <button
           data-testid="generate-narration-btn"
-          onClick={handleGenerate}
+          onClick={handleOpenDrawer}
           disabled={generating}
           className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
         >

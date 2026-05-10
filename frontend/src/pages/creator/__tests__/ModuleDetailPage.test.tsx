@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { ModuleDetailPage } from '../ModuleDetailPage'
 
@@ -40,8 +40,12 @@ describe('ModuleDetailPage', () => {
     expect(screen.getByTestId('module-unlock-rule-select')).toBeInTheDocument()
   })
 
-  it('renders AI generate description button', () => {
+  it('renders AI generate description button inside SideDrawer', () => {
     renderPage()
+    // The generate button is inside the SideDrawer (hidden until opened)
+    // Open the drawer first by clicking the trigger
+    const triggerBtn = screen.getByRole('button', { name: /generate with ai/i })
+    fireEvent.click(triggerBtn)
     expect(screen.getByTestId('ai-generate-description-btn')).toBeInTheDocument()
   })
 })

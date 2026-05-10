@@ -21,15 +21,15 @@ export function SideDrawer({ isOpen, onClose, title, children }: SideDrawerProps
 
   return (
     <>
-      {/* Overlay backdrop */}
+      {/* Overlay backdrop — z-[55] to appear above Modal (z-50) */}
       <div
-        className="fixed inset-0 bg-black/40 z-40"
+        className="fixed inset-0 bg-black/40 z-[55]"
         onClick={onClose}
         data-testid="side-drawer-overlay"
       />
-      {/* Drawer panel */}
+      {/* Drawer panel — z-[60] to appear above Modal (z-50) */}
       <div
-        className="fixed right-0 top-0 h-full w-96 bg-white shadow-xl z-50 flex flex-col"
+        className="fixed right-0 top-0 h-full w-96 bg-white shadow-xl z-[60] flex flex-col"
         data-testid="side-drawer"
       >
         <div className="flex items-center justify-between p-4 border-b">

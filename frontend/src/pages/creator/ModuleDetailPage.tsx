@@ -6,6 +6,8 @@ import { Textarea } from '@/components/common/Textarea'
 import { Select } from '@/components/common/Select'
 import { Button } from '@/components/common/Button'
 import { useSSEStream } from '@/hooks/useSSEStream'
+import { SideDrawer } from '@/components/ai/SideDrawer'
+import { StreamingTextOutput } from '@/components/ai/StreamingTextOutput'
 
 interface ModuleData {
   id: number
@@ -47,6 +49,7 @@ export function ModuleDetailPage() {
   const [aiPrompt, setAiPrompt] = useState('')
   const [docFile, setDocFile] = useState<File | null>(null)
   const [tonePreset, setTonePreset] = useState('professional')
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false)
   const { startStream, cancel, isStreaming: streaming } = useSSEStream()
 
   useEffect(() => {
@@ -198,19 +201,31 @@ export function ModuleDetailPage() {
             rows={4}
           />
 
-          {/* AI generation panel */}
-          <div style={{ marginTop: '10px', padding: '14px', background: '#f9fafb',
-            border: '1px solid #e5e7eb', borderRadius: '8px' }}>
-            <p style={{ fontSize: '12px', fontWeight: 600, color: '#374151', marginBottom: '8px' }}>
+          {/* AI generation trigger */}
+          <div style={{ marginTop: '8px' }}>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setAiDrawerOpen(true)}
+            >
               Generate with AI
-            </p>
-            <Textarea
-              value={aiPrompt}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setAiPrompt(e.target.value)}
-              placeholder="Describe the module topic for AI to write the description..."
-              rows={2}
-            />
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '8px' }}>
+            </Button>
+          </div>
+
+          {/* AI generation SideDrawer */}
+          <SideDrawer
+            isOpen={aiDrawerOpen}
+            onClose={() => { cancel(); setAiDrawerOpen(false) }}
+            title="Generate Description"
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <Textarea
+                value={aiPrompt}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setAiPrompt(e.target.value)}
+                placeholder="Describe the module topic for AI to write the description..."
+                rows={3}
+              />
               <input
                 type="file"
                 accept=".pdf,.docx"
@@ -218,26 +233,43 @@ export function ModuleDetailPage() {
                 style={{ fontSize: '12px', color: '#6b7280' }}
                 title="Optional: upload a document for context"
               />
-              <Button
-                type="button"
-                data-testid="ai-generate-description-btn"
-                onClick={handleGenerateDescription}
-                disabled={streaming || !aiPrompt.trim()}
-              >
-                {streaming ? 'Generating...' : 'Generate description'}
-              </Button>
-              {streaming && (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <Button
+                  type="button"
+                  data-testid="ai-generate-description-btn"
+                  onClick={handleGenerateDescription}
+                  disabled={streaming || !aiPrompt.trim()}
+                >
+                  {streaming ? 'Generating...' : 'Generate description'}
+                </Button>
+                {streaming && (
+                  <button
+                    type="button"
+                    onClick={() => cancel()}
+                    style={{ fontSize: '12px', color: '#ef4444', background: 'none',
+                      border: 'none', cursor: 'pointer' }}
+                  >
+                    Stop
+                  </button>
+                )}
+              </div>
+              <StreamingTextOutput
+                text={description}
+                isStreaming={streaming}
+                placeholder="Generated description will appear here (and update the field above)..."
+              />
+              {!streaming && description && (
                 <button
                   type="button"
-                  onClick={() => cancel()}
-                  style={{ fontSize: '12px', color: '#ef4444', background: 'none',
-                    border: 'none', cursor: 'pointer' }}
+                  onClick={() => setAiDrawerOpen(false)}
+                  style={{ fontSize: '13px', color: '#2563eb', background: 'none',
+                    border: 'none', cursor: 'pointer', textAlign: 'left' }}
                 >
-                  Stop
+                  ✓ Description applied — close drawer
                 </button>
               )}
             </div>
-          </div>
+          </SideDrawer>
         </div>
 
         {/* Learning Objectives (UI label: "Learning Outcome", API field: learning_objectives) */}

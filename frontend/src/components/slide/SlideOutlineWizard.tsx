@@ -1,3 +1,7 @@
+// AI-02 architectural exception: SlideOutlineWizard IS the generation surface —
+// a multi-step wizard overlay. It does not use SideDrawer because the wizard
+// itself provides the structured UI for document upload, prompt editing,
+// step navigation, and streamed JSON output parsing.
 import React, { useState, useRef } from 'react'
 import { api } from '@/services/api'
 import { useSSEStream } from '@/hooks/useSSEStream'

@@ -6,6 +6,8 @@ import { Select } from '@/components/common/Select'
 import { Textarea } from '@/components/common/Textarea'
 import { api } from '@/services/api'
 import { useSSEStream } from '@/hooks/useSSEStream'
+import { SideDrawer } from '@/components/ai/SideDrawer'
+import { StreamingTextOutput } from '@/components/ai/StreamingTextOutput'
 
 interface CourseIdentityModalProps {
   open: boolean
@@ -33,6 +35,10 @@ export function CourseIdentityModal({ open, onClose, onCreated }: CourseIdentity
   const [tonePreset, setTonePreset] = useState('')
   const [objectives, setObjectives] = useState<string[]>([''])
   const [saving, setSaving] = useState(false)
+  const [descDrawerOpen, setDescDrawerOpen] = useState(false)
+  const [objDrawerOpen, setObjDrawerOpen] = useState(false)
+  const [drawerDescPreview, setDrawerDescPreview] = useState('')
+  const [drawerObjPreview, setDrawerObjPreview] = useState('')
 
   const { startStream: startDescStream, cancel: cancelDesc, isStreaming: isStreamingDescription } = useSSEStream()
   const { startStream: startObjStream, cancel: cancelObj, isStreaming: isStreamingObjectives } = useSSEStream()
@@ -43,6 +49,10 @@ export function CourseIdentityModal({ open, onClose, onCreated }: CourseIdentity
     setAudienceLevel('')
     setTonePreset('')
     setObjectives([''])
+    setDrawerDescPreview('')
+    setDrawerObjPreview('')
+    setDescDrawerOpen(false)
+    setObjDrawerOpen(false)
     cancelDesc()
     cancelObj()
   }
@@ -67,15 +77,23 @@ export function CourseIdentityModal({ open, onClose, onCreated }: CourseIdentity
   }
 
   const streamDescription = async () => {
-    setDescription('')
+    setDrawerDescPreview('')
+    setDescDrawerOpen(true)
     await startDescStream({
       url: '/api/courses/ai/generate-description',
       body: { topic: title, tone_preset: tonePreset || 'professional' },
-      onToken: t => setDescription(prev => prev + t),
+      onToken: t => setDrawerDescPreview(prev => prev + t),
     })
   }
 
+  const applyDescription = () => {
+    setDescription(drawerDescPreview)
+    setDescDrawerOpen(false)
+  }
+
   const streamObjectives = async () => {
+    setDrawerObjPreview('')
+    setObjDrawerOpen(true)
     let accumulated = ''
     await startObjStream({
       url: '/api/courses/ai/generate-objectives',
@@ -84,10 +102,15 @@ export function CourseIdentityModal({ open, onClose, onCreated }: CourseIdentity
         description,
         tone_preset: tonePreset || 'professional',
       },
-      onToken: t => { accumulated += t },
+      onToken: t => {
+        accumulated += t
+        setDrawerObjPreview(prev => prev + t)
+      },
     })
-    // Parse accumulated text into objectives — lines starting with "- "
-    const parsed = accumulated
+  }
+
+  const applyObjectives = () => {
+    const parsed = drawerObjPreview
       .split('\n')
       .filter(l => l.trim().startsWith('- '))
       .map(l => l.trim().slice(2).trim())
@@ -95,6 +118,7 @@ export function CourseIdentityModal({ open, onClose, onCreated }: CourseIdentity
     if (parsed.length > 0) {
       setObjectives(parsed)
     }
+    setObjDrawerOpen(false)
   }
 
   const handleSave = async () => {
@@ -122,6 +146,53 @@ export function CourseIdentityModal({ open, onClose, onCreated }: CourseIdentity
   const isStreaming = isStreamingDescription || isStreamingObjectives
 
   return (
+    <>
+    {/* Description generation SideDrawer — z-[60] appears above Modal z-50 */}
+    <SideDrawer
+      isOpen={descDrawerOpen}
+      onClose={() => { cancelDesc(); setDescDrawerOpen(false) }}
+      title="Generate Description"
+    >
+      <div className="flex flex-col gap-3">
+        <StreamingTextOutput
+          text={drawerDescPreview}
+          isStreaming={isStreamingDescription}
+          placeholder="AI-generated description will stream here..."
+        />
+        {!isStreamingDescription && drawerDescPreview && (
+          <button
+            onClick={applyDescription}
+            className="text-sm px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Apply to description
+          </button>
+        )}
+      </div>
+    </SideDrawer>
+
+    {/* Objectives generation SideDrawer */}
+    <SideDrawer
+      isOpen={objDrawerOpen}
+      onClose={() => { cancelObj(); setObjDrawerOpen(false) }}
+      title="Generate Objectives"
+    >
+      <div className="flex flex-col gap-3">
+        <StreamingTextOutput
+          text={drawerObjPreview}
+          isStreaming={isStreamingObjectives}
+          placeholder="AI-generated objectives will stream here..."
+        />
+        {!isStreamingObjectives && drawerObjPreview && (
+          <button
+            onClick={applyObjectives}
+            className="text-sm px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Apply objectives
+          </button>
+        )}
+      </div>
+    </SideDrawer>
+
     <Modal open={open} onClose={handleClose} title="Create New Course" size="lg">
       <div style={{ maxHeight: '70vh', overflowY: 'auto', paddingRight: '4px' }}>
         {/* Title */}
@@ -236,5 +307,6 @@ export function CourseIdentityModal({ open, onClose, onCreated }: CourseIdentity
         </Button>
       </div>
     </Modal>
+    </>
   )
 }
