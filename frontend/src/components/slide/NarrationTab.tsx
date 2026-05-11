@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { api, API_BASE } from '@/services/api'
 import { useSlideEditorStore } from '@/store/slideEditorStore'
 import { useSSEStream } from '@/hooks/useSSEStream'

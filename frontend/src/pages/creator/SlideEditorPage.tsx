@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useBlocker } from 'react-router-dom'
 import { api } from '@/services/api'
 import { useSlideEditorStore } from '@/store/slideEditorStore'
@@ -113,7 +113,7 @@ export function SlideEditorPage() {
         <div className="flex items-center gap-2">
           <button
             data-testid="undo-btn"
-            onClick={undo}
+            onClick={() => undo()}
             disabled={pastStates.length === 0}
             className="px-2 py-1 text-sm border rounded disabled:opacity-40"
             title="Undo (Cmd+Z)"
@@ -122,7 +122,7 @@ export function SlideEditorPage() {
           </button>
           <button
             data-testid="redo-btn"
-            onClick={redo}
+            onClick={() => redo()}
             disabled={futureStates.length === 0}
             className="px-2 py-1 text-sm border rounded disabled:opacity-40"
             title="Redo (Cmd+Shift+Z)"

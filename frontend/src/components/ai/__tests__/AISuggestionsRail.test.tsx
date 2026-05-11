@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import { AISuggestionsRail } from '../AISuggestionsRail'
-import type { BuilderModule, BuilderVideo, BuilderQuiz } from '@/components/builder/types'
+import type { BuilderModule } from '@/components/builder/types'
 
 const makeModule = (overrides: Partial<BuilderModule> = {}): BuilderModule => ({
   id: 1,
