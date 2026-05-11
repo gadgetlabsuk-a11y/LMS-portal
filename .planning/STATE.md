@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
 status: executing
-last_updated: "2026-05-10T23:57:22.405Z"
-last_activity: 2026-05-11 — Completed 18-03 — CoursePreviewPage frontend. PREVIEW-01/02/03 all GREEN.
+last_updated: "2026-05-11T01:03:00Z"
+last_activity: 2026-05-11 — Completed 18-04 — Publish flow frontend. PUBLISH-01/02/03/04/05/06/08 all wired.
 progress:
   total_phases: 10
   completed_phases: 9
   total_plans: 55
-  completed_plans: 53
+  completed_plans: 54
 ---
 
 # State
 
 ## Current Position
 
-Phase: 18 (Preview and Publish) — IN PROGRESS (3/5 plans done)
-Last completed: 18-03 — CoursePreviewPage frontend. PREVIEW-01/02/03 all GREEN.
-Status: Phase 18 IN PROGRESS. Plan 18-03 done. Next: Phase 18 Plan 04 (publish flow frontend).
-Last activity: 2026-05-11 — Completed 18-03 — CoursePreviewPage frontend. PREVIEW-01/02/03 all GREEN.
+Phase: 18 (Preview and Publish) — IN PROGRESS (4/5 plans done)
+Last completed: 18-04 — Publish flow frontend. PUBLISH-01/02/03/04/05/06/08 all wired.
+Status: Phase 18 IN PROGRESS. Plan 18-04 done. Next: Phase 18 Plan 05 (browser verification).
+Last activity: 2026-05-11 — Completed 18-04 — Publish flow frontend. PUBLISH-01/02/03/04/05/06/08 all wired.
 
 ## Project Reference
 
@@ -93,8 +93,16 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 18 P01 | ~6 min | 2 tasks | 2 files |
 | Phase 18 P02 | 36min | 2 tasks | 10 files |
 | Phase 18 P03 | ~33min | 2 tasks | 5 files |
+| Phase 18 P04 | 5 | 2 tasks | 5 files |
 
 ## Accumulated Context
+
+### Decisions from 18-04
+
+- `api.get` returns `Promise<Response>` not `Promise<{ data: T }>` — PreflightModal uses `.json()` to parse response; plan's interface docs were incorrect (Rule 1 auto-fix)
+- `PublishConfirmModal` is a nested `<Modal>` inside `PreflightModal` — no separate standalone component needed; thin placeholder file exists for future extraction
+- Course status fetched from `GET /api/courses/:id` on mount in `CourseBuilderPage`; `archive-btn` visibility gated on `courseStatus === 'published' || courseStatus === 'has_unpublished_changes'`
+- CourseBuilderPage test mock updated with extra `mockResolvedValueOnce` for new course-status fetch (first `api.get` call now is course detail)
 
 ### Decisions from 18-03
 
