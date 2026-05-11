@@ -34,8 +34,10 @@ describe('CourseBuilderPage', () => {
   })
 
   it('renders status pill for each module', async () => {
-    // Return one module from /courses/1/modules; empty arrays for videos and quizzes
+    // First call: GET /courses/1 (course status). Second call: GET /courses/1/modules.
+    // Remaining calls: videos and quizzes for each module.
     mockGet
+      .mockResolvedValueOnce({ json: async () => ({ status: 'draft' }) })
       .mockResolvedValueOnce({
         json: async () => [{ id: 1, course_id: 1, order_index: 0, title: 'Intro', status: 'draft' }],
       })
@@ -54,5 +56,11 @@ describe('CourseBuilderPage', () => {
     mockGet.mockResolvedValue({ json: async () => [] })
     renderPage()
     expect(await screen.findByTestId('preview-mode-btn')).toBeInTheDocument()
+  })
+
+  it('renders publish button (PUBLISH-01)', async () => {
+    mockGet.mockResolvedValue({ json: async () => [] })
+    renderPage()
+    expect(await screen.findByTestId('publish-btn')).toBeInTheDocument()
   })
 })

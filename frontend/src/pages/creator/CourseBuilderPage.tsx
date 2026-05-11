@@ -4,6 +4,7 @@ import { api } from '@/services/api'
 import { CourseTreeRail } from '@/components/builder/CourseTreeRail'
 import { ModuleOverviewList } from '@/components/builder/ModuleOverviewList'
 import { AISuggestionsRail } from '@/components/ai/AISuggestionsRail'
+import { PreflightModal } from '@/components/publish/PreflightModal'
 import type { BuilderModule as Module, BuilderVideo as Video, BuilderQuiz as Quiz } from '@/components/builder/types'
 
 export function CourseBuilderPage() {
@@ -13,11 +14,18 @@ export function CourseBuilderPage() {
   const [videos, setVideos] = useState<Record<number, Video[]>>({})
   const [quizzes, setQuizzes] = useState<Record<number, Quiz[]>>({})
   const [loading, setLoading] = useState(true)
+  const [showPreflight, setShowPreflight] = useState(false)
+  const [courseStatus, setCourseStatus] = useState<string>('draft')
 
   useEffect(() => {
     if (!id) return
     const fetchTree = async () => {
       try {
+        // Fetch course status
+        const courseRes = await api.get(`/courses/${id}`)
+        const courseData = await courseRes.json()
+        setCourseStatus(courseData.status ?? 'draft')
+
         const modsRes = await api.get(`/courses/${id}/modules`)
         const mods: Module[] = await modsRes.json()
         setModules(mods)
@@ -50,6 +58,12 @@ export function CourseBuilderPage() {
     navigate(
       `/creator/courses/${id}/preview?returnTo=${encodeURIComponent(`/creator/courses/${id}/builder`)}`
     )
+  }
+
+  const handleArchive = async () => {
+    if (!confirm('Archive this course? It will no longer appear in the learner catalogue.')) return
+    await api.post(`/courses/${id}/archive`, {})
+    setCourseStatus('archived')
   }
 
   const handleModulesReorder = (reordered: Module[]) => {
@@ -86,22 +100,58 @@ export function CourseBuilderPage() {
           }}>
             Course Builder
           </h1>
-          <button
-            data-testid="preview-mode-btn"
-            onClick={handlePreview}
-            style={{
-              padding: '6px 14px',
-              background: '#f59e0b',
-              color: 'white',
-              borderRadius: '4px',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-            }}
-          >
-            Preview
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              data-testid="preview-mode-btn"
+              onClick={handlePreview}
+              style={{
+                padding: '6px 14px',
+                background: '#f59e0b',
+                color: 'white',
+                borderRadius: '4px',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+              }}
+            >
+              Preview
+            </button>
+            <button
+              data-testid="publish-btn"
+              onClick={() => setShowPreflight(true)}
+              style={{
+                padding: '6px 14px',
+                background: '#3b82f6',
+                color: 'white',
+                borderRadius: '4px',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+              }}
+            >
+              Publish
+            </button>
+            {(courseStatus === 'published' || courseStatus === 'has_unpublished_changes') && (
+              <button
+                data-testid="archive-btn"
+                onClick={handleArchive}
+                style={{
+                  padding: '6px 14px',
+                  background: '#6b7280',
+                  color: 'white',
+                  borderRadius: '4px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                }}
+              >
+                Archive
+              </button>
+            )}
+          </div>
         </div>
         <ModuleOverviewList
           courseId={Number(id)}
@@ -115,6 +165,12 @@ export function CourseBuilderPage() {
       <div style={{ width: '256px', flexShrink: 0, overflowY: 'auto', borderLeft: '1px solid #e5e7eb' }}>
         <AISuggestionsRail modules={modules} videos={videos} quizzes={quizzes} />
       </div>
+      <PreflightModal
+        open={showPreflight}
+        courseId={Number(id)}
+        onClose={() => setShowPreflight(false)}
+        onPublished={() => { setCourseStatus('published'); setShowPreflight(false) }}
+      />
     </div>
   )
 }
