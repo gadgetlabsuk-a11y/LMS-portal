@@ -37,7 +37,7 @@ Phases 1–8 were tracked manually before GSD was adopted. What shipped:
 - [x] **Phase 15: AI Generation Infrastructure** — SSE streaming infrastructure, reusable AI drawer, document ingestion pipeline, AI suggestions rail (completed 2026-05-10)
 - [x] **Phase 16: Quiz Builder** — Quiz creation with MCQ/true-false/short-answer questions, drag-to-reorder, AI question generation
 - [x] **Phase 17: TTS & Narration** — ElevenLabs narration audio generation (per-slide and bulk) with rate limiting and script-hash caching (completed 2026-05-10)
-- [ ] **Phase 18: Preview & Publish** — Full-course preview in learner view, pre-flight publish checklist, version history, archive
+- [x] **Phase 18: Preview & Publish** — Full-course preview in learner view, pre-flight publish checklist, version history, archive (completed 2026-05-11)
 
 ## Phase Details
 
@@ -245,4 +245,4 @@ Plans:
 | 15. AI Generation Infrastructure | 5/5 | Complete   | 2026-05-10 | - |
 | 16. Quiz Builder | 4/5 | Complete    | 2026-05-10 | - |
 | 17. TTS & Narration | 6/6 | Complete    | 2026-05-10 | - |
-| 18. Preview & Publish | 4/5 | In Progress|  | - |
+| 18. Preview & Publish | 5/5 | Complete   | 2026-05-11 | - |

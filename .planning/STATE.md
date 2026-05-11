@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: AI Course Builder
-status: executing
-last_updated: "2026-05-11T01:03:00Z"
-last_activity: 2026-05-11 — Completed 18-04 — Publish flow frontend. PUBLISH-01/02/03/04/05/06/08 all wired.
+status: complete
+last_updated: "2026-05-11T20:02:38.292Z"
+last_activity: 2026-05-11 — Completed 18-05 — Human verification passed. All 10 browser checks approved. Phase 18 COMPLETE. Milestone v1.0 AI Course Builder DONE.
 progress:
   total_phases: 10
-  completed_phases: 9
+  completed_phases: 10
   total_plans: 55
-  completed_plans: 54
+  completed_plans: 55
 ---
 
 # State
 
 ## Current Position
 
-Phase: 18 (Preview and Publish) — IN PROGRESS (4/5 plans done)
-Last completed: 18-04 — Publish flow frontend. PUBLISH-01/02/03/04/05/06/08 all wired.
-Status: Phase 18 IN PROGRESS. Plan 18-04 done. Next: Phase 18 Plan 05 (browser verification).
-Last activity: 2026-05-11 — Completed 18-04 — Publish flow frontend. PUBLISH-01/02/03/04/05/06/08 all wired.
+Phase: 18 (Preview and Publish) — COMPLETE (5/5 plans done)
+Last completed: 18-05 — Human verification passed. All 10 browser checks approved (PREVIEW-01 through PUBLISH-08).
+Status: MILESTONE v1.0 AI Course Builder COMPLETE. All 55 plans across 10 phases delivered and verified.
+Last activity: 2026-05-11 — Completed 18-05 — Human verification passed. Phase 18 COMPLETE. Milestone v1.0 AI Course Builder DONE.
 
 ## Project Reference
 
@@ -94,8 +94,15 @@ See: .planning/PROJECT.md (updated 2026-05-08)
 | Phase 18 P02 | 36min | 2 tasks | 10 files |
 | Phase 18 P03 | ~33min | 2 tasks | 5 files |
 | Phase 18 P04 | 5 | 2 tasks | 5 files |
+| Phase 18 P05 | 5min | 1 tasks | 0 files |
 
 ## Accumulated Context
+
+### Decisions from 18-05
+
+- All 10 browser checks approved on first attempt — no rework required after human verification
+- Phase 18 COMPLETE: PREVIEW-01 through PUBLISH-08 all verified end-to-end in browser with live data
+- Milestone v1.0 AI Course Builder is DONE — all 75 requirements across Phases 9-18 delivered and verified
 
 ### Decisions from 18-04
 
