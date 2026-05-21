@@ -5,6 +5,7 @@ import { useToast } from '@/context/ToastContext'
 import { Button } from '@/components/common/Button'
 import { Input } from '@/components/common/Input'
 import { Card } from '@/components/common/Card'
+import stadlerLogo from '@/assets/stadler-logo.png'
 
 const API_BASE = import.meta.env.PROD ? '/lms' : ''
 
@@ -18,6 +19,7 @@ interface BrandConfig {
   font_family?: string
   heading_font?: string
   border_radius?: number
+  logo_url?: string
 }
 
 export const LoginPage = () => {
@@ -27,7 +29,7 @@ export const LoginPage = () => {
   const [requiresMfa, setRequiresMfa] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  const [brandConfig, setBrandConfig] = useState<BrandConfig>({ brand_name: 'LMS Course Builder' })
+  const [brandConfig, setBrandConfig] = useState<BrandConfig>({ brand_name: 'SRSUK Learning Portal' })
   const navigate = useNavigate()
   const { login } = useAuth()
   const { showToast } = useToast()
@@ -83,80 +85,98 @@ export const LoginPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg)' }}>
-      <Card className="w-full max-w-md">
-        <div className="p-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text)' }}>
-              {brandConfig.brand_name}
-            </h1>
-            <p className="text-gray-600">Admin Portal</p>
-          </div>
+    <div className="min-h-screen flex flex-col md:flex-row">
+      {/* Brand panel */}
+      <div className="bg-brand-gradient text-white md:w-1/2 flex flex-col justify-center items-start p-10 md:p-16">
+        <img
+          src={brandConfig.logo_url || stadlerLogo}
+          alt={brandConfig.brand_name}
+          className="h-10 w-auto mb-8"
+          style={brandConfig.logo_url ? undefined : { filter: 'brightness(0) invert(1)' }}
+        />
+        <h1 className="text-3xl md:text-4xl font-bold uppercase tracking-wide">
+          {brandConfig.brand_name}
+        </h1>
+        <div className="w-16 h-1 bg-brand-accent my-5" />
+        <p className="text-white/80 max-w-sm">
+          People Manager training and learning, aligned to the Stadler corporate standard.
+        </p>
+      </div>
 
-          <form onSubmit={handleLogin}>
-            {!requiresMfa ? (
-              <>
+      {/* Sign-in panel */}
+      <div className="md:w-1/2 flex items-center justify-center p-6 bg-brand-surface">
+        <Card className="w-full max-w-md">
+          <div className="p-8">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold mb-2 text-brand-dark">Sign in</h2>
+              <p className="text-gray-600">Welcome back. Please enter your details.</p>
+            </div>
+
+            <form onSubmit={handleLogin}>
+              {!requiresMfa ? (
+                <>
+                  <Input
+                    type="text"
+                    label="Username"
+                    placeholder="Enter your username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                  />
+                  <Input
+                    type="password"
+                    label="Password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </>
+              ) : (
                 <Input
                   type="text"
-                  label="Username"
-                  placeholder="Enter your username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  label="MFA Code"
+                  placeholder="Enter 6-digit code"
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  maxLength={6}
                   required
                 />
-                <Input
-                  type="password"
-                  label="Password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </>
-            ) : (
-              <Input
-                type="text"
-                label="MFA Code"
-                placeholder="Enter 6-digit code"
-                value={mfaCode}
-                onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                maxLength={6}
-                required
-              />
-            )}
+              )}
 
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-                {error}
-              </div>
-            )}
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+                  {error}
+                </div>
+              )}
 
-            <Button
-              type="submit"
-              fullWidth
-              disabled={isLoading}
-            >
-              {isLoading ? '⏳ Processing...' : (requiresMfa ? 'Verify MFA' : 'Sign In')}
-            </Button>
-
-            {requiresMfa && (
               <Button
-                type="button"
-                variant="ghost"
+                type="submit"
                 fullWidth
-                onClick={() => {
-                  setRequiresMfa(false)
-                  setMfaCode('')
-                  setPassword('')
-                }}
-                className="mt-2"
+                disabled={isLoading}
               >
-                Back to Login
+                {isLoading ? '⏳ Processing...' : (requiresMfa ? 'Verify MFA' : 'Sign In')}
               </Button>
-            )}
-          </form>
-        </div>
-      </Card>
+
+              {requiresMfa && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  fullWidth
+                  onClick={() => {
+                    setRequiresMfa(false)
+                    setMfaCode('')
+                    setPassword('')
+                  }}
+                  className="mt-2"
+                >
+                  Back to Login
+                </Button>
+              )}
+            </form>
+          </div>
+        </Card>
+      </div>
     </div>
   )
 }
