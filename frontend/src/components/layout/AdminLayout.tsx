@@ -1,6 +1,7 @@
 import { ReactNode, useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
+import stadlerLogo from '@/assets/stadler-logo.png'
 
 const API_BASE = import.meta.env.PROD ? '/lms' : ''
 
@@ -24,7 +25,8 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
   const location = useLocation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [brandName, setBrandName] = useState('LMS Course Builder')
+  const [brandName, setBrandName] = useState('Stadler')
+  const [logoUrl, setLogoUrl] = useState('')
 
   useEffect(() => {
     const fetchBrandConfig = async () => {
@@ -32,7 +34,8 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
         const res = await fetch(API_BASE + '/api/whitelabel/preview')
         if (res.ok) {
           const data = await res.json()
-          setBrandName(data.brand_name || 'LMS Course Builder')
+          setBrandName(data.brand_name || 'Stadler')
+          setLogoUrl(data.logo_url || '')
         }
       } catch (err) {
         console.error('Failed to fetch brand config:', err)
@@ -49,11 +52,23 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gray-900 text-white transition-all duration-200 flex flex-col`}>
-        <div className="p-4 border-b border-gray-700">
-          <h1 className={`font-bold ${sidebarOpen ? 'text-lg' : 'text-xs text-center'}`}>
-            {sidebarOpen ? brandName : '◉'}
-          </h1>
+      <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-brand-dark text-white transition-all duration-200 flex flex-col`}>
+        <div className="p-4 border-b border-white/15 flex items-center justify-center h-16">
+          {sidebarOpen ? (
+            <img
+              src={logoUrl || stadlerLogo}
+              alt={brandName}
+              className="h-7 w-auto max-w-full object-contain"
+              style={logoUrl ? undefined : { filter: 'brightness(0) invert(1)' }}
+            />
+          ) : (
+            <img
+              src={logoUrl || stadlerLogo}
+              alt={brandName}
+              className="h-6 w-6 object-contain object-left"
+              style={logoUrl ? undefined : { filter: 'brightness(0) invert(1)' }}
+            />
+          )}
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
@@ -61,7 +76,7 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
-              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition ${location.pathname === item.path ? 'bg-blue-600' : 'hover:bg-gray-800'}`}
+              className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg border-l-4 transition ${location.pathname === item.path ? 'bg-blue-600 border-brand-accent' : 'border-transparent hover:bg-white/10'}`}
             >
               <span className="text-xl">{item.icon}</span>
               {sidebarOpen && <span>{item.label}</span>}
@@ -72,7 +87,7 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
         <div className="p-4 border-t border-gray-700 space-y-2">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-full flex items-center justify-center px-3 py-2 rounded-lg hover:bg-gray-800 transition text-sm"
+            className="w-full flex items-center justify-center px-3 py-2 rounded-lg hover:bg-white/10 transition text-sm"
           >
             {sidebarOpen ? '◀' : '▶'}
           </button>
@@ -81,7 +96,7 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
               logout()
               navigate('/login')
             }}
-            className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-800 transition text-red-400"
+            className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-white/10 transition text-red-400"
           >
             <span className="text-xl">🚪</span>
             {sidebarOpen && <span>Logout</span>}
@@ -93,7 +108,7 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
       <div className="flex-1 flex flex-col">
         {/* Top Bar */}
         <div className="bg-white border-b border-gray-200 p-4 flex justify-between items-center shadow-sm">
-          <h2 className="text-2xl font-bold">{getPageTitle()}</h2>
+          <h2 className="text-2xl font-bold text-brand-dark border-b-2 border-brand-accent pb-1">{getPageTitle()}</h2>
           <div className="flex items-center space-x-4">
             {user && (
               <div className="flex items-center space-x-2">
