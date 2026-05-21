@@ -3,13 +3,13 @@
 @tailwind utilities;
 
 :root {
-  --primary: #2563eb;
-  --secondary: #7c3aed;
-  --accent: #f59e0b;
-  --bg: #f8fafc;
-  --text: #1e293b;
-  --font-family: 'Inter', sans-serif;
-  --heading-font: 'Inter', sans-serif;
+  --primary: #1E5A9A;
+  --secondary: #0B3F75;
+  --accent: #FFBD00;
+  --bg: #F0F7FE;
+  --text: #0B3F75;
+  --font-family: 'Arial', 'Helvetica', sans-serif;
+  --heading-font: 'Arial', 'Helvetica', sans-serif;
   --border-radius: 8px;
 }
 
