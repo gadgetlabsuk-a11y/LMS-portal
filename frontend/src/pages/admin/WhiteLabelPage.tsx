@@ -23,14 +23,14 @@ interface WhiteLabelConfig {
 }
 
 const DEFAULT_CONFIG: WhiteLabelConfig = {
-  brand_name: 'LMS Course Builder',
-  primary_color: '#2563eb',
-  secondary_color: '#7c3aed',
-  accent_color: '#f59e0b',
-  bg_color: '#f8fafc',
-  text_color: '#1e293b',
-  font_family: 'Inter',
-  heading_font: 'Inter',
+  brand_name: 'SRSUK Learning Portal',
+  primary_color: '#1E5A9A',
+  secondary_color: '#0B3F75',
+  accent_color: '#FFBD00',
+  bg_color: '#F0F7FE',
+  text_color: '#0B3F75',
+  font_family: 'Arial',
+  heading_font: 'Arial',
   border_radius: 8,
   custom_css: '',
   logo_url: '',
@@ -234,6 +234,7 @@ export const WhiteLabelPage = () => {
             value={config.font_family}
             onChange={(e) => setConfig({ ...config, font_family: e.target.value })}
             options={[
+              { value: 'Arial', label: 'Arial (Stadler)' },
               { value: 'Inter', label: 'Inter' },
               { value: 'Roboto', label: 'Roboto' },
               { value: 'Open Sans', label: 'Open Sans' },
@@ -248,6 +249,7 @@ export const WhiteLabelPage = () => {
             value={config.heading_font}
             onChange={(e) => setConfig({ ...config, heading_font: e.target.value })}
             options={[
+              { value: 'Arial', label: 'Arial (Stadler)' },
               { value: 'Inter', label: 'Inter' },
               { value: 'Roboto', label: 'Roboto' },
               { value: 'Open Sans', label: 'Open Sans' },
