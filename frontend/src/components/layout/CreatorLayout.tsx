@@ -68,7 +68,7 @@ export const CreatorLayout = ({ children }: { children: ReactNode }) => {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-gray-700 space-y-2">
+        <div className="p-4 border-t border-white/15 space-y-2">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="w-full flex items-center justify-center px-3 py-2 rounded-lg hover:bg-white/10 transition text-sm"
