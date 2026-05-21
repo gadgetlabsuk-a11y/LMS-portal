@@ -1,6 +1,7 @@
 import { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
+import stadlerLogo from '@/assets/stadler-logo.png'
 
 export const LearnerLayout = ({ children }: { children: ReactNode }) => {
   const { user, logout } = useAuth()
@@ -16,17 +17,17 @@ export const LearnerLayout = ({ children }: { children: ReactNode }) => {
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
-            <span
-              className="text-lg font-bold text-gray-900 cursor-pointer"
+            <img
+              src={stadlerLogo}
+              alt="SRSUK Learning Portal"
+              className="h-7 w-auto cursor-pointer"
               onClick={() => navigate('/learn')}
-            >
-              LMS Course Builder
-            </span>
+            />
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-500">{user?.username}</span>
               <button
                 onClick={handleLogout}
-                className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1 rounded border border-gray-300 hover:border-gray-400 transition-colors"
+                className="text-sm text-gray-600 hover:text-brand px-3 py-1 rounded border border-gray-300 hover:border-brand transition-colors"
               >
                 Logout
               </button>
