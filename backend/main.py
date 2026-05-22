@@ -23,7 +23,7 @@ from models import User, UserRole, WhiteLabelConfig, FeatureFlag, ErrorLog
 from services.auth_service import AuthService
 
 # Import routers
-from routers import admin, auth, users, courses, security, dev_tools, whitelabel, learn, creator, uploads, modules, videos, slides, blocks, quizzes, tts as tts_router_module
+from routers import admin, auth, users, courses, security, dev_tools, whitelabel, learn, creator, uploads, modules, videos, slides, blocks, quizzes, tts as tts_router_module, content_generation
 
 # Configure logging
 logging.basicConfig(
@@ -211,6 +211,7 @@ app.include_router(blocks.router)
 app.include_router(quizzes.router)
 app.include_router(uploads.router)
 app.include_router(tts_router_module.router)
+app.include_router(content_generation.router)
 
 
 # Mount static files for uploads
