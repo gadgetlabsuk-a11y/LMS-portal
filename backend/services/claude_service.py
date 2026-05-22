@@ -707,6 +707,38 @@ Create a course that:
                 logger.warning(f"Outline parse failed (attempt {attempt + 1}): {e}")
         raise ValueError(f"Could not produce a valid outline: {last_err}")
 
+    SUPPORTED_BLOCK_TYPES = {"heading", "text", "quote", "code"}
+
+    async def generate_slide_blocks(
+        self, corpus: str, module_title: str, video_title: str,
+        slide_title: str, brief: str = "",
+    ) -> dict:
+        """Generate content blocks + narration for one slide, grounded in the corpus."""
+        prompt = (
+            "Generate the content of ONE course slide, STRICTLY from the source material. "
+            "Use ONLY supported block types: heading, text, quote, code.\n"
+            f"Module: {module_title}\nVideo: {video_title}\nSlide title: {slide_title}\n"
+            f"What this slide should cover: {brief}\n\n"
+            "Return ONLY a JSON object (no markdown) with this exact shape:\n"
+            '{"blocks": [{"type": str, "content": {"text": str}}], "narration_script": str}\n'
+            'Use 2-5 blocks. The narration_script is 2-4 spoken sentences.\n\n'
+            f"SOURCE MATERIAL:\n{corpus}"
+        )
+        last_err: Exception | None = None
+        for attempt in range(2):
+            raw = await self._complete(prompt, max_tokens=2048)
+            try:
+                obj = _extract_json_obj(raw)
+                content = SlideContent.model_validate(obj).model_dump()
+                content["blocks"] = [
+                    b for b in content["blocks"] if b["type"] in self.SUPPORTED_BLOCK_TYPES
+                ]
+                return content
+            except Exception as e:
+                last_err = e
+                logger.warning(f"Slide-content parse failed (attempt {attempt + 1}): {e}")
+        raise ValueError(f"Could not produce valid slide content: {last_err}")
+
     async def generate_podcast_script(
         self,
         source_text: str,

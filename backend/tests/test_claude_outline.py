@@ -94,3 +94,42 @@ async def test_generate_course_outline_raises_after_second_failure():
             await svc.generate_course_outline(
                 corpus="x", n_modules=1, videos_per_module=1, slides_per_video=1,
             )
+
+
+@pytest.mark.asyncio
+async def test_generate_slide_blocks_returns_validated_content():
+    svc = ClaudeService()
+    payload = json.dumps({
+        "blocks": [
+            {"type": "heading", "content": {"text": "Title"}},
+            {"type": "text", "content": {"text": "Body"}},
+        ],
+        "narration_script": "Spoken words.",
+    })
+    with patch.object(svc, "_complete", return_value=payload):
+        result = await svc.generate_slide_blocks(
+            corpus="src", module_title="M", video_title="V",
+            slide_title="S", brief="cover X",
+        )
+    assert result["narration_script"] == "Spoken words."
+    assert result["blocks"][0]["type"] == "heading"
+    assert all(b["type"] in {"heading", "text", "quote", "code"} for b in result["blocks"])
+
+
+@pytest.mark.asyncio
+async def test_generate_slide_blocks_drops_unsupported_block_types():
+    svc = ClaudeService()
+    payload = json.dumps({
+        "blocks": [
+            {"type": "text", "content": {"text": "ok"}},
+            {"type": "image", "content": {"url": "x"}},
+        ],
+        "narration_script": "n",
+    })
+    with patch.object(svc, "_complete", return_value=payload):
+        result = await svc.generate_slide_blocks(
+            corpus="src", module_title="M", video_title="V", slide_title="S", brief="b",
+        )
+    types = [b["type"] for b in result["blocks"]]
+    assert "image" not in types
+    assert "text" in types
