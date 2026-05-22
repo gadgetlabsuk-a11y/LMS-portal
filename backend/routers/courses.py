@@ -53,7 +53,6 @@ class CourseUpdate(BaseModel):
 
     title: Optional[str] = None
     description: Optional[str] = None
-    content: Optional[Dict[str, Any]] = None
     status: Optional[CourseStatus] = None
 
 
@@ -107,9 +106,12 @@ class CourseResponse(BaseModel):
 
 
 class CourseDetailResponse(CourseResponse):
-    """Detailed course response with content."""
+    """Detailed course response.
 
-    content: Optional[Dict[str, Any]]
+    The legacy ``content`` JSON blob was retired in v1.0 (course content now
+    lives in relational Module/Video/Slide/Block tables), so this no longer
+    exposes a ``content`` field.
+    """
 
 
 class EnrollmentResponse(BaseModel):
@@ -388,7 +390,7 @@ def list_courses(
     items = []
     for c in courses:
         item = CourseResponse.model_validate(c)
-        item.has_content = bool(c.content)
+        item.has_content = bool(c.modules)
         items.append(item)
 
     return {
@@ -655,9 +657,6 @@ def update_course(
 
     if course_data.description is not None:
         course.description = course_data.description
-
-    if course_data.content is not None:
-        course.content = course_data.content
 
     if course_data.status is not None:
         course.status = course_data.status
