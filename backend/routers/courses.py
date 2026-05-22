@@ -1054,7 +1054,8 @@ async def generate_script(
     """
     Generate a presenter script (.docx) for a course.
 
-    Requires the course to have generated content (course.content must not be None).
+    Legacy export: targets the retired course.content JSON blob. Returns HTTP 400
+    for slide-based courses (which have no such blob) until the export is rebuilt.
     """
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
@@ -1063,15 +1064,19 @@ async def generate_script(
     if current_user.role.value != "admin" and course.creator_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    if not course.content:
+    legacy_content = getattr(course, "content", None)
+    if not legacy_content:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Course has no generated content. Generate the course content first.",
+            detail=(
+                "Script export isn't available for courses built with the slide editor. "
+                "It targets the retired course-content format and is pending a rebuild."
+            ),
         )
 
     try:
         service = ScriptService()
-        docx_bytes = await service.generate_script(course.content)
+        docx_bytes = await service.generate_script(legacy_content)
 
         safe_title = "".join(c if c.isalnum() or c in " -_" else "_" for c in course.title)
         filename = f"{safe_title}_script.docx"
@@ -1101,7 +1106,8 @@ def generate_slides(
     """
     Generate a PowerPoint presentation (.pptx) for a course.
 
-    Requires the course to have generated content (course.content must not be None).
+    Legacy export: targets the retired course.content JSON blob. Returns HTTP 400
+    for slide-based courses (which have no such blob) until the export is rebuilt.
     """
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
@@ -1110,15 +1116,19 @@ def generate_slides(
     if current_user.role.value != "admin" and course.creator_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    if not course.content:
+    legacy_content = getattr(course, "content", None)
+    if not legacy_content:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Course has no generated content. Generate the course content first.",
+            detail=(
+                "PowerPoint export isn't available for courses built with the slide editor. "
+                "It targets the retired course-content format and is pending a rebuild."
+            ),
         )
 
     try:
         service = SlideService()
-        pptx_bytes = service.generate_slides(course.content)
+        pptx_bytes = service.generate_slides(legacy_content)
 
         safe_title = "".join(c if c.isalnum() or c in " -_" else "_" for c in course.title)
         filename = f"{safe_title}_slides.pptx"
@@ -1148,7 +1158,8 @@ async def generate_voiceover(
     """
     Generate text-to-speech audio for all lessons in a course.
 
-    Requires the course to have generated content (course.content must not be None).
+    Legacy export: targets the retired course.content JSON blob. Returns HTTP 400
+    for slide-based courses (which have no such blob) until the export is rebuilt.
     Uses ElevenLabs API to create MP3 audio files.
 
     Args:
@@ -1169,19 +1180,23 @@ async def generate_voiceover(
     if current_user.role.value != "admin" and course.creator_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    if not course.content:
+    legacy_content = getattr(course, "content", None)
+    if not legacy_content:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Course has no generated content. Generate the course content first.",
+            detail=(
+                "Course-level voiceover isn't available for courses built with the slide editor. "
+                "Per-slide narration is generated from the editor instead."
+            ),
         )
 
     try:
         service = TTSService()
-        audio_urls = await service.generate_audio_for_course(course.content, course_id)
+        audio_urls = await service.generate_audio_for_course(legacy_content, course_id)
 
-        # Store audio_urls in course.content
-        # Must use flag_modified so SQLAlchemy detects the JSON mutation
-        updated_content = dict(course.content)
+        # Store audio_urls back into the legacy content blob.
+        # Must use flag_modified so SQLAlchemy detects the JSON mutation.
+        updated_content = dict(legacy_content)
         updated_content["audio_urls"] = audio_urls
         course.content = updated_content
         course.updated_at = datetime.now(timezone.utc)
@@ -1254,6 +1269,19 @@ async def upload_video_clip(
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied",
+            )
+
+        # Legacy clip upload wrote into the retired ``course.content`` JSON blob.
+        # Slide-based courses attach video through the slide editor, so this path is
+        # disabled (before any file is read/written) rather than 500-ing on the
+        # missing attribute.
+        if getattr(course, "content", None) is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "This upload route is for legacy courses only. Upload video for "
+                    "slide-based courses through the slide editor."
+                ),
             )
 
         # Validate file extension
@@ -1364,6 +1392,56 @@ async def upload_video_clip(
         )
 
 
+def _player_placeholder_html(course_title: str) -> str:
+    """Friendly placeholder shown when a course has no legacy player content.
+
+    The interactive HTML player was built for the retired ``course.content`` JSON
+    blob. Courses authored with the relational slide editor have no such blob, so
+    the embedded preview/player shows this clean message (HTTP 200) instead of
+    erroring. The full relational player is tracked as a separate rebuild.
+    """
+    safe_title = (
+        (course_title or "This course")
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+    )
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{safe_title}</title>
+<style>
+*{{margin:0;padding:0;box-sizing:border-box}}
+html,body{{height:100%}}
+body{{
+  font-family:Arial,Helvetica,sans-serif;
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;padding:2rem;
+  background:linear-gradient(-45deg,#007BC0,#0B3F75);
+  color:#fff;text-align:center;
+}}
+.card{{max-width:32rem}}
+.card h1{{font-size:1.5rem;font-weight:700;margin-bottom:0.75rem}}
+.card p{{font-size:1rem;line-height:1.6;color:#F0F7FE;opacity:0.92}}
+.badge{{
+  display:inline-block;margin-bottom:1.25rem;padding:0.35rem 0.9rem;
+  border-radius:999px;background:rgba(255,255,255,0.15);
+  font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;
+}}
+</style>
+</head>
+<body>
+<div class="card">
+<span class="badge">Preview</span>
+<h1>{safe_title}</h1>
+<p>This course doesn't have a playable preview yet. Build slides in the editor and publish the course to generate the learner experience.</p>
+</div>
+</body>
+</html>"""
+
+
 @router.get("/{course_id}/player", response_class=HTMLResponse)
 def get_player(
     course_id: int,
@@ -1389,16 +1467,18 @@ def get_player(
     if not course:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
 
-    if not course.content:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Course has no generated content. Generate the course content first.",
-        )
+    # The legacy JSON ``course.content`` blob was retired in favour of the relational
+    # Module/Video/Slide/Block model. This player still expects the old shape, so it
+    # has no playable data for slide-based courses. Degrade gracefully with a clean
+    # placeholder page (HTTP 200) rather than 500-ing on the missing attribute.
+    legacy_content = getattr(course, "content", None)
+    if not legacy_content:
+        return _player_placeholder_html(course.title)
 
     try:
         service = PlayerService()
-        audio_urls = course.content.get("audio_urls", {})
-        html = service.generate_player(course.content, audio_urls, course_id)
+        audio_urls = legacy_content.get("audio_urls", {})
+        html = service.generate_player(legacy_content, audio_urls, course_id)
 
         logger.info(f"Player accessed for course {course_id}")
 
