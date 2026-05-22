@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from sqlalchemy.orm import Session
 from sse_starlette.sse import EventSourceResponse
 
+from config import settings
 from database import get_db
 from models import User, Course, CourseStatus, Module, Video, Slide, Block, CourseSourceDocument
 from middleware.auth_middleware import require_creator
@@ -36,9 +37,13 @@ def _clamp(value: int, lo: int, hi: int) -> int:
     return max(lo, min(hi, value))
 
 
-async def _extract_corpus(files: List[UploadFile]) -> str:
-    """Extract + merge text from uploaded files into a capped corpus. Skips unreadable files."""
-    texts: list[str] = []
+def _validate_upload_files(files: List[UploadFile]) -> None:
+    """Validate file count and extension before any heavy work."""
+    if len(files) > MAX_FILES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Too many files. Maximum {MAX_FILES}.",
+        )
     for f in files:
         name = (f.filename or "").lower()
         if not name.endswith(ALLOWED_EXTS):
@@ -46,7 +51,18 @@ async def _extract_corpus(files: List[UploadFile]) -> str:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Unsupported file type: {f.filename}. Allowed: .pptx, .docx, .pdf",
             )
+
+
+async def _extract_corpus(files: List[UploadFile]) -> str:
+    """Extract + merge text from uploaded files into a capped corpus. Skips unreadable files."""
+    texts: list[str] = []
+    for f in files:
         data = await f.read()
+        if len(data) > settings.MAX_UPLOAD_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"File too large: {f.filename}. Max {settings.MAX_UPLOAD_SIZE // (1024 * 1024)}MB per file.",
+            )
         try:
             texts.append(document_service.extract_text(data, f.filename))
         except Exception as e:
@@ -71,11 +87,7 @@ async def outline_from_content(
     current_user: User = Depends(require_creator),
 ):
     """Phase 1: extract corpus + return a validated, reviewable course outline (no persistence)."""
-    if len(files) > MAX_FILES:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Too many files. Maximum {MAX_FILES}.",
-        )
+    _validate_upload_files(files)
     n_modules = _clamp(modules, 1, MAX_MODULES)
     vpm = _clamp(videos_per_module, 1, MAX_VIDEOS_PER_MODULE)
     spv = _clamp(slides_per_video, 1, MAX_SLIDES_PER_VIDEO)
@@ -103,6 +115,8 @@ async def create_from_outline(
     current_user: User = Depends(require_creator),
 ):
     """Phase 2a: persist the (edited) outline as a Draft course + stored source text."""
+    _validate_upload_files(files)
+
     try:
         parsed = CourseOutline.model_validate(json.loads(outline))
     except Exception as e:
@@ -110,6 +124,19 @@ async def create_from_outline(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid outline: {e}",
         )
+
+    # Fix 3: bound hand-edited outline dimensions
+    if len(parsed.modules) > MAX_MODULES:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Too many modules (max {MAX_MODULES}).")
+    for m in parsed.modules:
+        if len(m.videos) > MAX_VIDEOS_PER_MODULE:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"Too many videos in a module (max {MAX_VIDEOS_PER_MODULE}).")
+        for v in m.videos:
+            if len(v.slides) > MAX_SLIDES_PER_VIDEO:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail=f"Too many slides in a video (max {MAX_SLIDES_PER_VIDEO}).")
 
     course = Course(
         title=parsed.title or "Generated Course",
@@ -122,6 +149,11 @@ async def create_from_outline(
 
     for f in files:
         data = await f.read()
+        if len(data) > settings.MAX_UPLOAD_SIZE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"File too large: {f.filename}. Max {settings.MAX_UPLOAD_SIZE // (1024 * 1024)}MB per file.",
+            )
         try:
             text = document_service.extract_text(data, f.filename)
         except Exception as e:
@@ -194,6 +226,9 @@ async def generate_video_content(
     corpus = _course_corpus(course.id, db)
     slides = db.query(Slide).filter(Slide.video_id == video.id).order_by(Slide.order_index).all()
     slide_ids = [s.id for s in slides]
+    # Fix 4: capture plain strings before the generator so db.commit() expiry can't cause silent reloads
+    module_title = module.title
+    video_title = video.title
 
     async def event_generator():
         for sid in slide_ids:
@@ -202,7 +237,7 @@ async def generate_video_content(
             slide = db.query(Slide).filter(Slide.id == sid).first()
             try:
                 content = await claude_service.generate_slide_blocks(
-                    corpus=corpus, module_title=module.title, video_title=video.title,
+                    corpus=corpus, module_title=module_title, video_title=video_title,
                     slide_title=slide.narration_script or "", brief=slide.narration_script or "",
                 )
                 for bi, b in enumerate(content["blocks"]):

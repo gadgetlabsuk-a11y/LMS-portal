@@ -185,3 +185,60 @@ def test_generate_content_404_for_missing_video(creator_token):
         headers={"Authorization": f"Bearer {creator_token}"},
     )
     assert res.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# New tests (code-review fixes)
+# ---------------------------------------------------------------------------
+
+def test_generate_content_isolates_failed_slide(creator_token, creator_user, db):
+    course, video = _seed_video_with_slides(db, creator_user, n_slides=2)
+    content = {"blocks": [{"type": "text", "content": {"text": "B"}}], "narration_script": "n"}
+    calls = {"n": 0}
+
+    async def side(*args, **kwargs):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise ValueError("boom")
+        return content
+
+    with patch("routers.content_generation.claude_service.generate_slide_blocks", side_effect=side):
+        res = client.post(f"/api/videos/{video.id}/ai/generate-content",
+                          headers={"Authorization": f"Bearer {creator_token}"})
+    assert res.status_code == 200
+    assert "error" in res.text
+    slides = db.query(Slide).filter(Slide.video_id == video.id).order_by(Slide.order_index).all()
+    b0 = db.query(Block).filter(Block.slide_id == slides[0].id).all()
+    b1 = db.query(Block).filter(Block.slide_id == slides[1].id).all()
+    assert len(b0) == 0  # failed slide has no blocks
+    assert len(b1) == 1  # subsequent slide still filled
+
+
+def test_from_outline_rejects_unsupported_file_type(creator_token):
+    outline = {"title": "T", "description": "", "modules": []}
+    res = client.post("/api/courses/from-outline",
+        data={"outline": _json.dumps(outline)},
+        files=[("files", ("a.txt", io.BytesIO(b"x"), "text/plain"))],
+        headers={"Authorization": f"Bearer {creator_token}"})
+    assert res.status_code == 400
+
+
+def test_from_outline_rejects_oversized_outline(creator_token):
+    outline = {"title": "T", "description": "", "modules": [
+        {"title": f"M{i}", "description": "", "videos": []} for i in range(9)
+    ]}
+    res = client.post("/api/courses/from-outline",
+        data={"outline": _json.dumps(outline)},
+        files=[("files", ("a.pdf", io.BytesIO(b"x"), "application/pdf"))],
+        headers={"Authorization": f"Bearer {creator_token}"})
+    assert res.status_code == 400
+
+
+def test_outline_from_content_rejects_oversized_file(creator_token):
+    from config import settings as _settings
+    with patch.object(_settings, "MAX_UPLOAD_SIZE", 3):
+        res = client.post("/api/courses/ai/outline-from-content",
+            data={"modules": 1, "videos_per_module": 1, "slides_per_video": 1},
+            files=[("files", ("a.pdf", io.BytesIO(b"way more than three bytes"), "application/pdf"))],
+            headers={"Authorization": f"Bearer {creator_token}"})
+    assert res.status_code == 400
