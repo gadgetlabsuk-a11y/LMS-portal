@@ -589,6 +589,69 @@ Create a course that:
                         except _json.JSONDecodeError:
                             continue
 
+    async def generate_podcast_script(
+        self,
+        source_text: str,
+        host_persona: str = "a warm, clear, professional training host",
+        target_minutes: int = 10,
+        title: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Generate a continuous, podcast-style narration script grounded in the source.
+
+        Unlike per-slide narration, this produces one flowing script paced for listening
+        retention, in a consistent host persona. Used for ILB video_type='podcast'.
+        Stays faithful to the source material — no invented facts.
+        """
+        title_line = f"Course title: {title}\n" if title else ""
+        # ~140 spoken words/minute is a reasonable retention pace.
+        target_words = target_minutes * 140
+        prompt = f"""You are {host_persona}. Write a spoken-word podcast narration script that\
+ teaches the material in the SOURCE below. Pace it for listening (around {target_words} words,\
+ ~{target_minutes} minutes). Be faithful to the source — do NOT invent facts beyond it.
+
+Guidelines:
+- Conversational and clear, as if speaking directly to one learner.
+- Open with a short hook, then teach in logical segments, then a brief recap.
+- Mark natural segment breaks with a line "[SEGMENT BREAK]" so the player can insert
+  knowledge checks.
+- Output ONLY the narration script text (no headings, no stage directions other than the
+  [SEGMENT BREAK] markers).
+
+{title_line}SOURCE:
+---
+{source_text}
+---"""
+
+        headers = {
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+            "x-api-key": self.api_key,
+        }
+        payload = {
+            "model": self.model,
+            "max_tokens": 8192,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                CLAUDE_API_URL, json=payload, headers=headers, timeout=180.0
+            )
+        if response.status_code != 200:
+            logger.error("Claude API error (podcast script): %s - %s", response.status_code, response.text)
+            raise Exception(f"Claude API error: {response.status_code}")
+
+        data = response.json()
+        script_text = data.get("content", [{}])[0].get("text", "")
+        usage = data.get("usage", {})
+        tokens_used = usage.get("output_tokens", 0) + usage.get("input_tokens", 0)
+        segments = [s.strip() for s in script_text.split("[SEGMENT BREAK]") if s.strip()]
+        return {
+            "script": script_text,
+            "segments": segments,
+            "tokens_used": tokens_used,
+            "model": self.model,
+        }
+
     async def validate_api_key(self) -> bool:
         """
         Validate Claude API key by making a test request.

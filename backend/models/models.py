@@ -145,6 +145,7 @@ class Enrollment(Base):
     # Relationships
     user = relationship("User", back_populates="enrollments")
     course = relationship("Course", back_populates="enrollments")
+    broadcast_sessions = relationship("BroadcastSession", back_populates="enrollment", cascade="all, delete-orphan")
 
     __table_args__ = (
         UniqueConstraint("user_id", "course_id", name="uq_user_course"),
@@ -309,6 +310,9 @@ class Video(Base):
     estimated_duration_seconds = Column(Integer, nullable=True)
     narration_voice_id = Column(String(100), nullable=True)
     source_video_url = Column(String(500), nullable=True)
+    # ILB (podcast/avatar) config — used when video_type='podcast'
+    heygen_avatar_id = Column(String(100), nullable=True)
+    prerendered_video_url = Column(String(500), nullable=True)
     status = Column(String(20), nullable=True, server_default="draft")
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
@@ -460,4 +464,78 @@ class CourseVersion(Base):
     __table_args__ = (
         UniqueConstraint("course_id", "version_number", name="uq_course_version"),
         Index("idx_course_version", "course_id", "version_number"),
+    )
+
+
+class BroadcastSession(Base):
+    """An ILB (Interactive Learning Broadcast) play session.
+
+    Named BroadcastSession to avoid colliding with the auth `Session` table.
+    Links to an Enrollment, which already carries the learner + course-version pin.
+    """
+    __tablename__ = "broadcast_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    enrollment_id = Column(Integer, ForeignKey("enrollments.id", ondelete="CASCADE"), nullable=False)
+    mode = Column(String(20), nullable=False, server_default="interrupt")  # interrupt | defer
+    started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    completed_at = Column(DateTime, nullable=True)
+    final_score = Column(Float, nullable=True)  # percentage 0-100
+    completion_status = Column(String(20), nullable=False, server_default="in_progress")  # in_progress | completed | abandoned
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
+
+    enrollment = relationship("Enrollment", back_populates="broadcast_sessions")
+    interactions = relationship("Interaction", back_populates="broadcast_session", cascade="all, delete-orphan", order_by="Interaction.ts")
+    attestations = relationship("SessionAttestation", back_populates="broadcast_session", cascade="all, delete-orphan")
+
+    __table_args__ = (Index("idx_broadcast_enrollment", "enrollment_id"),)
+
+
+class Interaction(Base):
+    """A single logged interaction within a broadcast session (Q&A, knowledge check, attention check)."""
+    __tablename__ = "interactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    broadcast_session_id = Column(Integer, ForeignKey("broadcast_sessions.id", ondelete="CASCADE"), nullable=False)
+    ts = Column(DateTime, default=datetime.utcnow, nullable=False)
+    type = Column(String(20), nullable=False)  # question | answer | check | attention
+    input_mode = Column(String(10), nullable=True)  # voice | text
+    question_text = Column(Text, nullable=True)
+    answer_text = Column(Text, nullable=True)
+    source_refs = Column(JSON, nullable=True)  # cited source passages used to ground the answer
+    confidence = Column(Float, nullable=True)
+    escalated = Column(Boolean, nullable=False, server_default="0")
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    broadcast_session = relationship("BroadcastSession", back_populates="interactions")
+
+    __table_args__ = (Index("idx_interaction_session_ts", "broadcast_session_id", "ts"),)
+
+
+class SessionAttestation(Base):
+    """Tamper-evidence record for a broadcast session.
+
+    Per-learner hash chain: each attestation's prev_hash points at the learner's previous
+    attestation content_hash. timestamp_token (RFC 3161) and anchor_ref (WORM) are populated
+    by the external anchor; STUBBED in the demo, hardened in the praxis rebuild.
+    """
+    __tablename__ = "session_attestations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    broadcast_session_id = Column(Integer, ForeignKey("broadcast_sessions.id", ondelete="CASCADE"), nullable=False)
+    learner_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    sequence = Column(Integer, nullable=False, server_default="0")  # position in the learner's chain
+    content_hash = Column(String(64), nullable=False)
+    prev_hash = Column(String(64), nullable=True)
+    signed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    timestamp_token = Column(Text, nullable=True)   # RFC 3161 token — stub in demo
+    anchor_ref = Column(String(500), nullable=True)  # WORM storage reference — stub in demo
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    broadcast_session = relationship("BroadcastSession", back_populates="attestations")
+
+    __table_args__ = (
+        Index("idx_attestation_session", "broadcast_session_id"),
+        Index("idx_attestation_learner_seq", "learner_id", "sequence"),
     )

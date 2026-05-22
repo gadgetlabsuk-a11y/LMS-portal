@@ -26,6 +26,9 @@ from .models import (
     Resource,
     AiPromptLog,
     CourseVersion,
+    BroadcastSession,
+    Interaction,
+    SessionAttestation,
 )
 
 __all__ = [
@@ -52,4 +55,7 @@ __all__ = [
     "Resource",
     "AiPromptLog",
     "CourseVersion",
+    "BroadcastSession",
+    "Interaction",
+    "SessionAttestation",
 ]
