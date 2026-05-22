@@ -7,12 +7,71 @@ import httpx
 import json
 import logging
 from typing import Dict, Any, Optional, AsyncGenerator
+from pydantic import BaseModel
 from config import settings
 
 logger = logging.getLogger(__name__)
 
 CLAUDE_API_URL = "https://api.anthropic.com/v1/messages"
 CLAUDE_MODEL = "claude-sonnet-4-6"
+
+
+class SlideOutline(BaseModel):
+    title: str
+    brief: str = ""
+
+
+class VideoOutline(BaseModel):
+    title: str
+    description: str = ""
+    slides: list[SlideOutline]
+
+
+class ModuleOutline(BaseModel):
+    title: str
+    description: str = ""
+    videos: list[VideoOutline]
+
+
+class CourseOutline(BaseModel):
+    title: str
+    description: str = ""
+    modules: list[ModuleOutline]
+
+
+class GeneratedBlock(BaseModel):
+    type: str
+    content: dict
+
+
+class SlideContent(BaseModel):
+    blocks: list[GeneratedBlock]
+    narration_script: str = ""
+
+
+def _extract_json_obj(content: str) -> dict:
+    """Parse a JSON object from a model response, tolerating code fences/prose."""
+    import json as _json
+    text = content.strip()
+    if "```" in text:
+        fenced = text.split("```")
+        for chunk in fenced:
+            chunk = chunk.strip()
+            if chunk.startswith("json"):
+                chunk = chunk[4:].strip()
+            if chunk.startswith("{"):
+                text = chunk
+                break
+    if not text.lstrip().startswith("{"):
+        start = text.find("{")
+        end = text.rfind("}")
+        if start == -1 or end == -1 or end <= start:
+            raise ValueError("No JSON object found in model response")
+        text = text[start:end + 1]
+    try:
+        return _json.loads(text)
+    except _json.JSONDecodeError as e:
+        raise ValueError(f"Malformed JSON in model response: {e}")
 
 
 class ClaudeService:
@@ -588,6 +647,28 @@ Create a course that:
                                     yield token
                         except _json.JSONDecodeError:
                             continue
+
+    async def _complete(self, prompt: str, max_tokens: int = 8192) -> str:
+        """Non-streaming completion: returns the model's text content."""
+        headers = {
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+            "x-api-key": self.api_key,
+        }
+        payload = {
+            "model": self.model,
+            "max_tokens": max_tokens,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                CLAUDE_API_URL, json=payload, headers=headers, timeout=180.0,
+            )
+        if response.status_code != 200:
+            logger.error(f"Claude API error: {response.status_code} - {response.text}")
+            raise Exception(f"Claude API error: {response.status_code}")
+        data = response.json()
+        return data.get("content", [{}])[0].get("text", "")
 
     async def generate_podcast_script(
         self,
