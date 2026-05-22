@@ -88,7 +88,7 @@ export const CreatorDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-indigo-50 border-l-4 border-indigo-500 p-4 rounded">
+      <div className="bg-blue-50 border-l-4 border-brand-accent p-4 rounded">
         <p className="text-lg font-semibold">Welcome, {user?.username}! 👋</p>
         <p className="text-gray-600 text-sm mt-1">Here's an overview of your courses and learners.</p>
       </div>

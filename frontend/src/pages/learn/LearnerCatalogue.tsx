@@ -101,7 +101,7 @@ export const LearnerCatalogue = () => {
               onClick={() => navigate(`/learn/${course.id}`)}
               className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer overflow-hidden border border-gray-100"
             >
-              <div className="h-32 bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+              <div className="h-32 bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
                 <span className="text-white text-4xl">📚</span>
               </div>
               <div className="p-4">

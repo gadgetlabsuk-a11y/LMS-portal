@@ -106,8 +106,8 @@ export function CourseBuilderPage() {
               onClick={handlePreview}
               style={{
                 padding: '6px 14px',
-                background: '#f59e0b',
-                color: 'white',
+                background: '#FFBD00',
+                color: '#0B3F75',
                 borderRadius: '4px',
                 border: 'none',
                 cursor: 'pointer',

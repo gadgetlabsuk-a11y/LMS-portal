@@ -8,6 +8,7 @@ import {
   useSortable, arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/common/Badge'
 import { api } from '@/services/api'
 import type { BuilderModule as Module, BuilderVideo as Video, BuilderQuiz as Quiz } from './types'
@@ -23,11 +24,14 @@ interface ModuleOverviewListProps {
 
 function SortableVideoRow({
   video,
+  courseId,
   statusVariant,
 }: {
   video: Video
+  courseId: number
   statusVariant: (s: string | null) => 'success' | 'info'
 }) {
+  const navigate = useNavigate()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: `video-${video.id}` })
   const style = {
@@ -35,6 +39,9 @@ function SortableVideoRow({
     transition,
     opacity: isDragging ? 0.5 : 1,
   }
+
+  const openSlides = () =>
+    navigate(`/creator/courses/${courseId}/videos/${video.id}/slides`)
 
   return (
     <div ref={setNodeRef} style={style} data-testid="sortable-video-row">
@@ -53,7 +60,17 @@ function SortableVideoRow({
         >
           ⠿
         </span>
-        <span style={{ flex: 1, fontSize: '13px', color: '#374151' }}>{video.title}</span>
+        <button
+          type="button"
+          onClick={openSlides}
+          aria-label={`Open slide builder for ${video.title}`}
+          style={{
+            flex: 1, textAlign: 'left', fontSize: '13px', color: '#1E5A9A',
+            background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 500,
+          }}
+        >
+          {video.title}
+        </button>
         <Badge variant={statusVariant(video.status)}>
           {video.status || 'draft'}
         </Badge>
@@ -101,9 +118,6 @@ function SortableModuleRow({
   const statusVariant = (status: string | null): 'success' | 'info' =>
     status === 'published' ? 'success' : 'info'
 
-  // courseId is used by parent caller; suppress unused-var lint
-  void courseId
-
   return (
     <div ref={setNodeRef} style={style} data-testid="sortable-module-row">
       {/* Module header row */}
@@ -145,7 +159,7 @@ function SortableModuleRow({
           >
             <div style={{ paddingLeft: '28px', marginBottom: '4px' }}>
               {videos.map((vid) => (
-                <SortableVideoRow key={vid.id} video={vid} statusVariant={statusVariant} />
+                <SortableVideoRow key={vid.id} video={vid} courseId={courseId} statusVariant={statusVariant} />
               ))}
             </div>
           </SortableContext>

@@ -77,7 +77,7 @@ export function SlideBuilderPage() {
           <button
             data-testid="ai-outline-btn"
             onClick={() => setWizardOpen(true)}
-            className="px-3 py-1.5 bg-purple-600 text-white text-sm rounded hover:bg-purple-700"
+            className="px-3 py-1.5 bg-brand-accent text-brand-dark text-sm rounded hover:bg-[#E6AA00]"
           >
             AI Outline
           </button>
@@ -92,7 +92,7 @@ export function SlideBuilderPage() {
             data-testid="bulk-narration-btn"
             onClick={handleBulkGenerate}
             disabled={bulkGenerating}
-            className="px-3 py-1.5 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 disabled:opacity-50"
+            className="px-3 py-1.5 bg-brand-accent text-brand-dark text-sm rounded hover:bg-[#E6AA00] disabled:opacity-50"
           >
             {bulkGenerating ? 'Generating...' : 'Generate Narration'}
           </button>
