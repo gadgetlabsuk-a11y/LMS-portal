@@ -63,7 +63,7 @@ export function CourseTreeRail({ courseId, modules, videos, quizzes }: CourseTre
             <div
               key={vid.id}
               data-testid="tree-video-row"
-              onClick={() => navigate(`/creator/courses/${courseId}/videos/${vid.id}`)}
+              onClick={() => navigate(`/creator/courses/${courseId}/videos/${vid.id}/slides`)}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '4px 8px 4px 20px', borderRadius: '4px', cursor: 'pointer',
