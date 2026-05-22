@@ -670,6 +670,43 @@ Create a course that:
         data = response.json()
         return data.get("content", [{}])[0].get("text", "")
 
+    def _build_outline_prompt(
+        self, corpus: str, n_modules: int, videos_per_module: int,
+        slides_per_video: int, tone: str, difficulty: str,
+    ) -> str:
+        return (
+            "You are designing an online course STRICTLY from the source material below. "
+            "Use ONLY information present in the source; do not invent unrelated topics.\n\n"
+            f"Produce EXACTLY {n_modules} modules. Each module has EXACTLY "
+            f"{videos_per_module} videos. Each video has EXACTLY {slides_per_video} slides.\n"
+            f"Difficulty: {difficulty}. Tone: {tone}.\n\n"
+            "Return ONLY a JSON object (no markdown, no code fences) with this exact shape:\n"
+            '{"title": str, "description": str, "modules": [{"title": str, '
+            '"description": str, "videos": [{"title": str, "description": str, '
+            '"slides": [{"title": str, "brief": str}]}]}]}\n'
+            'Each slide "brief" is a one-sentence description of what the slide covers.\n\n'
+            f"SOURCE MATERIAL:\n{corpus}"
+        )
+
+    async def generate_course_outline(
+        self, corpus: str, n_modules: int, videos_per_module: int,
+        slides_per_video: int, tone: str = "formal", difficulty: str = "intermediate",
+    ) -> dict:
+        """Generate a validated course outline from source corpus. Retries once on bad JSON."""
+        prompt = self._build_outline_prompt(
+            corpus, n_modules, videos_per_module, slides_per_video, tone, difficulty
+        )
+        last_err: Exception | None = None
+        for attempt in range(2):
+            raw = await self._complete(prompt, max_tokens=8192)
+            try:
+                obj = _extract_json_obj(raw)
+                return CourseOutline.model_validate(obj).model_dump()
+            except Exception as e:  # ValueError (parse) or ValidationError
+                last_err = e
+                logger.warning(f"Outline parse failed (attempt {attempt + 1}): {e}")
+        raise ValueError(f"Could not produce a valid outline: {last_err}")
+
     async def generate_podcast_script(
         self,
         source_text: str,
