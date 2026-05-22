@@ -72,6 +72,21 @@ class DocumentService:
             )
 
     @staticmethod
+    def build_corpus(texts: list[str], max_chars: int = 60000) -> str:
+        """Merge per-file extracted texts into a single capped corpus.
+
+        Each file gets an equal share of the budget so one large file can't
+        crowd out the others; the joined result is hard-capped at max_chars.
+        """
+        non_empty = [t for t in texts if t and t.strip()]
+        if not non_empty:
+            return ""
+        per_file = max(1, max_chars // len(non_empty))
+        parts = [t[:per_file] for t in non_empty]
+        corpus = "\n\n---\n\n".join(parts)
+        return corpus[:max_chars]
+
+    @staticmethod
     def _extract_docx(file_bytes: bytes) -> str:
         """
         Extract text from DOCX file.
