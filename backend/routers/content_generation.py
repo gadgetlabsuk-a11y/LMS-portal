@@ -2,6 +2,7 @@
 
 No router prefix — full /api/... paths are declared per route (mirrors routers/slides.py).
 """
+import json
 import logging
 from typing import List
 
@@ -9,9 +10,9 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import User
+from models import User, Course, CourseStatus, Module, Video, Slide, CourseSourceDocument
 from middleware.auth_middleware import require_creator
-from services.claude_service import ClaudeService
+from services.claude_service import ClaudeService, CourseOutline
 from services.document_service import DocumentService
 
 logger = logging.getLogger(__name__)
@@ -91,3 +92,68 @@ async def outline_from_content(
             detail="AI could not generate an outline from this content. Try different files or settings.",
         )
     return outline
+
+
+@router.post("/api/courses/from-outline", status_code=status.HTTP_201_CREATED)
+async def create_from_outline(
+    outline: str = Form(...),
+    files: List[UploadFile] = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_creator),
+):
+    """Phase 2a: persist the (edited) outline as a Draft course + stored source text."""
+    try:
+        parsed = CourseOutline.model_validate(json.loads(outline))
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid outline: {e}",
+        )
+
+    course = Course(
+        title=parsed.title or "Generated Course",
+        description=parsed.description or "",
+        creator_id=current_user.id,
+        status=CourseStatus.DRAFT,
+    )
+    db.add(course)
+    db.flush()  # assign course.id
+
+    for f in files:
+        data = await f.read()
+        try:
+            text = document_service.extract_text(data, f.filename)
+        except Exception as e:
+            logger.warning(f"Skipping unreadable source file {f.filename}: {e}")
+            text = ""
+        db.add(CourseSourceDocument(
+            course_id=course.id,
+            filename=f.filename or "upload",
+            content_type=f.content_type,
+            char_count=len(text),
+            extracted_text=text,
+        ))
+
+    video_map = []
+    for mi, m in enumerate(parsed.modules):
+        module = Module(course_id=course.id, order_index=mi, title=m.title,
+                        description=m.description, status="draft")
+        db.add(module)
+        db.flush()
+        for vi, v in enumerate(m.videos):
+            video = Video(module_id=module.id, order_index=vi, title=v.title,
+                          description=v.description, status="draft")
+            db.add(video)
+            db.flush()
+            slide_ids = []
+            for si, s in enumerate(v.slides):
+                slide = Slide(video_id=video.id, order_index=si,
+                              narration_script=s.brief or "", status="draft")
+                db.add(slide)
+                db.flush()
+                slide_ids.append(slide.id)
+            video_map.append({"video_id": video.id, "slide_ids": slide_ids})
+
+    db.commit()
+    db.refresh(course)
+    return {"course_id": course.id, "videos": video_map}
