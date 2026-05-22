@@ -367,6 +367,27 @@ class Block(Base):
     __table_args__ = (Index("idx_block_slide_order", "slide_id", "order_index"),)
 
 
+class CourseSourceDocument(Base):
+    """Extracted text from a file uploaded for AI course generation.
+
+    Stores per-file source text used (a) as provenance ("generated from these
+    files") and (b) as the grounding corpus for per-video slide-content generation.
+    """
+    __tablename__ = "course_source_documents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    filename = Column(String(500), nullable=False)
+    content_type = Column(String(200), nullable=True)
+    char_count = Column(Integer, nullable=False, server_default="0")
+    extracted_text = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    course = relationship("Course")
+
+    __table_args__ = (Index("idx_source_doc_course", "course_id"),)
+
+
 class Quiz(Base):
     """Quiz — can be attached to a module (assessment) or video (knowledge check)."""
     __tablename__ = "quizzes"
