@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useParams, useNavigate, useBlocker } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '@/services/api'
 import { useSlideEditorStore } from '@/store/slideEditorStore'
 import { SlideCanvas } from '@/components/slide/SlideCanvas'
@@ -64,13 +64,18 @@ export function SlideEditorPage() {
     }
   }, [blocks, isDirty])
 
-  // Navigation guard — flush before leaving
-  const blocker = useBlocker(isDirty)
+  // Flush any pending save when leaving the editor. (We previously used
+  // react-router's useBlocker here, but that hook only works inside a data
+  // router — under the app's <BrowserRouter> it throws and white-screens the
+  // editor. Content is already persisted by the 500ms debounced autosave; this
+  // unmount-only flush covers the trailing edit without re-running on changes.)
+  const flushRef = useRef(flushSave)
+  flushRef.current = flushSave
   useEffect(() => {
-    if (blocker.state === 'blocked') {
-      flushSave().then(() => blocker.proceed())
+    return () => {
+      void flushRef.current()
     }
-  }, [blocker.state])
+  }, [])
 
   // Keyboard shortcuts for undo/redo
   useEffect(() => {
