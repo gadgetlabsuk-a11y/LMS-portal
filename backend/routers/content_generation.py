@@ -6,11 +6,12 @@ import json
 import logging
 from typing import List
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from sqlalchemy.orm import Session
+from sse_starlette.sse import EventSourceResponse
 
 from database import get_db
-from models import User, Course, CourseStatus, Module, Video, Slide, CourseSourceDocument
+from models import User, Course, CourseStatus, Module, Video, Slide, Block, CourseSourceDocument
 from middleware.auth_middleware import require_creator
 from services.claude_service import ClaudeService, CourseOutline
 from services.document_service import DocumentService
@@ -157,3 +158,67 @@ async def create_from_outline(
     db.commit()
     db.refresh(course)
     return {"course_id": course.id, "videos": video_map}
+
+
+def _get_video_or_404(video_id: int, db: Session, current_user: User) -> Video:
+    video = db.query(Video).filter(Video.id == video_id).first()
+    if not video:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Video not found")
+    module = db.query(Module).filter(Module.id == video.module_id).first()
+    course = db.query(Course).filter(Course.id == module.course_id).first() if module else None
+    if not course:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
+    if current_user.role.value != "admin" and course.creator_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+    return video
+
+
+def _course_corpus(course_id: int, db: Session) -> str:
+    docs = db.query(CourseSourceDocument).filter(
+        CourseSourceDocument.course_id == course_id).all()
+    return DocumentService.build_corpus([d.extracted_text or "" for d in docs],
+                                        max_chars=CORPUS_MAX_CHARS)
+
+
+@router.post("/api/videos/{video_id}/ai/generate-content")
+async def generate_video_content(
+    video_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_creator),
+):
+    """Phase 2b: fill each slide of a video with blocks + narration, streaming per-slide progress."""
+    video = _get_video_or_404(video_id, db, current_user)
+    module = db.query(Module).filter(Module.id == video.module_id).first()
+    course = db.query(Course).filter(Course.id == module.course_id).first()
+    corpus = _course_corpus(course.id, db)
+    slides = db.query(Slide).filter(Slide.video_id == video.id).order_by(Slide.order_index).all()
+    slide_ids = [s.id for s in slides]
+
+    async def event_generator():
+        for sid in slide_ids:
+            if await request.is_disconnected():
+                break
+            slide = db.query(Slide).filter(Slide.id == sid).first()
+            try:
+                content = await claude_service.generate_slide_blocks(
+                    corpus=corpus, module_title=module.title, video_title=video.title,
+                    slide_title=slide.narration_script or "", brief=slide.narration_script or "",
+                )
+                for bi, b in enumerate(content["blocks"]):
+                    db.add(Block(
+                        slide_id=slide.id, order_index=bi, type=b["type"],
+                        content=b.get("content") or {},
+                        grid_position={"x": 0, "y": bi * 4, "w": 12, "h": 4},
+                    ))
+                if content.get("narration_script"):
+                    slide.narration_script = content["narration_script"]
+                slide.status = "draft"
+                db.commit()
+                yield {"data": "slide"}
+            except Exception as e:
+                db.rollback()
+                logger.warning(f"Slide {sid} content generation failed: {e}")
+                yield {"data": "error"}
+
+    return EventSourceResponse(event_generator())

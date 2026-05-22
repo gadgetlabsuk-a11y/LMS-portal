@@ -133,3 +133,55 @@ def test_from_outline_rejects_malformed_outline(creator_token):
         headers={"Authorization": f"Bearer {creator_token}"},
     )
     assert res.status_code == 400
+
+
+import pytest
+from models import Block
+
+
+@pytest.fixture(autouse=True)
+def _reset_sse_state():
+    from sse_starlette.sse import AppStatus
+    AppStatus.should_exit_event = None
+    yield
+
+
+def _seed_video_with_slides(db, creator_user, n_slides=2):
+    course = Course(title="C", creator_id=creator_user.id, status=CourseStatus.DRAFT)
+    db.add(course); db.flush()
+    db.add(CourseSourceDocument(course_id=course.id, filename="s.pdf",
+           content_type="application/pdf", char_count=5, extracted_text="corpus"))
+    module = Module(course_id=course.id, order_index=0, title="M", status="draft")
+    db.add(module); db.flush()
+    video = Video(module_id=module.id, order_index=0, title="V", status="draft")
+    db.add(video); db.flush()
+    for i in range(n_slides):
+        db.add(Slide(video_id=video.id, order_index=i, narration_script=f"brief{i}", status="draft"))
+    db.commit(); db.refresh(video)
+    return course, video
+
+
+def test_generate_content_fills_blocks_and_streams(creator_token, creator_user, db):
+    course, video = _seed_video_with_slides(db, creator_user, n_slides=2)
+    content = {"blocks": [{"type": "text", "content": {"text": "Body"}}], "narration_script": "n"}
+    with patch("routers.content_generation.claude_service.generate_slide_blocks", return_value=content):
+        res = client.post(
+            f"/api/videos/{video.id}/ai/generate-content",
+            headers={"Authorization": f"Bearer {creator_token}"},
+        )
+    assert res.status_code == 200
+    assert "data:" in res.text
+
+    blocks = db.query(Block).join(Slide, Block.slide_id == Slide.id).filter(
+        Slide.video_id == video.id).all()
+    assert len(blocks) == 2
+    slides = db.query(Slide).filter(Slide.video_id == video.id).all()
+    assert all(s.narration_script == "n" for s in slides)
+
+
+def test_generate_content_404_for_missing_video(creator_token):
+    res = client.post(
+        "/api/videos/999999/ai/generate-content",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert res.status_code == 404
