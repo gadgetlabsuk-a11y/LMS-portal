@@ -10,6 +10,7 @@ import { CreatorLayout } from '@/components/layout/CreatorLayout'
 // Auth
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { SmartRedirect } from '@/components/auth/SmartRedirect'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 
 // Pages
 import { LoginPage } from '@/pages/LoginPage'
@@ -29,6 +30,7 @@ import { QuizBuilderPage } from '@/pages/creator/QuizBuilderPage'
 import { CreatorLearners } from '@/pages/creator/CreatorLearners'
 import { LearnerCatalogue } from '@/pages/learn/LearnerCatalogue'
 import { CourseDetail } from '@/pages/learn/CourseDetail'
+import { ILBPlayerPage } from '@/pages/learn/ILBPlayerPage'
 import { CourseViewerPage } from '@/pages/CourseViewerPage'
 import { CoursePreviewPage } from '@/pages/creator/CoursePreviewPage'
 
@@ -42,6 +44,7 @@ export default function App() {
   }, [navigate])
 
   return (
+    <ErrorBoundary>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
 
@@ -209,6 +212,16 @@ export default function App() {
         }
       />
 
+      {/* ILB player (no layout wrapper — full-screen interactive broadcast) */}
+      <Route
+        path="/learn/:id/broadcast"
+        element={
+          <ProtectedRoute>
+            <ILBPlayerPage />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Learner routes */}
       <Route
         path="/learn"
@@ -235,5 +248,6 @@ export default function App() {
       <Route path="/" element={<SmartRedirect />} />
       <Route path="*" element={<SmartRedirect />} />
     </Routes>
+    </ErrorBoundary>
   )
 }
