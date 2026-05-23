@@ -448,3 +448,36 @@ def test_learner_cannot_start_unpublished_broadcast(client, db, creator_token, t
     bid = _make_broadcast(client, creator_token)
     r = client.post("/api/ilb/sessions", json={"broadcast_id": bid}, headers=_auth(trainee_token))
     assert r.status_code == 404
+
+
+def test_complete_marks_enrollment_completed(client, db, trainee_token, published_course, enrollment):
+    r = client.post("/api/ilb/sessions",
+                    json={"course_id": published_course.id, "mode": "interrupt"},
+                    headers=_auth(trainee_token))
+    assert r.status_code == 201, r.text
+    sid = r.json()["session"]["id"]
+
+    r = client.post(f"/api/ilb/sessions/{sid}/complete",
+                    json={"final_score": 91.0}, headers=_auth(trainee_token))
+    assert r.status_code == 200, r.text
+
+    db.refresh(enrollment)
+    assert enrollment.completed is True
+    assert enrollment.completed_at is not None
+    assert enrollment.progress == 100.0
+
+
+def test_complete_standalone_broadcast_session_has_no_enrollment(client, db, trainee_token, trainee_user):
+    from models import Broadcast
+    b = Broadcast(title="Company brief", creator_id=trainee_user.id, published=True)
+    db.add(b); db.commit(); db.refresh(b)
+
+    r = client.post("/api/ilb/sessions",
+                    json={"broadcast_id": b.id, "mode": "interrupt"},
+                    headers=_auth(trainee_token))
+    assert r.status_code == 201, r.text
+    sid = r.json()["session"]["id"]
+
+    r = client.post(f"/api/ilb/sessions/{sid}/complete",
+                    json={"final_score": 80.0}, headers=_auth(trainee_token))
+    assert r.status_code == 200, r.text  # must not crash despite having no enrolment

@@ -321,6 +321,17 @@ def complete_session(
     bs.completed_at = datetime.utcnow()
     if body.final_score is not None:
         bs.final_score = body.final_score
+
+    # Unify completion for course-attached broadcasts: a finished enrolment-backed session
+    # also completes the enrolment (same signal regular courses use — see courses.py
+    # update_progress, which sets completed when progress >= 100). Standalone broadcast
+    # sessions have no enrolment, so this is skipped; their completion is the session itself.
+    enrollment = bs.enrollment
+    if enrollment is not None and not enrollment.completed:
+        enrollment.completed = True
+        enrollment.completed_at = bs.completed_at
+        enrollment.progress = 100.0
+
     db.commit()
     db.refresh(bs)
 
