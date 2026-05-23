@@ -602,3 +602,73 @@ class Broadcast(Base):
     sessions = relationship("BroadcastSession", back_populates="broadcast")
 
     __table_args__ = (Index("idx_broadcast_creator", "creator_id"),)
+
+
+class Department(Base):
+    """A group of users that courses/podcasts can be assigned to."""
+
+    __tablename__ = "departments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), unique=True, nullable=False)
+    description = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    members = relationship(
+        "DepartmentMember", back_populates="department", cascade="all, delete-orphan"
+    )
+    content = relationship(
+        "DepartmentContent", back_populates="department", cascade="all, delete-orphan"
+    )
+
+
+class DepartmentMember(Base):
+    """Join row: a user belongs to a department (many-to-many)."""
+
+    __tablename__ = "department_members"
+
+    id = Column(Integer, primary_key=True, index=True)
+    department_id = Column(Integer, ForeignKey("departments.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    added_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    department = relationship("Department", back_populates="members")
+    user = relationship("User")
+
+    __table_args__ = (
+        UniqueConstraint("department_id", "user_id", name="uq_department_user"),
+        Index("idx_department_member_user", "user_id"),
+        Index("idx_department_member_dept", "department_id"),
+    )
+
+
+class DepartmentContent(Base):
+    """A course/podcast assigned to a department, optionally mandatory with a deadline.
+
+    A "podcast" is a Course with ilb_published=true; there is no separate entity.
+    due_mode is 'fixed' (use due_date) or 'relative' (use due_days from each user's
+    enrolment date), or None for a mandatory item with no hard deadline.
+    """
+
+    __tablename__ = "department_content"
+
+    id = Column(Integer, primary_key=True, index=True)
+    department_id = Column(Integer, ForeignKey("departments.id", ondelete="CASCADE"), nullable=False)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    mandatory = Column(Boolean, default=False, nullable=False)
+    due_mode = Column(String(20), nullable=True)
+    due_date = Column(DateTime, nullable=True)
+    due_days = Column(Integer, nullable=True)
+    assigned_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    department = relationship("Department", back_populates="content")
+    course = relationship("Course")
+
+    __table_args__ = (
+        UniqueConstraint("department_id", "course_id", name="uq_department_course"),
+        Index("idx_department_content_course", "course_id"),
+    )

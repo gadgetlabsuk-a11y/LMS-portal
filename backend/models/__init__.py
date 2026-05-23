@@ -31,6 +31,9 @@ from .models import (
     Interaction,
     SessionAttestation,
     Broadcast,
+    Department,
+    DepartmentMember,
+    DepartmentContent,
 )
 
 __all__ = [
@@ -62,4 +65,7 @@ __all__ = [
     "Interaction",
     "SessionAttestation",
     "Broadcast",
+    "Department",
+    "DepartmentMember",
+    "DepartmentContent",
 ]
