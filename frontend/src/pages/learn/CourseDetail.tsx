@@ -125,6 +125,12 @@ export const CourseDetail = () => {
             >
               {course!.has_content ? '▶ Start Course' : 'No content yet'}
             </button>
+            <button
+              onClick={() => navigate(`/learn/${course!.id}/broadcast`)}
+              className="w-full mt-3 py-3 px-6 rounded-lg font-bold text-white text-base bg-indigo-600 hover:bg-indigo-700 cursor-pointer transition-all"
+            >
+              🎙️ Launch Broadcast
+            </button>
           </div>
         </div>
       </div>

@@ -28,6 +28,7 @@ import { SlideBuilderPage } from '@/pages/creator/SlideBuilderPage'
 import { SlideEditorPage } from '@/pages/creator/SlideEditorPage'
 import { QuizBuilderPage } from '@/pages/creator/QuizBuilderPage'
 import { CreatorLearners } from '@/pages/creator/CreatorLearners'
+import { CreatorPodcastsPage } from '@/pages/creator/CreatorPodcastsPage'
 import { LearnerCatalogue } from '@/pages/learn/LearnerCatalogue'
 import { CourseDetail } from '@/pages/learn/CourseDetail'
 import { ILBPlayerPage } from '@/pages/learn/ILBPlayerPage'
@@ -187,6 +188,16 @@ export default function App() {
           <CreatorLayout>
             <ProtectedRoute creatorRoute>
               <CreatorLearners />
+            </ProtectedRoute>
+          </CreatorLayout>
+        }
+      />
+      <Route
+        path="/creator/podcasts"
+        element={
+          <CreatorLayout>
+            <ProtectedRoute creatorRoute>
+              <CreatorPodcastsPage />
             </ProtectedRoute>
           </CreatorLayout>
         }

@@ -48,6 +48,11 @@ export interface CompleteResult {
   attestation: Attestation
 }
 
+export interface PodcastScript {
+  script: string
+  segments: string[]
+}
+
 async function unwrap<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let detail = `Request failed (${res.status})`
@@ -81,4 +86,9 @@ export const ilbApi = {
 
   getAuditPack: (sessionId: number): Promise<Record<string, unknown>> =>
     api.get(`/ilb/sessions/${sessionId}/audit-pack`).then((r) => unwrap<Record<string, unknown>>(r)),
+
+  generatePodcastScript: (courseId: number, hostPersona: string, targetMinutes: number): Promise<PodcastScript> =>
+    api
+      .post(`/ilb/courses/${courseId}/podcast-script`, { host_persona: hostPersona, target_minutes: targetMinutes })
+      .then((r) => unwrap<PodcastScript>(r)),
 }

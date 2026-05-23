@@ -33,6 +33,7 @@ from models import (
 from middleware.auth_middleware import get_current_active_user
 from services.qa_service import QAService
 from services.audit_service import AuditService
+from services.claude_service import ClaudeService
 from services.integrations import get_avatar_provider
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,7 @@ router = APIRouter(prefix="/api/ilb", tags=["ilb"])
 VALID_MODES = {"interrupt", "defer"}
 _qa = QAService()
 _audit = AuditService()
+_claude = ClaudeService()
 
 
 # --------------------------------------------------------------------------- helpers
@@ -333,3 +335,46 @@ def audit_pack(
         } if attestation else None,
         "html": pack["html"],
     }
+
+
+# --------------------------------------------------------------------------- authoring
+
+class PodcastScriptRequest(BaseModel):
+    host_persona: str = "a warm, clear, professional training host"
+    target_minutes: int = 10
+
+
+class PodcastScriptResponse(BaseModel):
+    script: str
+    segments: List[str]
+
+
+@router.post("/courses/{course_id}/podcast-script", response_model=PodcastScriptResponse)
+async def make_podcast_script(
+    course_id: int,
+    body: PodcastScriptRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> PodcastScriptResponse:
+    """Generate a host-persona podcast narration script grounded in the course content.
+
+    Creator/admin authoring step. Faithful to the source — no invented facts (qa-style grounding).
+    """
+    if current_user.role not in (UserRole.CREATOR, UserRole.ADMIN):
+        raise HTTPException(status_code=403, detail="Creator or admin only")
+
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    source = _assemble_course_source(db, course_id)
+    if not source.strip():
+        raise HTTPException(status_code=422, detail="Course has no content to base a script on")
+
+    result = await _claude.generate_podcast_script(
+        source_text=source,
+        host_persona=body.host_persona,
+        target_minutes=body.target_minutes,
+        title=course.title,
+    )
+    return PodcastScriptResponse(script=result["script"], segments=result["segments"])

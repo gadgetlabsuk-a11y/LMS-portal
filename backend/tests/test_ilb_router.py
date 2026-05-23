@@ -127,3 +127,41 @@ def test_ownership_enforced(client, db, trainee_token, published_course):
     )
     r = client.get(f"/api/ilb/sessions/{sid}", headers=_auth(other_token))
     assert r.status_code == 403
+
+
+# --- podcast-script authoring route -------------------------------------------
+
+def test_podcast_script_creator(client, db, creator_token, creator_course, monkeypatch):
+    monkeypatch.setattr(ilb_router, "_assemble_course_source", lambda db, cid: "Some course content.")
+    monkeypatch.setattr(
+        ilb_router._claude,
+        "generate_podcast_script",
+        AsyncMock(return_value={"script": "Hello listeners.", "segments": ["Hello listeners."]}),
+    )
+    r = client.post(
+        f"/api/ilb/courses/{creator_course.id}/podcast-script",
+        json={"host_persona": "a friendly host", "target_minutes": 5},
+        headers=_auth(creator_token),
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["script"] == "Hello listeners."
+    assert r.json()["segments"] == ["Hello listeners."]
+
+
+def test_podcast_script_trainee_forbidden(client, trainee_token, published_course):
+    r = client.post(
+        f"/api/ilb/courses/{published_course.id}/podcast-script",
+        json={},
+        headers=_auth(trainee_token),
+    )
+    assert r.status_code == 403
+
+
+def test_podcast_script_empty_source_rejected(client, creator_token, creator_course, monkeypatch):
+    monkeypatch.setattr(ilb_router, "_assemble_course_source", lambda db, cid: "")
+    r = client.post(
+        f"/api/ilb/courses/{creator_course.id}/podcast-script",
+        json={},
+        headers=_auth(creator_token),
+    )
+    assert r.status_code == 422

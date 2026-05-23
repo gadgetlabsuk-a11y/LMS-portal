@@ -14,6 +14,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', path: '/creator', icon: '📊' },
   { label: 'My Courses', path: '/creator/courses', icon: '📚' },
+  { label: 'Podcasts', path: '/creator/podcasts', icon: '🎙️' },
   { label: 'Learners', path: '/creator/learners', icon: '👥' },
 ]
 
