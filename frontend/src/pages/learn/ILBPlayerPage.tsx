@@ -26,9 +26,9 @@ interface TranscriptEntry {
   disclaimer?: string
 }
 
-export const ILBPlayerPage = () => {
+export const ILBPlayerPage = ({ kind = 'course' }: { kind?: 'course' | 'broadcast' }) => {
   const { id } = useParams<{ id: string }>()
-  const courseId = Number(id)
+  const targetId = Number(id)
   const navigate = useNavigate()
 
   const [configLoading, setConfigLoading] = useState(true)
@@ -61,12 +61,12 @@ export const ILBPlayerPage = () => {
 
   // Load the course's saved broadcast config (gated server-side: learners only see published).
   useEffect(() => {
-    if (!Number.isFinite(courseId)) {
+    if (!Number.isFinite(targetId)) {
       setConfigLoading(false)
       return
     }
-    ilbApi
-      .getPodcast(courseId)
+    const load = kind === 'broadcast' ? ilbApi.getBroadcast(targetId) : ilbApi.getPodcast(targetId)
+    load
       .then((cfg) => {
         setAvailable(true)
         setSegments(cfg.segments ?? [])
@@ -77,7 +77,7 @@ export const ILBPlayerPage = () => {
       })
       .catch(() => setAvailable(false))
       .finally(() => setConfigLoading(false))
-  }, [courseId])
+  }, [targetId, kind])
 
   function push(entry: TranscriptEntry) {
     setTranscript((t) => [...t, entry])
@@ -87,7 +87,10 @@ export const ILBPlayerPage = () => {
     setStarting(true)
     setError(null)
     try {
-      const { session, live: transport } = await ilbApi.startSession(courseId, mode)
+      const { session, live: transport } =
+        kind === 'broadcast'
+          ? await ilbApi.startBroadcastSession(targetId, mode)
+          : await ilbApi.startSession(targetId, mode)
       setSessionId(session.id)
       setLive(transport)
       setState('playing')
@@ -217,7 +220,7 @@ export const ILBPlayerPage = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-gray-300 gap-4">
         <div className="text-5xl">🎙️</div>
-        <p>This course doesn’t have a published broadcast yet.</p>
+        <p>{kind === 'broadcast' ? 'This broadcast isn’t published yet.' : 'This course doesn’t have a published broadcast yet.'}</p>
         <button onClick={() => navigate(-1)} className="text-indigo-400 hover:underline text-sm">← Back</button>
       </div>
     )

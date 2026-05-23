@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/services/api'
 import { ilbApi, type Voice } from '@/services/ilbApi'
+import { CreatorStandaloneBroadcasts } from './CreatorStandaloneBroadcasts'
 
 /**
  * Creator authoring surface for ILB / "Podcast" broadcasts.
@@ -22,6 +23,7 @@ const DEFAULT_PERSONA = 'a warm, clear, professional training host'
 
 export function CreatorPodcastsPage() {
   const navigate = useNavigate()
+  const [tab, setTab] = useState<'course' | 'standalone'>('course')
   const [courses, setCourses] = useState<Course[]>([])
   const [voices, setVoices] = useState<Voice[]>([])
   const [loading, setLoading] = useState(true)
@@ -159,7 +161,21 @@ export function CreatorPodcastsPage() {
         (Voice &amp; audio are real; the live avatar is stubbed until HeyGen keys are configured.)
       </p>
 
-      {loading ? (
+      <div className="flex gap-2 mb-5 text-sm">
+        {(['course', 'standalone'] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-3 py-1.5 rounded ${tab === t ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+          >
+            {t === 'course' ? 'From course' : 'Standalone (brief / news)'}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'standalone' ? (
+        <CreatorStandaloneBroadcasts />
+      ) : loading ? (
         <p className="text-gray-400">Loading courses…</p>
       ) : courses.length === 0 ? (
         <p className="text-gray-400">No courses yet — create one first.</p>

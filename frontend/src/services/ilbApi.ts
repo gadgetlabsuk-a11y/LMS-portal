@@ -71,6 +71,37 @@ export interface Voice {
   description: string
 }
 
+export interface BroadcastSummary {
+  id: number
+  title: string
+  description: string | null
+  published: boolean
+}
+
+export interface BroadcastDetail {
+  id: number
+  title: string
+  description: string | null
+  source_text: string | null
+  host_persona: string | null
+  avatar_id: string | null
+  voice_id: string | null
+  script: string | null
+  segments: string[] | null
+  segment_audio: string[] | null
+  published: boolean
+}
+
+export type BroadcastPatch = Partial<{
+  title: string
+  description: string
+  source_text: string
+  host_persona: string
+  voice_id: string
+  avatar_id: string
+  script: string
+}>
+
 async function unwrap<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let detail = `Request failed (${res.status})`
@@ -133,4 +164,37 @@ export const ilbApi = {
     fd.append('file', blob, 'speech.webm')
     return api.postForm('/ilb/stt', fd).then((r) => unwrap<{ transcript: string }>(r))
   },
+
+  // --- standalone broadcasts ---
+  listBroadcasts: (): Promise<BroadcastSummary[]> =>
+    api.get('/ilb/broadcasts').then((r) => unwrap<BroadcastSummary[]>(r)),
+
+  getBroadcast: (id: number): Promise<BroadcastDetail> =>
+    api.get(`/ilb/broadcasts/${id}`).then((r) => unwrap<BroadcastDetail>(r)),
+
+  createBroadcast: (title: string, description?: string): Promise<BroadcastDetail> =>
+    api.post('/ilb/broadcasts', { title, description: description ?? null }).then((r) => unwrap<BroadcastDetail>(r)),
+
+  updateBroadcast: (id: number, patch: BroadcastPatch): Promise<BroadcastDetail> =>
+    api.put(`/ilb/broadcasts/${id}`, patch).then((r) => unwrap<BroadcastDetail>(r)),
+
+  uploadBroadcastSource: (id: number, file: File): Promise<BroadcastDetail> => {
+    const fd = new FormData()
+    fd.append('file', file, file.name)
+    return api.postForm(`/ilb/broadcasts/${id}/source-upload`, fd).then((r) => unwrap<BroadcastDetail>(r))
+  },
+
+  generateBroadcastScript: (id: number, hostPersona: string, targetMinutes: number): Promise<PodcastScript> =>
+    api
+      .post(`/ilb/broadcasts/${id}/generate-script`, { host_persona: hostPersona, target_minutes: targetMinutes })
+      .then((r) => unwrap<PodcastScript>(r)),
+
+  renderBroadcastAudio: (id: number): Promise<{ segment_audio: string[] }> =>
+    api.post(`/ilb/broadcasts/${id}/render-audio`, {}).then((r) => unwrap<{ segment_audio: string[] }>(r)),
+
+  publishBroadcast: (id: number, published = true): Promise<BroadcastDetail> =>
+    api.post(`/ilb/broadcasts/${id}/publish`, { published }).then((r) => unwrap<BroadcastDetail>(r)),
+
+  startBroadcastSession: (broadcastId: number, mode: string): Promise<StartSessionResult> =>
+    api.post('/ilb/sessions', { broadcast_id: broadcastId, mode }).then((r) => unwrap<StartSessionResult>(r)),
 }

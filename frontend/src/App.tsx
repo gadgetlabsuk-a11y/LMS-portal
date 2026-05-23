@@ -32,6 +32,7 @@ import { CreatorPodcastsPage } from '@/pages/creator/CreatorPodcastsPage'
 import { LearnerCatalogue } from '@/pages/learn/LearnerCatalogue'
 import { CourseDetail } from '@/pages/learn/CourseDetail'
 import { ILBPlayerPage } from '@/pages/learn/ILBPlayerPage'
+import { LearnerBroadcasts } from '@/pages/learn/LearnerBroadcasts'
 import { CourseViewerPage } from '@/pages/CourseViewerPage'
 import { CoursePreviewPage } from '@/pages/creator/CoursePreviewPage'
 
@@ -232,6 +233,14 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/learn/broadcast/:id"
+        element={
+          <ProtectedRoute>
+            <ILBPlayerPage kind="broadcast" />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Learner routes */}
       <Route
@@ -240,6 +249,16 @@ export default function App() {
           <LearnerLayout>
             <ProtectedRoute>
               <LearnerCatalogue />
+            </ProtectedRoute>
+          </LearnerLayout>
+        }
+      />
+      <Route
+        path="/learn/broadcasts"
+        element={
+          <LearnerLayout>
+            <ProtectedRoute>
+              <LearnerBroadcasts />
             </ProtectedRoute>
           </LearnerLayout>
         }
