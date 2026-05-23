@@ -45,16 +45,18 @@ describe('DepartmentDetailPage', () => {
 
   it('shows members and assigned content', async () => {
     renderPage()
-    expect(await screen.findByText('alice')).toBeInTheDocument()
-    expect(screen.getByText('Fire Safety')).toBeInTheDocument()
+    // 'alice' / 'Fire Safety' also appear in the user/content picker dropdowns, so assert on
+    // text unique to the member row (email) and the content row (the Course + Mandatory badges).
+    expect(await screen.findByText(/alice@x\.com/)).toBeInTheDocument()
     expect(screen.getByText('Course')).toBeInTheDocument()
-    expect(screen.getByText('Mandatory')).toBeInTheDocument()
+    // 'Mandatory' also labels the assign-form checkbox, so assert the row's unique due-date text.
+    expect(screen.getByText(/Due 2026-06-30/)).toBeInTheDocument()
   })
 
   it('assigns a standalone broadcast as mandatory with relative days', async () => {
     mockedApi.post.mockReturnValue(ok({ id: 8, content_type: 'broadcast', course_id: null, broadcast_id: 11, title: 'Company Brief', is_podcast: true, mandatory: true, due_mode: 'relative', due_date: null, due_days: 7 }))
     renderPage()
-    await screen.findByText('Fire Safety')
+    await screen.findByText('Course')  // wait for the assigned-content row to render
 
     await userEvent.selectOptions(await screen.findByLabelText(/content to assign/i), 'broadcast:11')
     await userEvent.click(screen.getByLabelText(/mandatory/i))
