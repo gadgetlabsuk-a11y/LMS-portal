@@ -84,6 +84,7 @@ def test_status_for():
     assert svc.status_for(completed=False, started=True, due=datetime(2026, 1, 1), now=now) == "overdue"
     assert svc.status_for(completed=False, started=True, due=datetime(2026, 12, 1), now=now) == "in_progress"
     assert svc.status_for(completed=False, started=False, due=None, now=now) == "not_started"
+    assert svc.status_for(completed=False, started=False, due=datetime(2026, 1, 1), now=now) == "overdue"
 
 
 def test_course_completion_signals(db):
@@ -123,3 +124,16 @@ def test_effective_due_for_user_earliest_across_departments(db):
     db.commit()
     assert svc.is_mandatory_for_user(db, u.id, course_id=c.id) is True
     assert svc.effective_due_for_user(db, u.id, course_id=c.id) == datetime(2026, 7, 1)
+
+
+def test_effective_due_for_user_relative_uses_per_department_join_date(db):
+    creator = _user(db, "creator_r"); u = _user(db, "rel")
+    c = _course(db, creator.id)
+    d1 = _dept(db, "RD1"); d2 = _dept(db, "RD2")
+    db.add(DepartmentMember(department_id=d1.id, user_id=u.id, added_at=datetime(2026, 1, 1)))
+    db.add(DepartmentMember(department_id=d2.id, user_id=u.id, added_at=datetime(2026, 3, 1)))
+    db.add(DepartmentContent(department_id=d1.id, course_id=c.id, mandatory=True, due_mode="relative", due_days=10))
+    db.add(DepartmentContent(department_id=d2.id, course_id=c.id, mandatory=True, due_mode="relative", due_days=10))
+    db.commit()
+    # d1: Jan 1 + 10d = Jan 11; d2: Mar 1 + 10d = Mar 11 -> earliest = Jan 11
+    assert svc.effective_due_for_user(db, u.id, course_id=c.id) == datetime(2026, 1, 11)

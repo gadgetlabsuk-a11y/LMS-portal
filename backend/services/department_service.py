@@ -7,11 +7,11 @@ BroadcastSession is created when the learner plays). Removing a member or unassi
 never deletes enrolments or sessions.
 """
 from datetime import datetime, timedelta, timezone
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy.orm import Session
 
-from models import Enrollment, BroadcastSession, DepartmentMember, DepartmentContent
+from models import Enrollment, BroadcastSession, DepartmentMember, DepartmentContent, Course
 
 
 def _as_naive_utc(dt: Optional[datetime]) -> Optional[datetime]:
@@ -33,7 +33,9 @@ def ensure_enrollment(db: Session, user_id: int, course_id: int) -> Enrollment:
         .first()
     )
     if enrollment is None:
-        enrollment = Enrollment(user_id=user_id, course_id=course_id, course_version=1)
+        course = db.query(Course).filter(Course.id == course_id).first()
+        course_version = (course.version if course and course.version else 1)
+        enrollment = Enrollment(user_id=user_id, course_id=course_id, course_version=course_version)
         db.add(enrollment)
         db.flush()
     return enrollment
@@ -79,7 +81,7 @@ def effective_due_date(content: DepartmentContent, anchor: Optional[datetime]) -
 def status_for(completed: bool, started: bool, due: Optional[datetime],
                now: Optional[datetime] = None) -> str:
     """Return one of: not_started | in_progress | completed | overdue."""
-    now = now or datetime.utcnow()
+    now = _as_naive_utc(now) if now is not None else datetime.utcnow()
     if completed:
         return "completed"
     if due is not None and due < now:
@@ -145,7 +147,7 @@ def content_started(db: Session, user_id: int, content: DepartmentContent) -> bo
 
 # --------------------------------------------------------------------------- cross-department resolution
 
-def _memberships(db: Session, user_id: int) -> dict:
+def _memberships(db: Session, user_id: int) -> Dict[int, Optional[datetime]]:
     """{department_id: added_at} for the user's current memberships."""
     return {
         m.department_id: m.added_at
