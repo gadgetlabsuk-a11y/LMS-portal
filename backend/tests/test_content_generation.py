@@ -242,3 +242,17 @@ def test_outline_from_content_rejects_oversized_file(creator_token):
             files=[("files", ("a.pdf", io.BytesIO(b"way more than three bytes"), "application/pdf"))],
             headers={"Authorization": f"Bearer {creator_token}"})
     assert res.status_code == 400
+
+
+def test_legacy_generate_endpoints_removed(creator_token):
+    r1 = client.post("/api/courses/generate", json={"topic": "x"},
+                     headers={"Authorization": f"Bearer {creator_token}"})
+    r2 = client.post("/api/courses/generate-from-document",
+                     files=[("file", ("a.pdf", io.BytesIO(b"x"), "application/pdf"))],
+                     headers={"Authorization": f"Bearer {creator_token}"})
+    # Endpoints are removed. The paths still match the existing
+    # /api/courses/{course_id} route for GET/PUT/DELETE, so a POST now yields
+    # 405 (Method Not Allowed) rather than 404 — either confirms the POST
+    # generation endpoints are gone.
+    assert r1.status_code in (404, 405)
+    assert r2.status_code in (404, 405)
