@@ -16,12 +16,18 @@ export function GenerateFromContentWizard({ open, onClose, onCreated }: Props) {
   const s = useGenerateStore()
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [progress, setProgress] = useState({ done: 0, total: 0 })
+  const [failed, setFailed] = useState(0)
+  const [createdCourseId, setCreatedCourseId] = useState<number | null>(null)
   const abortRef = useRef<AbortController | null>(null)
 
   if (!open) return null
 
   const handleClose = () => {
     abortRef.current?.abort()
+    setUploadError(null)
+    setProgress({ done: 0, total: 0 })
+    setFailed(0)
+    s.reset()
     onClose()
   }
 
@@ -84,17 +90,23 @@ export function GenerateFromContentWizard({ open, onClose, onCreated }: Props) {
         if (done) break
         const chunk = decoder.decode(value)
         for (const line of chunk.split('\n')) {
-          if (line.startsWith('data: ')) setProgress(p => ({ ...p, done: p.done + 1 }))
+          if (line.startsWith('data: ')) {
+            const val = line.slice(6).trim()
+            setProgress(p => ({ ...p, done: p.done + 1 }))
+            if (val === 'error') setFailed(n => n + 1)
+          }
         }
       }
     } catch (e: unknown) {
       if (e instanceof Error && e.name === 'AbortError') throw e
       setProgress(p => ({ ...p, done: p.done + slideCount }))
+      setFailed(n => n + slideCount)
     }
   }
 
   const handleCreate = async () => {
     s.setStep('creating')
+    setFailed(0)
     try {
       const fd = new FormData()
       s.files.forEach(f => fd.append('files', f))
@@ -111,11 +123,10 @@ export function GenerateFromContentWizard({ open, onClose, onCreated }: Props) {
       for (const v of data.videos as { video_id: number; slide_ids: number[] }[]) {
         await fillVideoContent(v.video_id, v.slide_ids.length)
       }
+      setCreatedCourseId(data.course_id)
       s.setStep('done')
-      onCreated(data.course_id)
-      s.reset()
     } catch (e: unknown) {
-      if (e instanceof Error && e.name === 'AbortError') return
+      if (e instanceof Error && e.name === 'AbortError') { s.reset(); return }
       s.setError('Could not create the course. Please try again.')
       s.setStep('review')
     }
@@ -130,7 +141,7 @@ export function GenerateFromContentWizard({ open, onClose, onCreated }: Props) {
       <div className="bg-white rounded-xl shadow-2xl w-[680px] max-h-[85vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-lg font-semibold">Generate course from content</h2>
-          <button onClick={handleClose} className="text-gray-400 hover:text-gray-700 text-xl">&#x2715;</button>
+          <button data-testid="wizard-close-btn" onClick={handleClose} className="text-gray-400 hover:text-gray-700 text-xl">&#x2715;</button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
@@ -143,6 +154,7 @@ export function GenerateFromContentWizard({ open, onClose, onCreated }: Props) {
                 data-testid="content-file-input"
                 type="file"
                 multiple
+                accept=".pptx,.docx,.pdf"
                 onChange={(e) => handleFiles(e.target.files)}
                 className="text-sm"
               />
@@ -169,6 +181,13 @@ export function GenerateFromContentWizard({ open, onClose, onCreated }: Props) {
                 <option value="professional">Professional</option>
                 <option value="casual">Casual</option>
               </select>
+              <label className="text-sm font-medium">Difficulty</label>
+              <select value={s.settings.difficulty} onChange={(e) => s.setSettings({ difficulty: e.target.value })}
+                className="border rounded px-3 py-2 text-sm">
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="advanced">Advanced</option>
+              </select>
             </div>
           )}
 
@@ -191,6 +210,17 @@ export function GenerateFromContentWizard({ open, onClose, onCreated }: Props) {
               <div className="animate-spin w-8 h-8 border-4 border-brand border-t-transparent rounded-full" />
               <p className="text-sm text-gray-500">
                 {s.step === 'creating' ? 'Creating course…' : `Filling content… ${progress.done}/${progress.total} slides`}
+              </p>
+            </div>
+          )}
+
+          {s.step === 'done' && (
+            <div className="flex flex-col items-center gap-2 py-10 text-center">
+              <p className="text-base font-semibold">Course created.</p>
+              <p className="text-sm text-gray-600">
+                {failed > 0
+                  ? `${failed} slide(s) couldn't be generated and were left empty — you can fill them in the editor.`
+                  : 'All slides were generated.'}
               </p>
             </div>
           )}
@@ -226,7 +256,11 @@ export function GenerateFromContentWizard({ open, onClose, onCreated }: Props) {
               >Create course</button>
             )}
             {s.step === 'done' && (
-              <button onClick={onClose} className="px-4 py-2 text-sm bg-brand text-white rounded">Done</button>
+              <button
+                data-testid="wizard-done-btn"
+                onClick={() => { const id = createdCourseId; s.reset(); if (id != null) onCreated(id) }}
+                className="px-4 py-2 text-sm bg-brand text-white rounded"
+              >Done</button>
             )}
           </div>
         </div>
