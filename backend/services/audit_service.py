@@ -134,6 +134,8 @@ class AuditService:
         enrollment = getattr(broadcast_session, "enrollment", None)
         if enrollment is not None:
             learner_id = getattr(enrollment, "user_id", None)
+        if learner_id is None:
+            learner_id = getattr(broadcast_session, "learner_id", None)
 
         if record is None:
             record = {

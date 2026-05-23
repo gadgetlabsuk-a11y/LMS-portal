@@ -351,3 +351,100 @@ def test_ask_returns_answer_audio(client, db, trainee_token, published_course, m
     )
     assert r.status_code == 200, r.text
     assert r.json()["answer_audio_url"] is not None
+
+
+# --- standalone broadcasts ----------------------------------------------------
+
+def _make_broadcast(client, creator_token, title="Team Brief"):
+    r = client.post(
+        "/api/ilb/broadcasts",
+        json={"title": title, "source_text": "Company news content."},
+        headers=_auth(creator_token),
+    )
+    assert r.status_code == 201, r.text
+    return r.json()["id"]
+
+
+def test_create_broadcast_creator_and_trainee(client, db, creator_token, trainee_token):
+    r = client.post("/api/ilb/broadcasts", json={"title": "Team Brief"}, headers=_auth(creator_token))
+    assert r.status_code == 201, r.text
+    assert r.json()["title"] == "Team Brief"
+    assert client.post("/api/ilb/broadcasts", json={"title": "X"}, headers=_auth(trainee_token)).status_code == 403
+
+
+def test_list_broadcasts_learner_sees_published_only(client, db, creator_token, trainee_token):
+    bid = _make_broadcast(client, creator_token, "Published Brief")
+    client.put(f"/api/ilb/broadcasts/{bid}", json={"script": "Hello."}, headers=_auth(creator_token))
+    client.post(f"/api/ilb/broadcasts/{bid}/publish", json={"published": True}, headers=_auth(creator_token))
+    _make_broadcast(client, creator_token, "Draft Brief")
+    titles = [b["title"] for b in client.get("/api/ilb/broadcasts", headers=_auth(trainee_token)).json()]
+    assert "Published Brief" in titles and "Draft Brief" not in titles
+
+
+def test_update_broadcast_computes_segments_clears_audio(client, db, creator_token):
+    bid = _make_broadcast(client, creator_token)
+    r = client.put(
+        f"/api/ilb/broadcasts/{bid}",
+        json={"script": "A.[SEGMENT BREAK]B.", "voice_id": "v1"},
+        headers=_auth(creator_token),
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["segments"] == ["A.", "B."]
+    assert r.json()["segment_audio"] is None
+    assert r.json()["voice_id"] == "v1"
+
+
+def test_broadcast_generate_script(client, db, creator_token, monkeypatch):
+    bid = _make_broadcast(client, creator_token)
+    monkeypatch.setattr(
+        ilb_router._claude, "generate_podcast_script",
+        AsyncMock(return_value={"script": "Welcome.", "segments": ["Welcome."]}),
+    )
+    r = client.post(f"/api/ilb/broadcasts/{bid}/generate-script", json={"target_minutes": 3}, headers=_auth(creator_token))
+    assert r.status_code == 200, r.text
+    assert r.json()["script"] == "Welcome."
+
+
+def test_broadcast_publish_requires_script(client, db, creator_token, trainee_token):
+    bid = _make_broadcast(client, creator_token)
+    assert client.post(f"/api/ilb/broadcasts/{bid}/publish", json={"published": True}, headers=_auth(creator_token)).status_code == 422
+    client.put(f"/api/ilb/broadcasts/{bid}", json={"script": "Hello."}, headers=_auth(creator_token))
+    r = client.post(f"/api/ilb/broadcasts/{bid}/publish", json={"published": True}, headers=_auth(creator_token))
+    assert r.status_code == 200 and r.json()["published"] is True
+    assert client.get(f"/api/ilb/broadcasts/{bid}", headers=_auth(trainee_token)).status_code == 200
+
+
+def test_standalone_session_lifecycle(client, db, creator_token, trainee_token, monkeypatch):
+    bid = _make_broadcast(client, creator_token, "Safety Brief")
+    client.put(f"/api/ilb/broadcasts/{bid}", json={"script": "Wear your harness."}, headers=_auth(creator_token))
+    client.post(f"/api/ilb/broadcasts/{bid}/publish", json={"published": True}, headers=_auth(creator_token))
+
+    r = client.post("/api/ilb/sessions", json={"broadcast_id": bid}, headers=_auth(trainee_token))
+    assert r.status_code == 201, r.text
+    sid = r.json()["session"]["id"]
+    assert r.json()["session"]["broadcast_id"] == bid
+
+    monkeypatch.setattr(
+        ilb_router._qa, "answer",
+        AsyncMock(return_value=QAResult(answer="A.", source_refs=["s"], confidence=0.9, covered=True, escalated=False)),
+    )
+    assert client.post(f"/api/ilb/sessions/{sid}/ask", json={"question": "Q?"}, headers=_auth(trainee_token)).status_code == 200
+
+    r = client.post(f"/api/ilb/sessions/{sid}/complete", json={}, headers=_auth(trainee_token))
+    assert r.status_code == 200, r.text
+    assert r.json()["attestation"]["sequence"] == 0
+
+    r = client.get(f"/api/ilb/sessions/{sid}/audit-pack", headers=_auth(trainee_token))
+    assert r.status_code == 200, r.text
+    assert r.json()["record"]["course"]["title"] == "Safety Brief"
+
+
+def test_start_session_requires_exactly_one_target(client, db, trainee_token):
+    # neither course_id nor broadcast_id -> 422
+    assert client.post("/api/ilb/sessions", json={}, headers=_auth(trainee_token)).status_code == 422
+
+
+def test_learner_cannot_start_unpublished_broadcast(client, db, creator_token, trainee_token):
+    bid = _make_broadcast(client, creator_token)
+    r = client.post("/api/ilb/sessions", json={"broadcast_id": bid}, headers=_auth(trainee_token))
+    assert r.status_code == 404

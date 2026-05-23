@@ -505,7 +505,10 @@ class BroadcastSession(Base):
     __tablename__ = "broadcast_sessions"
 
     id = Column(Integer, primary_key=True, index=True)
-    enrollment_id = Column(Integer, ForeignKey("enrollments.id", ondelete="CASCADE"), nullable=False)
+    # A session is backed by EITHER a course enrolment OR a standalone broadcast.
+    enrollment_id = Column(Integer, ForeignKey("enrollments.id", ondelete="CASCADE"), nullable=True)
+    broadcast_id = Column(Integer, ForeignKey("broadcasts.id", ondelete="CASCADE"), nullable=True)
+    learner_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)  # set for standalone
     mode = Column(String(20), nullable=False, server_default="interrupt")  # interrupt | defer
     started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     completed_at = Column(DateTime, nullable=True)
@@ -515,10 +518,14 @@ class BroadcastSession(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
 
     enrollment = relationship("Enrollment", back_populates="broadcast_sessions")
+    broadcast = relationship("Broadcast", back_populates="sessions")
     interactions = relationship("Interaction", back_populates="broadcast_session", cascade="all, delete-orphan", order_by="Interaction.ts")
     attestations = relationship("SessionAttestation", back_populates="broadcast_session", cascade="all, delete-orphan")
 
-    __table_args__ = (Index("idx_broadcast_enrollment", "enrollment_id"),)
+    __table_args__ = (
+        Index("idx_broadcast_enrollment", "enrollment_id"),
+        Index("idx_broadcast_session_broadcast", "broadcast_id"),
+    )
 
 
 class Interaction(Base):
@@ -568,3 +575,30 @@ class SessionAttestation(Base):
         Index("idx_attestation_session", "broadcast_session_id"),
         Index("idx_attestation_learner_seq", "learner_id", "sequence"),
     )
+
+
+class Broadcast(Base):
+    """A STANDALONE Interactive Learning Broadcast — org content outside a course
+    (team brief, company news, policy update). Course-attached broadcasts live on Course;
+    this is the additive standalone path with its own source material.
+    """
+    __tablename__ = "broadcasts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(500), nullable=False)
+    description = Column(Text, nullable=True)
+    creator_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    source_text = Column(Text, nullable=True)  # grounding source (paste / extracted doc / AI topic)
+    host_persona = Column(String(255), nullable=True)
+    avatar_id = Column(String(100), nullable=True)
+    voice_id = Column(String(100), nullable=True)
+    script = Column(Text, nullable=True)
+    segments = Column(JSON, nullable=True)
+    segment_audio = Column(JSON, nullable=True)
+    published = Column(Boolean, nullable=False, server_default="0")
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
+
+    sessions = relationship("BroadcastSession", back_populates="broadcast")
+
+    __table_args__ = (Index("idx_broadcast_creator", "creator_id"),)

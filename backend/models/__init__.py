@@ -30,6 +30,7 @@ from .models import (
     BroadcastSession,
     Interaction,
     SessionAttestation,
+    Broadcast,
 )
 
 __all__ = [
@@ -60,4 +61,5 @@ __all__ = [
     "BroadcastSession",
     "Interaction",
     "SessionAttestation",
+    "Broadcast",
 ]

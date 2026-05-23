@@ -29,12 +29,14 @@ from models import (
     BroadcastSession,
     Interaction,
     SessionAttestation,
+    Broadcast,
 )
 from middleware.auth_middleware import get_current_active_user
 from services.qa_service import QAService
 from services.audit_service import AuditService
 from services.claude_service import ClaudeService
 from services.tts_service import TTSService
+from services.document_service import DocumentService
 from services.integrations import get_avatar_provider, get_stt_provider
 
 logger = logging.getLogger(__name__)
@@ -85,24 +87,44 @@ def _load_owned_session(db: Session, session_id: int, user: User) -> BroadcastSe
     if not bs:
         raise HTTPException(status_code=404, detail="Broadcast session not found")
     enrollment = bs.enrollment
-    is_owner = enrollment is not None and enrollment.user_id == user.id
+    is_owner = (enrollment is not None and enrollment.user_id == user.id) or (bs.learner_id == user.id)
     is_privileged = user.role in (UserRole.ADMIN, UserRole.CREATOR)
     if not (is_owner or is_privileged):
         raise HTTPException(status_code=403, detail="Not your session")
     return bs
 
 
-async def _maybe_voice_answer(db: Session, course_id: int, answer_text: str, interaction_id: int) -> Optional[str]:
-    """Render a Q&A answer to speech (ElevenLabs) using the course voice, if configured."""
+def _session_context(db: Session, bs: BroadcastSession) -> Dict[str, Any]:
+    """Resolve grounding source / voice / content title / learner for either session type."""
+    if bs.broadcast_id:
+        b = db.query(Broadcast).filter(Broadcast.id == bs.broadcast_id).first()
+        return {
+            "source": (b.source_text or "") if b else "",
+            "voice_id": b.voice_id if b else None,
+            "title": b.title if b else "Broadcast",
+            "version": None,
+            "learner_id": bs.learner_id,
+        }
+    enrollment = bs.enrollment
+    course = db.query(Course).filter(Course.id == enrollment.course_id).first() if enrollment else None
+    return {
+        "source": _assemble_course_source(db, enrollment.course_id) if enrollment else "",
+        "voice_id": course.ilb_voice_id if course else None,
+        "title": course.title if course else "Course",
+        "version": enrollment.course_version if enrollment else None,
+        "learner_id": enrollment.user_id if enrollment else None,
+    }
+
+
+async def _maybe_voice_answer(answer_text: str, voice_id: Optional[str], interaction_id: int) -> Optional[str]:
+    """Render a Q&A answer to speech (ElevenLabs) using the given voice, if configured."""
     if not (answer_text and _tts.api_key):
         return None
     from pathlib import Path
     from config import settings
 
-    course = db.query(Course).filter(Course.id == course_id).first()
-    voice_id = (course.ilb_voice_id if course else None) or TTSService.DEFAULT_VOICE_ID
     try:
-        audio = await _tts.synthesize(answer_text, voice_id)
+        audio = await _tts.synthesize(answer_text, voice_id or TTSService.DEFAULT_VOICE_ID)
         audio_dir = Path(settings.UPLOAD_DIR) / "audio"
         audio_dir.mkdir(parents=True, exist_ok=True)
         filename = f"ilb_answer_{interaction_id}.mp3"
@@ -116,13 +138,15 @@ async def _maybe_voice_answer(db: Session, course_id: int, answer_text: str, int
 # --------------------------------------------------------------------------- schemas
 
 class StartSessionRequest(BaseModel):
-    course_id: int
+    course_id: Optional[int] = None
+    broadcast_id: Optional[int] = None
     mode: str = "interrupt"
 
 
 class BroadcastSessionResponse(BaseModel):
     id: int
-    enrollment_id: int
+    enrollment_id: Optional[int] = None
+    broadcast_id: Optional[int] = None
     mode: str
     completion_status: str
     started_at: datetime
@@ -170,55 +194,66 @@ def start_session(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> StartSessionResponse:
-    """Start an ILB broadcast session for a course.
+    """Start an ILB session backed by EITHER a course (course_id) or a standalone broadcast.
 
-    Enrolment management isn't a full feature yet, so the ILB demo find-or-creates the
-    learner's enrolment for the course on first broadcast (version-pinned to the course's
-    current version).
+    For courses, enrolment management isn't a full feature yet, so the demo find-or-creates the
+    learner's enrolment. For standalone broadcasts, the session links directly to the broadcast.
     """
     if body.mode not in VALID_MODES:
         raise HTTPException(status_code=422, detail=f"mode must be one of {sorted(VALID_MODES)}")
+    if bool(body.course_id) == bool(body.broadcast_id):
+        raise HTTPException(status_code=422, detail="Provide exactly one of course_id or broadcast_id")
 
-    course = db.query(Course).filter(Course.id == body.course_id).first()
-    if not course:
-        raise HTTPException(status_code=404, detail="Course not found")
+    avatar_id = "demo_avatar"
 
-    enrollment = (
-        db.query(Enrollment)
-        .filter(Enrollment.user_id == current_user.id, Enrollment.course_id == body.course_id)
-        .first()
-    )
-    if not enrollment:
-        enrollment = Enrollment(
-            user_id=current_user.id,
-            course_id=body.course_id,
-            course_version=course.version or 1,
+    if body.broadcast_id is not None:
+        broadcast = db.query(Broadcast).filter(Broadcast.id == body.broadcast_id).first()
+        if not broadcast:
+            raise HTTPException(status_code=404, detail="Broadcast not found")
+        privileged = current_user.role in (UserRole.CREATOR, UserRole.ADMIN)
+        if not privileged and not broadcast.published:
+            raise HTTPException(status_code=404, detail="Broadcast not published")
+        bs = BroadcastSession(
+            broadcast_id=broadcast.id,
+            learner_id=current_user.id,
+            mode=body.mode,
+            started_at=datetime.utcnow(),
+            completion_status="in_progress",
         )
-        db.add(enrollment)
-        db.commit()
-        db.refresh(enrollment)
+        if broadcast.avatar_id:
+            avatar_id = broadcast.avatar_id
+    else:
+        course = db.query(Course).filter(Course.id == body.course_id).first()
+        if not course:
+            raise HTTPException(status_code=404, detail="Course not found")
+        enrollment = (
+            db.query(Enrollment)
+            .filter(Enrollment.user_id == current_user.id, Enrollment.course_id == body.course_id)
+            .first()
+        )
+        if not enrollment:
+            enrollment = Enrollment(
+                user_id=current_user.id, course_id=body.course_id, course_version=course.version or 1,
+            )
+            db.add(enrollment)
+            db.commit()
+            db.refresh(enrollment)
+        bs = BroadcastSession(
+            enrollment_id=enrollment.id, mode=body.mode,
+            started_at=datetime.utcnow(), completion_status="in_progress",
+        )
+        first_video = (
+            db.query(Video)
+            .join(Module, Video.module_id == Module.id)
+            .filter(Module.course_id == body.course_id, Video.heygen_avatar_id.isnot(None))
+            .first()
+        )
+        if first_video and first_video.heygen_avatar_id:
+            avatar_id = first_video.heygen_avatar_id
 
-    bs = BroadcastSession(
-        enrollment_id=enrollment.id,
-        mode=body.mode,
-        started_at=datetime.utcnow(),
-        completion_status="in_progress",
-    )
     db.add(bs)
     db.commit()
     db.refresh(bs)
-
-    # Pick the course's configured avatar if a podcast video has one; else a demo default.
-    avatar_id = "demo_avatar"
-    first_video = (
-        db.query(Video)
-        .join(Module, Video.module_id == Module.id)
-        .filter(Module.course_id == enrollment.course_id, Video.heygen_avatar_id.isnot(None))
-        .first()
-    )
-    if first_video and first_video.heygen_avatar_id:
-        avatar_id = first_video.heygen_avatar_id
-
     live = get_avatar_provider().create_live_session(avatar_id)
     logger.info("ILB session started: id=%s user=%s mode=%s", bs.id, current_user.id, bs.mode)
     return StartSessionResponse(session=BroadcastSessionResponse.model_validate(bs), live=live)
@@ -250,10 +285,9 @@ async def ask(
     if not body.question.strip():
         raise HTTPException(status_code=422, detail="question must not be empty")
 
-    course_id = bs.enrollment.course_id
-    source = _assemble_course_source(db, course_id)
+    ctx = _session_context(db, bs)
 
-    result = await _qa.answer(body.question, source)
+    result = await _qa.answer(body.question, ctx["source"])
 
     interaction = Interaction(
         broadcast_session_id=bs.id,
@@ -270,7 +304,7 @@ async def ask(
     db.commit()
     db.refresh(interaction)
 
-    answer_audio_url = await _maybe_voice_answer(db, course_id, result.answer, interaction.id)
+    answer_audio_url = await _maybe_voice_answer(result.answer, ctx["voice_id"], interaction.id)
     return AskResponse(**result.to_dict(), answer_audio_url=answer_audio_url)
 
 
@@ -313,9 +347,8 @@ def audit_pack(
 ) -> Dict[str, Any]:
     """Generate the regulator audit pack (machine JSON + human HTML) for a session."""
     bs = _load_owned_session(db, session_id, current_user)
-    enrollment = bs.enrollment
-    learner = db.query(User).filter(User.id == enrollment.user_id).first()
-    course = db.query(Course).filter(Course.id == enrollment.course_id).first()
+    ctx = _session_context(db, bs)
+    learner = db.query(User).filter(User.id == ctx["learner_id"]).first() if ctx["learner_id"] else None
 
     interactions = [
         {
@@ -334,11 +367,7 @@ def audit_pack(
     record = _audit.build_session_record(
         session=bs,
         learner={"id": getattr(learner, "id", None), "username": getattr(learner, "username", None)},
-        course={
-            "id": getattr(course, "id", None),
-            "title": getattr(course, "title", None),
-            "version": enrollment.course_version,
-        },
+        course={"id": None, "title": ctx["title"], "version": ctx["version"]},
         interactions=interactions,
     )
 
@@ -578,3 +607,218 @@ async def transcribe_audio(
         raise HTTPException(status_code=422, detail="Empty audio")
     transcript = await get_stt_provider().transcribe(audio, file.content_type or "audio/webm")
     return {"transcript": transcript}
+
+
+# --------------------------------------------------------------------------- standalone broadcasts
+
+class BroadcastCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    source_text: Optional[str] = None
+
+
+class BroadcastUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    source_text: Optional[str] = None
+    host_persona: Optional[str] = None
+    voice_id: Optional[str] = None
+    avatar_id: Optional[str] = None
+    script: Optional[str] = None
+
+
+class BroadcastOut(BaseModel):
+    id: int
+    title: str
+    description: Optional[str] = None
+    source_text: Optional[str] = None
+    host_persona: Optional[str] = None
+    avatar_id: Optional[str] = None
+    voice_id: Optional[str] = None
+    script: Optional[str] = None
+    segments: Optional[List[str]] = None
+    segment_audio: Optional[List[str]] = None
+    published: bool = False
+
+    class Config:
+        from_attributes = True
+
+
+class BroadcastSummary(BaseModel):
+    id: int
+    title: str
+    description: Optional[str] = None
+    published: bool = False
+
+
+def _require_creator(user: User) -> None:
+    if user.role not in (UserRole.CREATOR, UserRole.ADMIN):
+        raise HTTPException(status_code=403, detail="Creator or admin only")
+
+
+def _get_broadcast(db: Session, broadcast_id: int) -> Broadcast:
+    b = db.query(Broadcast).filter(Broadcast.id == broadcast_id).first()
+    if not b:
+        raise HTTPException(status_code=404, detail="Broadcast not found")
+    return b
+
+
+@router.post("/broadcasts", response_model=BroadcastOut, status_code=201)
+def create_broadcast(
+    body: BroadcastCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> BroadcastOut:
+    """Create a standalone broadcast (team brief, company news, etc.)."""
+    _require_creator(current_user)
+    b = Broadcast(
+        title=body.title, description=body.description,
+        source_text=body.source_text, creator_id=current_user.id,
+    )
+    db.add(b)
+    db.commit()
+    db.refresh(b)
+    return BroadcastOut.model_validate(b)
+
+
+@router.get("/broadcasts", response_model=List[BroadcastSummary])
+def list_broadcasts(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> List[BroadcastSummary]:
+    """List broadcasts — learners see only published ones."""
+    q = db.query(Broadcast)
+    if current_user.role not in (UserRole.CREATOR, UserRole.ADMIN):
+        q = q.filter(Broadcast.published.is_(True))
+    items = q.order_by(Broadcast.created_at.desc()).all()
+    return [BroadcastSummary(id=b.id, title=b.title, description=b.description, published=bool(b.published)) for b in items]
+
+
+@router.get("/broadcasts/{broadcast_id}", response_model=BroadcastOut)
+def get_broadcast(
+    broadcast_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> BroadcastOut:
+    b = _get_broadcast(db, broadcast_id)
+    if current_user.role not in (UserRole.CREATOR, UserRole.ADMIN) and not b.published:
+        raise HTTPException(status_code=404, detail="Broadcast not published")
+    return BroadcastOut.model_validate(b)
+
+
+@router.put("/broadcasts/{broadcast_id}", response_model=BroadcastOut)
+def update_broadcast(
+    broadcast_id: int,
+    body: BroadcastUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> BroadcastOut:
+    _require_creator(current_user)
+    b = _get_broadcast(db, broadcast_id)
+    data = body.model_dump(exclude_unset=True)
+    for field in ("title", "description", "source_text", "host_persona", "voice_id", "avatar_id"):
+        if field in data:
+            setattr(b, field, data[field])
+    if "script" in data:
+        b.script = data["script"]
+        b.segments = _segments_from_script(data["script"] or "")
+        b.segment_audio = None  # invalidate stale audio
+    db.commit()
+    db.refresh(b)
+    return BroadcastOut.model_validate(b)
+
+
+@router.post("/broadcasts/{broadcast_id}/source-upload", response_model=BroadcastOut)
+async def broadcast_source_upload(
+    broadcast_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> BroadcastOut:
+    """Set a broadcast's source by extracting text from an uploaded PDF/DOCX/PPTX."""
+    _require_creator(current_user)
+    b = _get_broadcast(db, broadcast_id)
+    raw = await file.read()
+    try:
+        text = DocumentService.extract_text_from_file_sync(raw, file.content_type or "")
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Could not extract text: {e}")
+    if not text.strip():
+        raise HTTPException(status_code=422, detail="No text extracted from the document")
+    b.source_text = text
+    db.commit()
+    db.refresh(b)
+    return BroadcastOut.model_validate(b)
+
+
+@router.post("/broadcasts/{broadcast_id}/generate-script", response_model=PodcastScriptResponse)
+async def broadcast_generate_script(
+    broadcast_id: int,
+    body: PodcastScriptRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> PodcastScriptResponse:
+    """Generate a host-persona script from the broadcast's source (paste / doc / topic)."""
+    _require_creator(current_user)
+    b = _get_broadcast(db, broadcast_id)
+    if not (b.source_text and b.source_text.strip()):
+        raise HTTPException(status_code=422, detail="Add source content first (paste, upload, or a topic)")
+    result = await _claude.generate_podcast_script(
+        source_text=b.source_text, host_persona=body.host_persona,
+        target_minutes=body.target_minutes, title=b.title,
+    )
+    b.script = result["script"]
+    b.segments = result["segments"]
+    b.segment_audio = None
+    db.commit()
+    db.refresh(b)
+    return PodcastScriptResponse(script=result["script"], segments=result["segments"])
+
+
+@router.post("/broadcasts/{broadcast_id}/render-audio")
+async def broadcast_render_audio(
+    broadcast_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Dict[str, Any]:
+    """Render the broadcast's script segments to narration audio (ElevenLabs)."""
+    _require_creator(current_user)
+    b = _get_broadcast(db, broadcast_id)
+    segments = b.segments or []
+    if not segments:
+        raise HTTPException(status_code=422, detail="Generate a script first")
+    if not _tts.api_key:
+        raise HTTPException(status_code=503, detail="TTS not configured (ELEVENLABS_API_KEY)")
+    from pathlib import Path
+    from config import settings
+
+    voice_id = b.voice_id or TTSService.DEFAULT_VOICE_ID
+    audio_dir = Path(settings.UPLOAD_DIR) / "audio"
+    audio_dir.mkdir(parents=True, exist_ok=True)
+    urls: List[str] = []
+    for i, segment in enumerate(segments):
+        audio = await _tts.synthesize(segment, voice_id)
+        filename = f"ilb_bcast_{broadcast_id}_seg_{i}.mp3"
+        (audio_dir / filename).write_bytes(audio)
+        urls.append(f"/uploads/audio/{filename}")
+    b.segment_audio = urls
+    db.commit()
+    db.refresh(b)
+    return {"segment_audio": urls}
+
+
+@router.post("/broadcasts/{broadcast_id}/publish", response_model=BroadcastOut)
+def publish_broadcast(
+    broadcast_id: int,
+    body: PublishRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> BroadcastOut:
+    _require_creator(current_user)
+    b = _get_broadcast(db, broadcast_id)
+    if body.published and not (b.script and b.script.strip()):
+        raise HTTPException(status_code=422, detail="Nothing to publish — generate a script first")
+    b.published = body.published
+    db.commit()
+    db.refresh(b)
+    return BroadcastOut.model_validate(b)
