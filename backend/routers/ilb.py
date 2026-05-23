@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -35,7 +35,7 @@ from services.qa_service import QAService
 from services.audit_service import AuditService
 from services.claude_service import ClaudeService
 from services.tts_service import TTSService
-from services.integrations import get_avatar_provider
+from services.integrations import get_avatar_provider, get_stt_provider
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +92,27 @@ def _load_owned_session(db: Session, session_id: int, user: User) -> BroadcastSe
     return bs
 
 
+async def _maybe_voice_answer(db: Session, course_id: int, answer_text: str, interaction_id: int) -> Optional[str]:
+    """Render a Q&A answer to speech (ElevenLabs) using the course voice, if configured."""
+    if not (answer_text and _tts.api_key):
+        return None
+    from pathlib import Path
+    from config import settings
+
+    course = db.query(Course).filter(Course.id == course_id).first()
+    voice_id = (course.ilb_voice_id if course else None) or TTSService.DEFAULT_VOICE_ID
+    try:
+        audio = await _tts.synthesize(answer_text, voice_id)
+        audio_dir = Path(settings.UPLOAD_DIR) / "audio"
+        audio_dir.mkdir(parents=True, exist_ok=True)
+        filename = f"ilb_answer_{interaction_id}.mp3"
+        (audio_dir / filename).write_bytes(audio)
+        return f"/uploads/audio/{filename}"
+    except Exception:
+        logger.warning("Answer TTS failed for interaction %s", interaction_id, exc_info=True)
+        return None
+
+
 # --------------------------------------------------------------------------- schemas
 
 class StartSessionRequest(BaseModel):
@@ -129,6 +150,7 @@ class AskResponse(BaseModel):
     covered: bool
     escalated: bool
     disclaimer: str
+    answer_audio_url: Optional[str] = None
 
 
 class CompleteRequest(BaseModel):
@@ -246,8 +268,10 @@ async def ask(
     )
     db.add(interaction)
     db.commit()
+    db.refresh(interaction)
 
-    return AskResponse(**result.to_dict())
+    answer_audio_url = await _maybe_voice_answer(db, course_id, result.answer, interaction.id)
+    return AskResponse(**result.to_dict(), answer_audio_url=answer_audio_url)
 
 
 @router.post("/sessions/{session_id}/complete", response_model=CompleteResponse)
@@ -538,3 +562,19 @@ async def render_podcast_audio(
     db.refresh(course)
     logger.info("ILB audio rendered: course=%s segments=%s", course_id, len(urls))
     return {"segment_audio": urls}
+
+
+@router.post("/stt")
+async def transcribe_audio(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_active_user),
+) -> Dict[str, Any]:
+    """Transcribe a recorded question (push-to-talk) to text via Deepgram."""
+    from config import settings
+    if not settings.DEEPGRAM_API_KEY:
+        raise HTTPException(status_code=503, detail="Speech-to-text not configured (DEEPGRAM_API_KEY)")
+    audio = await file.read()
+    if not audio:
+        raise HTTPException(status_code=422, detail="Empty audio")
+    transcript = await get_stt_provider().transcribe(audio, file.content_type or "audio/webm")
+    return {"transcript": transcript}

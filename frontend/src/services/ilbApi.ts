@@ -33,6 +33,7 @@ export interface AskResult {
   covered: boolean
   escalated: boolean
   disclaimer: string
+  answer_audio_url: string | null
 }
 
 export interface Attestation {
@@ -126,4 +127,10 @@ export const ilbApi = {
 
   renderAudio: (courseId: number): Promise<{ segment_audio: string[] }> =>
     api.post(`/ilb/courses/${courseId}/podcast/render-audio`, {}).then((r) => unwrap<{ segment_audio: string[] }>(r)),
+
+  transcribe: (blob: Blob): Promise<{ transcript: string }> => {
+    const fd = new FormData()
+    fd.append('file', blob, 'speech.webm')
+    return api.postForm('/ilb/stt', fd).then((r) => unwrap<{ transcript: string }>(r))
+  },
 }

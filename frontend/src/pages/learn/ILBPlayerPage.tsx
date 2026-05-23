@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { API_BASE } from '@/services/api'
 import { ilbApi, type LiveTransport } from '@/services/ilbApi'
@@ -52,6 +52,10 @@ export const ILBPlayerPage = () => {
   const [queued, setQueued] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([])
+  const [recording, setRecording] = useState(false)
+  const [answerAudioUrl, setAnswerAudioUrl] = useState<string | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
 
   const liveAvatar = state === 'listening' || state === 'answering'
 
@@ -95,14 +99,15 @@ export const ILBPlayerPage = () => {
     }
   }
 
-  async function askBackend(q: string) {
+  async function askBackend(q: string, inputMode: 'text' | 'voice' = 'text') {
     if (sessionId == null) return
     push({ role: 'learner', text: q })
     setAsking(true)
     setState('answering')
     try {
-      const res = await ilbApi.ask(sessionId, q, 'text')
+      const res = await ilbApi.ask(sessionId, q, inputMode)
       push({ role: 'host', text: res.answer, escalated: res.escalated, sourceRefs: res.source_refs, disclaimer: res.disclaimer })
+      if (res.answer_audio_url) setAnswerAudioUrl(res.answer_audio_url)
     } catch (e) {
       push({ role: 'system', text: `Q&A failed: ${e instanceof Error ? e.message : 'error'}` })
     } finally {
@@ -149,8 +154,52 @@ export const ILBPlayerPage = () => {
     }
   }
 
-  function startVoiceCapture() {
-    push({ role: 'system', text: '[stub] Voice input (Deepgram STT) arrives with API keys. Type your question for now.' })
+  // Push-to-talk: click to record, click to stop → Deepgram transcribes → ask.
+  async function toggleVoiceCapture() {
+    if (recording) {
+      mediaRecorderRef.current?.stop()
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mr = new MediaRecorder(stream)
+      chunksRef.current = []
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data)
+      }
+      mr.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop())
+        setRecording(false)
+        setState('answering')
+        const blob = new Blob(chunksRef.current, { type: mr.mimeType || 'audio/webm' })
+        try {
+          const { transcript } = await ilbApi.transcribe(blob)
+          const q = transcript.trim()
+          if (!q) {
+            push({ role: 'system', text: "Didn't catch that — try again." })
+            setState('playing')
+            return
+          }
+          if (mode === 'interrupt') {
+            setState('paused')
+            void askBackend(q, 'voice')
+          } else {
+            setQueued((qs) => [...qs, q])
+            push({ role: 'system', text: `Queued: "${q}"` })
+            setState('playing')
+          }
+        } catch (e) {
+          push({ role: 'system', text: `Transcription failed: ${e instanceof Error ? e.message : 'error'}` })
+          setState('playing')
+        }
+      }
+      mediaRecorderRef.current = mr
+      mr.start()
+      setRecording(true)
+      setState('listening')
+    } catch {
+      push({ role: 'system', text: 'Microphone unavailable or permission denied.' })
+    }
   }
 
   const started = sessionId != null
@@ -233,6 +282,10 @@ export const ILBPlayerPage = () => {
             </div>
           )}
 
+          {answerAudioUrl && (
+            <audio key={answerAudioUrl} autoPlay controls src={`${API_BASE}${answerAudioUrl}`} className="w-full max-w-2xl" />
+          )}
+
           {!started ? (
             <button
               onClick={() => void startBroadcast()}
@@ -273,8 +326,12 @@ export const ILBPlayerPage = () => {
                     </button>
                   </>
                 )}
-                <button onClick={startVoiceCapture} className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 text-sm" title="Voice input arrives with API keys">
-                  🎤 ·stub
+                <button
+                  onClick={() => void toggleVoiceCapture()}
+                  disabled={asking || completed}
+                  className={`px-4 py-2 rounded text-sm disabled:opacity-40 ${recording ? 'bg-red-600 hover:bg-red-500' : 'bg-gray-700 hover:bg-gray-600'}`}
+                >
+                  {recording ? '⏹ Stop' : '🎤 Speak'}
                 </button>
                 {mode === 'defer' && (
                   <button

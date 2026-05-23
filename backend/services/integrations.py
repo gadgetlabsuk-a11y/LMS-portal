@@ -11,6 +11,8 @@ See docs/superpowers/specs/2026-05-21-ilb-design.md §3.
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
+import httpx
+
 
 # --- Avatar (HeyGen): hybrid pre-render + live --------------------------------------
 
@@ -47,16 +49,42 @@ class StubAvatarProvider(AvatarProvider):
 
 class STTProvider(ABC):
     @abstractmethod
-    def transcribe(self, audio: bytes) -> str:
-        """Transcribe a chunk/utterance of audio to text."""
+    async def transcribe(self, audio: bytes, content_type: str = "audio/webm") -> str:
+        """Transcribe an utterance of audio to text."""
         raise NotImplementedError
 
 
 class StubSTTProvider(STTProvider):
-    """Demo stub. Real impl: Deepgram streaming STT over a websocket relay."""
+    """Demo stub used when no DEEPGRAM_API_KEY is configured."""
 
-    def transcribe(self, audio: bytes) -> str:
+    async def transcribe(self, audio: bytes, content_type: str = "audio/webm") -> str:
         return "[stub transcript]"
+
+
+class DeepgramSTTProvider(STTProvider):
+    """Deepgram pre-recorded (push-to-talk) transcription via REST.
+
+    Streaming partials over a websocket are the later upgrade; this transcribes a recorded
+    utterance, which is robust for the demo.
+    """
+
+    URL = "https://api.deepgram.com/v1/listen"
+
+    def __init__(self, api_key: str) -> None:
+        self.api_key = api_key
+
+    async def transcribe(self, audio: bytes, content_type: str = "audio/webm") -> str:
+        headers = {"Authorization": f"Token {self.api_key}", "Content-Type": content_type}
+        params = {"model": "nova-2", "smart_format": "true", "punctuate": "true"}
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(self.URL, params=params, headers=headers, content=audio, timeout=30.0)
+        if resp.status_code != 200:
+            raise Exception(f"Deepgram STT error: {resp.status_code} {resp.text[:200]}")
+        data = resp.json()
+        try:
+            return data["results"]["channels"][0]["alternatives"][0]["transcript"]
+        except (KeyError, IndexError):
+            return ""
 
 
 # --- Live text-to-speech (ElevenLabs Turbo) ----------------------------------------
@@ -83,7 +111,12 @@ def get_avatar_provider(real: Optional[AvatarProvider] = None) -> AvatarProvider
 
 
 def get_stt_provider(real: Optional[STTProvider] = None) -> STTProvider:
-    return real or StubSTTProvider()
+    if real:
+        return real
+    from config import settings
+    if settings.DEEPGRAM_API_KEY:
+        return DeepgramSTTProvider(settings.DEEPGRAM_API_KEY)
+    return StubSTTProvider()
 
 
 def get_live_tts_provider(real: Optional[LiveTTSProvider] = None) -> LiveTTSProvider:

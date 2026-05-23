@@ -4,9 +4,11 @@ The Claude call in qa_service is mocked so these run offline.
 """
 
 import pytest
+from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import routers.ilb as ilb_router
+from config import settings
 from models import Enrollment, Interaction, User, UserRole
 from services.qa_service import QAResult
 from services.auth_service import AuthService
@@ -299,3 +301,53 @@ def test_render_audio_trainee_forbidden(client, db, trainee_token, creator_cours
         headers=_auth(trainee_token),
     )
     assert r.status_code == 403
+
+
+# --- voice Q&A (Deepgram STT + spoken answers) --------------------------------
+
+def test_stt_no_key(client, trainee_token, monkeypatch):
+    monkeypatch.setattr(settings, "DEEPGRAM_API_KEY", "")
+    r = client.post(
+        "/api/ilb/stt",
+        files={"file": ("speech.webm", b"audio-bytes", "audio/webm")},
+        headers=_auth(trainee_token),
+    )
+    assert r.status_code == 503
+
+
+def test_stt_transcribes(client, trainee_token, monkeypatch):
+    monkeypatch.setattr(settings, "DEEPGRAM_API_KEY", "test-key")
+    fake = SimpleNamespace(transcribe=AsyncMock(return_value="what is lockout tagout"))
+    monkeypatch.setattr(ilb_router, "get_stt_provider", lambda: fake)
+    r = client.post(
+        "/api/ilb/stt",
+        files={"file": ("speech.webm", b"audio-bytes", "audio/webm")},
+        headers=_auth(trainee_token),
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["transcript"] == "what is lockout tagout"
+
+
+def test_ask_returns_answer_audio(client, db, trainee_token, published_course, monkeypatch):
+    r = client.post(
+        "/api/ilb/sessions",
+        json={"course_id": published_course.id},
+        headers=_auth(trainee_token),
+    )
+    sid = r.json()["session"]["id"]
+    published_course.ilb_voice_id = "voiceX"
+    db.commit()
+    monkeypatch.setattr(
+        ilb_router._qa,
+        "answer",
+        AsyncMock(return_value=QAResult(answer="An answer.", source_refs=["s"], confidence=0.9, covered=True, escalated=False)),
+    )
+    monkeypatch.setattr(ilb_router._tts, "api_key", "test-key")
+    monkeypatch.setattr(ilb_router._tts, "synthesize", AsyncMock(return_value=b"answer-audio"))
+    r = client.post(
+        f"/api/ilb/sessions/{sid}/ask",
+        json={"question": "What is X?", "input_mode": "voice"},
+        headers=_auth(trainee_token),
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["answer_audio_url"] is not None
