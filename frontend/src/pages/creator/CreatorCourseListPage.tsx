@@ -5,6 +5,7 @@ import { Button } from '@/components/common/Button'
 import { Badge } from '@/components/common/Badge'
 import { CourseIdentityModal } from '@/components/course/CourseIdentityModal'
 import { CourseStructureModal } from '@/components/course/CourseStructureModal'
+import { GenerateFromContentWizard } from '@/components/generate/GenerateFromContentWizard'
 
 interface Course {
   id: number
@@ -19,6 +20,7 @@ export function CreatorCourseListPage() {
   const [showIdentityModal, setShowIdentityModal] = useState(false)
   const [showStructureModal, setShowStructureModal] = useState(false)
   const [pendingCourseId, setPendingCourseId] = useState<number | null>(null)
+  const [showGenerateWizard, setShowGenerateWizard] = useState(false)
 
   const fetchCourses = async () => {
     const res = await api.get('/courses')
@@ -69,9 +71,18 @@ export function CreatorCourseListPage() {
         <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#111827', margin: 0 }}>
           My Courses
         </h1>
-        <Button variant="primary" onClick={() => setShowIdentityModal(true)}>
-          + New Course
-        </Button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button
+            variant="secondary"
+            data-testid="generate-from-content-btn"
+            onClick={() => setShowGenerateWizard(true)}
+          >
+            Generate from content
+          </Button>
+          <Button variant="primary" onClick={() => setShowIdentityModal(true)}>
+            + New Course
+          </Button>
+        </div>
       </div>
 
       {/* Course list */}
@@ -134,6 +145,14 @@ export function CreatorCourseListPage() {
         onClose={handleStructureClose}
         courseId={pendingCourseId}
         onConfirmed={handleStructureConfirmed}
+      />
+      <GenerateFromContentWizard
+        open={showGenerateWizard}
+        onClose={() => setShowGenerateWizard(false)}
+        onCreated={(courseId) => {
+          setShowGenerateWizard(false)
+          navigate(`/creator/courses/${courseId}/builder`)
+        }}
       />
     </div>
   )
