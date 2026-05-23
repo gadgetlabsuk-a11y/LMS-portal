@@ -45,7 +45,8 @@ def upgrade() -> None:
         'department_content',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('department_id', sa.Integer(), sa.ForeignKey('departments.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('course_id', sa.Integer(), sa.ForeignKey('courses.id', ondelete='CASCADE'), nullable=False),
+        sa.Column('course_id', sa.Integer(), sa.ForeignKey('courses.id', ondelete='CASCADE'), nullable=True),
+        sa.Column('broadcast_id', sa.Integer(), sa.ForeignKey('broadcasts.id', ondelete='CASCADE'), nullable=True),
         sa.Column('mandatory', sa.Boolean(), server_default='0', nullable=False),
         sa.Column('due_mode', sa.String(length=20), nullable=True),
         sa.Column('due_date', sa.DateTime(), nullable=True),
@@ -55,11 +56,14 @@ def upgrade() -> None:
         sa.Column('updated_at', sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('department_id', 'course_id', name='uq_department_course'),
+        sa.UniqueConstraint('department_id', 'broadcast_id', name='uq_department_broadcast'),
     )
     op.create_index('idx_department_content_course', 'department_content', ['course_id'])
+    op.create_index('idx_department_content_broadcast', 'department_content', ['broadcast_id'])
 
 
 def downgrade() -> None:
+    op.drop_index('idx_department_content_broadcast', table_name='department_content')
     op.drop_index('idx_department_content_course', table_name='department_content')
     op.drop_table('department_content')
     op.drop_index('idx_department_member_dept', table_name='department_members')

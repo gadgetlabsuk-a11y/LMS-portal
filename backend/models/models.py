@@ -645,18 +645,22 @@ class DepartmentMember(Base):
 
 
 class DepartmentContent(Base):
-    """A course/podcast assigned to a department, optionally mandatory with a deadline.
+    """A course OR standalone broadcast assigned to a department, optionally mandatory.
 
-    A "podcast" is a Course with ilb_published=true; there is no separate entity.
-    due_mode is 'fixed' (use due_date) or 'relative' (use due_days from each user's
-    enrolment date), or None for a mandatory item with no hard deadline.
+    Exactly one of course_id / broadcast_id is set per row (enforced at the API boundary);
+    the content "kind" is derived ('broadcast' if broadcast_id else 'course'). A course may
+    itself be a course-attached broadcast (Course.ilb_published); a standalone broadcast is
+    the Broadcast entity (org content outside a course). due_mode is 'fixed' (use due_date)
+    or 'relative' (use due_days from the user's department-join date), or None for a
+    mandatory item with no hard deadline.
     """
 
     __tablename__ = "department_content"
 
     id = Column(Integer, primary_key=True, index=True)
     department_id = Column(Integer, ForeignKey("departments.id", ondelete="CASCADE"), nullable=False)
-    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=False)
+    course_id = Column(Integer, ForeignKey("courses.id", ondelete="CASCADE"), nullable=True)
+    broadcast_id = Column(Integer, ForeignKey("broadcasts.id", ondelete="CASCADE"), nullable=True)
     mandatory = Column(Boolean, default=False, nullable=False)
     due_mode = Column(String(20), nullable=True)
     due_date = Column(DateTime, nullable=True)
@@ -667,8 +671,11 @@ class DepartmentContent(Base):
 
     department = relationship("Department", back_populates="content")
     course = relationship("Course")
+    broadcast = relationship("Broadcast")
 
     __table_args__ = (
         UniqueConstraint("department_id", "course_id", name="uq_department_course"),
+        UniqueConstraint("department_id", "broadcast_id", name="uq_department_broadcast"),
         Index("idx_department_content_course", "course_id"),
+        Index("idx_department_content_broadcast", "broadcast_id"),
     )
