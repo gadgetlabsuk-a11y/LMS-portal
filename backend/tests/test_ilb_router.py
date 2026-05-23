@@ -1,0 +1,111 @@
+"""Integration tests for the ILB router (session lifecycle, Q&A, audit pack).
+
+The Claude call in qa_service is mocked so these run offline.
+"""
+
+import pytest
+from unittest.mock import AsyncMock
+
+import routers.ilb as ilb_router
+from models import Enrollment, Interaction, User, UserRole
+from services.qa_service import QAResult
+from services.auth_service import AuthService
+
+
+def _auth(token):
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def enrollment(db, trainee_user, published_course):
+    e = Enrollment(user_id=trainee_user.id, course_id=published_course.id, course_version=1)
+    db.add(e)
+    db.commit()
+    db.refresh(e)
+    return e
+
+
+def test_session_lifecycle(client, db, trainee_token, enrollment, monkeypatch):
+    # start
+    r = client.post(
+        "/api/ilb/sessions",
+        json={"enrollment_id": enrollment.id, "mode": "interrupt"},
+        headers=_auth(trainee_token),
+    )
+    assert r.status_code == 201, r.text
+    sid = r.json()["session"]["id"]
+    assert r.json()["live"]["provider"] == "stub"
+
+    # get
+    r = client.get(f"/api/ilb/sessions/{sid}", headers=_auth(trainee_token))
+    assert r.status_code == 200
+    assert r.json()["completion_status"] == "in_progress"
+
+    # ask (mock the grounded Q&A so no network)
+    monkeypatch.setattr(
+        ilb_router._qa,
+        "answer",
+        AsyncMock(return_value=QAResult(
+            answer="Grounded answer.", source_refs=["a passage"], confidence=0.9,
+            covered=True, escalated=False,
+        )),
+    )
+    r = client.post(
+        f"/api/ilb/sessions/{sid}/ask",
+        json={"question": "What is X?", "input_mode": "text"},
+        headers=_auth(trainee_token),
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["answer"] == "Grounded answer."
+    assert r.json()["escalated"] is False
+    assert db.query(Interaction).filter(Interaction.broadcast_session_id == sid).count() == 1
+
+    # complete -> seals into the learner hash chain
+    r = client.post(
+        f"/api/ilb/sessions/{sid}/complete",
+        json={"final_score": 88.0},
+        headers=_auth(trainee_token),
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["session"]["completion_status"] == "completed"
+    assert r.json()["attestation"]["sequence"] == 0
+    assert r.json()["attestation"]["content_hash"]
+
+    # audit pack
+    r = client.get(f"/api/ilb/sessions/{sid}/audit-pack", headers=_auth(trainee_token))
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["record"]["completion_status"] == "completed"
+    assert body["attestation"]["sequence"] == 0
+    assert "Audit Record" in body["html"]
+
+
+def test_invalid_mode_rejected(client, trainee_token, enrollment):
+    r = client.post(
+        "/api/ilb/sessions",
+        json={"enrollment_id": enrollment.id, "mode": "bogus"},
+        headers=_auth(trainee_token),
+    )
+    assert r.status_code == 422
+
+
+def test_ownership_enforced(client, db, trainee_token, enrollment):
+    r = client.post(
+        "/api/ilb/sessions",
+        json={"enrollment_id": enrollment.id},
+        headers=_auth(trainee_token),
+    )
+    sid = r.json()["session"]["id"]
+
+    other = User(
+        username="other_trainee", email="other_t@example.com",
+        hashed_password=AuthService.hash_password("pass123"), role=UserRole.TRAINEE, is_active=True,
+    )
+    db.add(other)
+    db.commit()
+    db.refresh(other)
+    other_token = AuthService.create_access_token(
+        user_id=other.id, username=other.username, role=other.role.value,
+    )
+    r = client.get(f"/api/ilb/sessions/{sid}", headers=_auth(other_token))
+    assert r.status_code == 403
