@@ -117,6 +117,12 @@ class Course(Base):
     certificate_enabled = Column(Boolean, nullable=True, server_default='1')
     published_at = Column(DateTime, nullable=True)
     version = Column(Integer, nullable=True, server_default='1')
+    # ILB (Interactive Learning Broadcast) config — one broadcast per course (demo).
+    ilb_script = Column(Text, nullable=True)
+    ilb_host_persona = Column(String(255), nullable=True)
+    ilb_avatar_id = Column(String(100), nullable=True)
+    ilb_segments = Column(JSON, nullable=True)
+    ilb_published = Column(Boolean, nullable=False, server_default='0')
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

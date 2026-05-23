@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '@/services/api'
+import { ilbApi } from '@/services/ilbApi'
 import { ModuleAccordion } from '@/pages/learn/ModuleAccordion'
 
 interface Lesson {
@@ -29,10 +30,20 @@ export const CourseDetail = () => {
   const [course, setCourse] = useState<Course | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [broadcastAvailable, setBroadcastAvailable] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
     fetchCourse()
+  }, [courseId])
+
+  // A broadcast is only offered to learners once it's published (server-gated).
+  useEffect(() => {
+    if (!courseId) return
+    ilbApi
+      .getPodcast(Number(courseId))
+      .then(() => setBroadcastAvailable(true))
+      .catch(() => setBroadcastAvailable(false))
   }, [courseId])
 
   const fetchCourse = async () => {
@@ -125,12 +136,14 @@ export const CourseDetail = () => {
             >
               {course!.has_content ? '▶ Start Course' : 'No content yet'}
             </button>
-            <button
-              onClick={() => navigate(`/learn/${course!.id}/broadcast`)}
-              className="w-full mt-3 py-3 px-6 rounded-lg font-bold text-white text-base bg-indigo-600 hover:bg-indigo-700 cursor-pointer transition-all"
-            >
-              🎙️ Launch Broadcast
-            </button>
+            {broadcastAvailable && (
+              <button
+                onClick={() => navigate(`/learn/${course!.id}/broadcast`)}
+                className="w-full mt-3 py-3 px-6 rounded-lg font-bold text-white text-base bg-indigo-600 hover:bg-indigo-700 cursor-pointer transition-all"
+              >
+                🎙️ Launch Broadcast
+              </button>
+            )}
           </div>
         </div>
       </div>

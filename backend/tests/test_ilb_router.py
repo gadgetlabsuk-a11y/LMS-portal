@@ -165,3 +165,62 @@ def test_podcast_script_empty_source_rejected(client, creator_token, creator_cou
         headers=_auth(creator_token),
     )
     assert r.status_code == 422
+
+
+# --- persist / publish --------------------------------------------------------
+
+def test_save_and_get_podcast_config(client, db, creator_token, creator_course):
+    r = client.put(
+        f"/api/ilb/courses/{creator_course.id}/podcast",
+        json={"script": "Intro.[SEGMENT BREAK]Body.", "host_persona": "host", "avatar_id": "av1"},
+        headers=_auth(creator_token),
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["segments"] == ["Intro.", "Body."]
+    assert body["published"] is False
+    # creator can read the draft back
+    r = client.get(f"/api/ilb/courses/{creator_course.id}/podcast", headers=_auth(creator_token))
+    assert r.status_code == 200
+    assert r.json()["avatar_id"] == "av1"
+
+
+def test_learner_cannot_see_unpublished(client, db, trainee_token, creator_course):
+    r = client.get(f"/api/ilb/courses/{creator_course.id}/podcast", headers=_auth(trainee_token))
+    assert r.status_code == 404
+
+
+def test_publish_then_learner_sees(client, db, creator_token, trainee_token, creator_course):
+    client.put(
+        f"/api/ilb/courses/{creator_course.id}/podcast",
+        json={"script": "Hello."},
+        headers=_auth(creator_token),
+    )
+    r = client.post(
+        f"/api/ilb/courses/{creator_course.id}/podcast/publish",
+        json={"published": True},
+        headers=_auth(creator_token),
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["published"] is True
+    r = client.get(f"/api/ilb/courses/{creator_course.id}/podcast", headers=_auth(trainee_token))
+    assert r.status_code == 200
+    assert r.json()["published"] is True
+
+
+def test_publish_without_script_rejected(client, db, creator_token, creator_course):
+    r = client.post(
+        f"/api/ilb/courses/{creator_course.id}/podcast/publish",
+        json={"published": True},
+        headers=_auth(creator_token),
+    )
+    assert r.status_code == 422
+
+
+def test_save_podcast_trainee_forbidden(client, db, trainee_token, creator_course):
+    r = client.put(
+        f"/api/ilb/courses/{creator_course.id}/podcast",
+        json={"script": "x"},
+        headers=_auth(trainee_token),
+    )
+    assert r.status_code == 403

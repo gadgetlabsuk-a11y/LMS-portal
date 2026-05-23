@@ -378,3 +378,100 @@ async def make_podcast_script(
         title=course.title,
     )
     return PodcastScriptResponse(script=result["script"], segments=result["segments"])
+
+
+# --------------------------------------------------------------------------- persist / publish
+
+def _segments_from_script(script: str) -> List[str]:
+    return [s.strip() for s in (script or "").split("[SEGMENT BREAK]") if s.strip()]
+
+
+class PodcastConfig(BaseModel):
+    course_id: int
+    script: Optional[str] = None
+    host_persona: Optional[str] = None
+    avatar_id: Optional[str] = None
+    segments: Optional[List[str]] = None
+    published: bool = False
+
+
+class PodcastConfigRequest(BaseModel):
+    script: str
+    host_persona: Optional[str] = None
+    avatar_id: Optional[str] = None
+
+
+class PublishRequest(BaseModel):
+    published: bool = True
+
+
+def _podcast_config(course: Course) -> PodcastConfig:
+    return PodcastConfig(
+        course_id=course.id,
+        script=course.ilb_script,
+        host_persona=course.ilb_host_persona,
+        avatar_id=course.ilb_avatar_id,
+        segments=course.ilb_segments,
+        published=bool(course.ilb_published),
+    )
+
+
+@router.get("/courses/{course_id}/podcast", response_model=PodcastConfig)
+def get_podcast_config(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> PodcastConfig:
+    """Get a course's broadcast config. Learners only see it once published."""
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    privileged = current_user.role in (UserRole.CREATOR, UserRole.ADMIN)
+    if not privileged and not course.ilb_published:
+        raise HTTPException(status_code=404, detail="No published broadcast for this course")
+    return _podcast_config(course)
+
+
+@router.put("/courses/{course_id}/podcast", response_model=PodcastConfig)
+def save_podcast_config(
+    course_id: int,
+    body: PodcastConfigRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> PodcastConfig:
+    """Persist the broadcast script + avatar config onto the course (creator/admin)."""
+    if current_user.role not in (UserRole.CREATOR, UserRole.ADMIN):
+        raise HTTPException(status_code=403, detail="Creator or admin only")
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    course.ilb_script = body.script
+    course.ilb_host_persona = body.host_persona
+    course.ilb_avatar_id = body.avatar_id
+    course.ilb_segments = _segments_from_script(body.script)
+    db.commit()
+    db.refresh(course)
+    logger.info("ILB podcast saved: course=%s by user=%s", course_id, current_user.id)
+    return _podcast_config(course)
+
+
+@router.post("/courses/{course_id}/podcast/publish", response_model=PodcastConfig)
+def publish_podcast(
+    course_id: int,
+    body: PublishRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> PodcastConfig:
+    """Publish (or unpublish) a course's broadcast (creator/admin)."""
+    if current_user.role not in (UserRole.CREATOR, UserRole.ADMIN):
+        raise HTTPException(status_code=403, detail="Creator or admin only")
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    if body.published and not (course.ilb_script and course.ilb_script.strip()):
+        raise HTTPException(status_code=422, detail="Nothing to publish — save a script first")
+    course.ilb_published = body.published
+    db.commit()
+    db.refresh(course)
+    logger.info("ILB podcast %s: course=%s", "published" if body.published else "unpublished", course_id)
+    return _podcast_config(course)

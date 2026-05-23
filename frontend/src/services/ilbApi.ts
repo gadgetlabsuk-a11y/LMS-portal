@@ -53,6 +53,15 @@ export interface PodcastScript {
   segments: string[]
 }
 
+export interface PodcastConfig {
+  course_id: number
+  script: string | null
+  host_persona: string | null
+  avatar_id: string | null
+  segments: string[] | null
+  published: boolean
+}
+
 async function unwrap<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let detail = `Request failed (${res.status})`
@@ -91,4 +100,17 @@ export const ilbApi = {
     api
       .post(`/ilb/courses/${courseId}/podcast-script`, { host_persona: hostPersona, target_minutes: targetMinutes })
       .then((r) => unwrap<PodcastScript>(r)),
+
+  getPodcast: (courseId: number): Promise<PodcastConfig> =>
+    api.get(`/ilb/courses/${courseId}/podcast`).then((r) => unwrap<PodcastConfig>(r)),
+
+  savePodcast: (courseId: number, script: string, hostPersona: string, avatarId: string): Promise<PodcastConfig> =>
+    api
+      .put(`/ilb/courses/${courseId}/podcast`, { script, host_persona: hostPersona, avatar_id: avatarId })
+      .then((r) => unwrap<PodcastConfig>(r)),
+
+  publishPodcast: (courseId: number, published = true): Promise<PodcastConfig> =>
+    api
+      .post(`/ilb/courses/${courseId}/podcast/publish`, { published })
+      .then((r) => unwrap<PodcastConfig>(r)),
 }
