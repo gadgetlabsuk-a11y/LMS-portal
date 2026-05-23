@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { API_BASE } from '@/services/api'
 import { ilbApi, type LiveTransport } from '@/services/ilbApi'
 
 /**
@@ -33,6 +34,7 @@ export const ILBPlayerPage = () => {
   const [configLoading, setConfigLoading] = useState(true)
   const [available, setAvailable] = useState(false)
   const [segments, setSegments] = useState<string[]>([])
+  const [segmentAudio, setSegmentAudio] = useState<string[]>([])
   const [segIdx, setSegIdx] = useState(0)
   const [avatarId, setAvatarId] = useState<string | null>(null)
   const [draftPreview, setDraftPreview] = useState(false)
@@ -64,6 +66,7 @@ export const ILBPlayerPage = () => {
       .then((cfg) => {
         setAvailable(true)
         setSegments(cfg.segments ?? [])
+        setSegmentAudio(cfg.segment_audio ?? [])
         setAvatarId(cfg.avatar_id)
         setDraftPreview(!cfg.published)
         setTranscript([{ role: 'system', text: 'Choose a mode and start the broadcast.' }])
@@ -153,6 +156,7 @@ export const ILBPlayerPage = () => {
   const started = sessionId != null
   const hasSegments = segments.length > 0
   const currentSegment = hasSegments ? segments[Math.min(segIdx, segments.length - 1)] : null
+  const currentAudio = segmentAudio.length > 0 ? segmentAudio[Math.min(segIdx, segmentAudio.length - 1)] : null
 
   if (configLoading) {
     return (
@@ -206,7 +210,12 @@ export const ILBPlayerPage = () => {
             {liveAvatar ? (
               <span className="text-gray-400 text-sm text-center">● LIVE avatar (HeyGen) — answering · stubbed pending keys</span>
             ) : started && currentSegment ? (
-              <p className="text-gray-200 text-sm leading-relaxed overflow-y-auto max-h-full">{currentSegment}</p>
+              <div className="w-full h-full flex flex-col gap-2 overflow-y-auto">
+                <p className="text-gray-200 text-sm leading-relaxed">{currentSegment}</p>
+                {currentAudio && (
+                  <audio key={segIdx} controls autoPlay src={`${API_BASE}${currentAudio}`} className="w-full mt-auto" />
+                )}
+              </div>
             ) : (
               <span className="text-gray-500 text-sm text-center">
                 {hasSegments ? 'Press play to begin the broadcast.' : 'No script saved for this course yet — text Q&A still works.'}

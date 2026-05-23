@@ -58,8 +58,16 @@ export interface PodcastConfig {
   script: string | null
   host_persona: string | null
   avatar_id: string | null
+  voice_id: string | null
   segments: string[] | null
+  segment_audio: string[] | null
   published: boolean
+}
+
+export interface Voice {
+  voice_id: string
+  name: string
+  description: string
 }
 
 async function unwrap<T>(res: Response): Promise<T> {
@@ -104,13 +112,18 @@ export const ilbApi = {
   getPodcast: (courseId: number): Promise<PodcastConfig> =>
     api.get(`/ilb/courses/${courseId}/podcast`).then((r) => unwrap<PodcastConfig>(r)),
 
-  savePodcast: (courseId: number, script: string, hostPersona: string, avatarId: string): Promise<PodcastConfig> =>
+  savePodcast: (courseId: number, script: string, hostPersona: string, avatarId: string, voiceId: string): Promise<PodcastConfig> =>
     api
-      .put(`/ilb/courses/${courseId}/podcast`, { script, host_persona: hostPersona, avatar_id: avatarId })
+      .put(`/ilb/courses/${courseId}/podcast`, { script, host_persona: hostPersona, avatar_id: avatarId, voice_id: voiceId })
       .then((r) => unwrap<PodcastConfig>(r)),
 
   publishPodcast: (courseId: number, published = true): Promise<PodcastConfig> =>
     api
       .post(`/ilb/courses/${courseId}/podcast/publish`, { published })
       .then((r) => unwrap<PodcastConfig>(r)),
+
+  listVoices: (): Promise<Voice[]> => api.get('/ilb/voices').then((r) => unwrap<Voice[]>(r)),
+
+  renderAudio: (courseId: number): Promise<{ segment_audio: string[] }> =>
+    api.post(`/ilb/courses/${courseId}/podcast/render-audio`, {}).then((r) => unwrap<{ segment_audio: string[] }>(r)),
 }

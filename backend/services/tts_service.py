@@ -59,6 +59,42 @@ class TTSService:
         db.refresh(slide)
         return audio_url
 
+    async def synthesize(self, text: str, voice_id: str) -> bytes:
+        """Render arbitrary text to MP3 bytes (used by ILB segment narration)."""
+        if not self.api_key:
+            raise ValueError("TTS not configured")
+        return await self._call_elevenlabs(text, voice_id)
+
+    async def list_voices(self) -> list:
+        """Live ElevenLabs voice catalogue (gender/accent/age labels), with a curated fallback."""
+        if not self.api_key:
+            return AVAILABLE_VOICES
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(
+                    "https://api.elevenlabs.io/v1/voices",
+                    headers={"xi-api-key": self.api_key},
+                    timeout=15.0,
+                )
+            if resp.status_code != 200:
+                return AVAILABLE_VOICES
+            voices = resp.json().get("voices", [])
+            out = []
+            for v in voices:
+                labels = v.get("labels", {}) or {}
+                desc = ", ".join(
+                    str(x) for x in (labels.get("gender"), labels.get("accent"), labels.get("age"))
+                    if x
+                )
+                out.append({
+                    "voice_id": v.get("voice_id"),
+                    "name": v.get("name"),
+                    "description": desc or v.get("category", ""),
+                })
+            return out or AVAILABLE_VOICES
+        except Exception:
+            return AVAILABLE_VOICES
+
     async def _call_elevenlabs(self, text: str, voice_id: str) -> bytes:
         url = self.API_URL.format(voice_id=voice_id)
         headers = {

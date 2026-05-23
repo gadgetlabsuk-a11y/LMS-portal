@@ -224,3 +224,78 @@ def test_save_podcast_trainee_forbidden(client, db, trainee_token, creator_cours
         headers=_auth(trainee_token),
     )
     assert r.status_code == 403
+
+
+# --- voice + narration audio --------------------------------------------------
+
+def test_list_voices(client, trainee_token, monkeypatch):
+    monkeypatch.setattr(
+        ilb_router._tts,
+        "list_voices",
+        AsyncMock(return_value=[{"voice_id": "v1", "name": "Rachel", "description": "American female"}]),
+    )
+    r = client.get("/api/ilb/voices", headers=_auth(trainee_token))
+    assert r.status_code == 200, r.text
+    assert r.json()[0]["voice_id"] == "v1"
+
+
+def test_save_sets_voice_and_clears_audio(client, db, creator_token, creator_course):
+    r = client.put(
+        f"/api/ilb/courses/{creator_course.id}/podcast",
+        json={"script": "Hello.", "voice_id": "voiceX"},
+        headers=_auth(creator_token),
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["voice_id"] == "voiceX"
+    assert r.json()["segment_audio"] is None
+
+
+def test_render_audio_happy(client, db, creator_token, creator_course, monkeypatch):
+    client.put(
+        f"/api/ilb/courses/{creator_course.id}/podcast",
+        json={"script": "Intro.[SEGMENT BREAK]Body.", "voice_id": "voiceX"},
+        headers=_auth(creator_token),
+    )
+    monkeypatch.setattr(ilb_router._tts, "api_key", "test-key")
+    monkeypatch.setattr(ilb_router._tts, "synthesize", AsyncMock(return_value=b"audio-bytes"))
+    r = client.post(
+        f"/api/ilb/courses/{creator_course.id}/podcast/render-audio",
+        json={},
+        headers=_auth(creator_token),
+    )
+    assert r.status_code == 200, r.text
+    assert len(r.json()["segment_audio"]) == 2
+
+
+def test_render_audio_no_script_rejected(client, db, creator_token, creator_course, monkeypatch):
+    monkeypatch.setattr(ilb_router._tts, "api_key", "test-key")
+    r = client.post(
+        f"/api/ilb/courses/{creator_course.id}/podcast/render-audio",
+        json={},
+        headers=_auth(creator_token),
+    )
+    assert r.status_code == 422
+
+
+def test_render_audio_no_key(client, db, creator_token, creator_course, monkeypatch):
+    client.put(
+        f"/api/ilb/courses/{creator_course.id}/podcast",
+        json={"script": "Hello."},
+        headers=_auth(creator_token),
+    )
+    monkeypatch.setattr(ilb_router._tts, "api_key", "")
+    r = client.post(
+        f"/api/ilb/courses/{creator_course.id}/podcast/render-audio",
+        json={},
+        headers=_auth(creator_token),
+    )
+    assert r.status_code == 503
+
+
+def test_render_audio_trainee_forbidden(client, db, trainee_token, creator_course):
+    r = client.post(
+        f"/api/ilb/courses/{creator_course.id}/podcast/render-audio",
+        json={},
+        headers=_auth(trainee_token),
+    )
+    assert r.status_code == 403

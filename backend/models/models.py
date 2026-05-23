@@ -121,7 +121,9 @@ class Course(Base):
     ilb_script = Column(Text, nullable=True)
     ilb_host_persona = Column(String(255), nullable=True)
     ilb_avatar_id = Column(String(100), nullable=True)
+    ilb_voice_id = Column(String(100), nullable=True)
     ilb_segments = Column(JSON, nullable=True)
+    ilb_segment_audio = Column(JSON, nullable=True)  # rendered narration audio URLs, per segment
     ilb_published = Column(Boolean, nullable=False, server_default='0')
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

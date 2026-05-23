@@ -34,6 +34,7 @@ from middleware.auth_middleware import get_current_active_user
 from services.qa_service import QAService
 from services.audit_service import AuditService
 from services.claude_service import ClaudeService
+from services.tts_service import TTSService
 from services.integrations import get_avatar_provider
 
 logger = logging.getLogger(__name__)
@@ -44,6 +45,7 @@ VALID_MODES = {"interrupt", "defer"}
 _qa = QAService()
 _audit = AuditService()
 _claude = ClaudeService()
+_tts = TTSService()
 
 
 # --------------------------------------------------------------------------- helpers
@@ -391,7 +393,9 @@ class PodcastConfig(BaseModel):
     script: Optional[str] = None
     host_persona: Optional[str] = None
     avatar_id: Optional[str] = None
+    voice_id: Optional[str] = None
     segments: Optional[List[str]] = None
+    segment_audio: Optional[List[str]] = None
     published: bool = False
 
 
@@ -399,6 +403,7 @@ class PodcastConfigRequest(BaseModel):
     script: str
     host_persona: Optional[str] = None
     avatar_id: Optional[str] = None
+    voice_id: Optional[str] = None
 
 
 class PublishRequest(BaseModel):
@@ -411,7 +416,9 @@ def _podcast_config(course: Course) -> PodcastConfig:
         script=course.ilb_script,
         host_persona=course.ilb_host_persona,
         avatar_id=course.ilb_avatar_id,
+        voice_id=course.ilb_voice_id,
         segments=course.ilb_segments,
+        segment_audio=course.ilb_segment_audio,
         published=bool(course.ilb_published),
     )
 
@@ -448,7 +455,9 @@ def save_podcast_config(
     course.ilb_script = body.script
     course.ilb_host_persona = body.host_persona
     course.ilb_avatar_id = body.avatar_id
+    course.ilb_voice_id = body.voice_id
     course.ilb_segments = _segments_from_script(body.script)
+    course.ilb_segment_audio = None  # script/voice changed — invalidate stale rendered audio
     db.commit()
     db.refresh(course)
     logger.info("ILB podcast saved: course=%s by user=%s", course_id, current_user.id)
@@ -475,3 +484,57 @@ def publish_podcast(
     db.refresh(course)
     logger.info("ILB podcast %s: course=%s", "published" if body.published else "unpublished", course_id)
     return _podcast_config(course)
+
+
+# --------------------------------------------------------------------------- voice / audio
+
+class Voice(BaseModel):
+    voice_id: str
+    name: str
+    description: str = ""
+
+
+@router.get("/voices", response_model=List[Voice])
+async def list_voices(current_user: User = Depends(get_current_active_user)) -> List[Voice]:
+    """ElevenLabs voice catalogue for the authoring voice picker (curated fallback if no key)."""
+    voices = await _tts.list_voices()
+    return [Voice(voice_id=v["voice_id"], name=v.get("name", ""), description=v.get("description", "")) for v in voices]
+
+
+@router.post("/courses/{course_id}/podcast/render-audio")
+async def render_podcast_audio(
+    course_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Dict[str, Any]:
+    """Render each saved script segment to narration audio (ElevenLabs) and store the URLs."""
+    from pathlib import Path
+    from config import settings
+
+    if current_user.role not in (UserRole.CREATOR, UserRole.ADMIN):
+        raise HTTPException(status_code=403, detail="Creator or admin only")
+    course = db.query(Course).filter(Course.id == course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    segments = course.ilb_segments or []
+    if not segments:
+        raise HTTPException(status_code=422, detail="Save a script first")
+    if not _tts.api_key:
+        raise HTTPException(status_code=503, detail="TTS not configured (ELEVENLABS_API_KEY)")
+
+    voice_id = course.ilb_voice_id or TTSService.DEFAULT_VOICE_ID
+    audio_dir = Path(settings.UPLOAD_DIR) / "audio"
+    audio_dir.mkdir(parents=True, exist_ok=True)
+
+    urls: List[str] = []
+    for i, segment in enumerate(segments):
+        audio = await _tts.synthesize(segment, voice_id)
+        filename = f"ilb_course_{course_id}_seg_{i}.mp3"
+        (audio_dir / filename).write_bytes(audio)
+        urls.append(f"/uploads/audio/{filename}")
+
+    course.ilb_segment_audio = urls
+    db.commit()
+    db.refresh(course)
+    logger.info("ILB audio rendered: course=%s segments=%s", course_id, len(urls))
+    return {"segment_audio": urls}

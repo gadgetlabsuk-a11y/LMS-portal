@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '@/services/api'
-import { ilbApi } from '@/services/ilbApi'
+import { ilbApi, type Voice } from '@/services/ilbApi'
 
 /**
  * Creator authoring surface for ILB / "Podcast" broadcasts.
- * Pick a course → configure host persona + avatar → generate a grounded script → SAVE it to the
- * course → PUBLISH so learners can launch it → preview the interactive broadcast.
+ * Pick a course → configure host persona + voice + avatar → generate a grounded script → SAVE →
+ * render narration audio (ElevenLabs) → PUBLISH → preview/launch.
  *
- * The live avatar/voice are Bucket B (stubbed pending HeyGen/Deepgram/ElevenLabs keys).
- * See docs/superpowers/specs/2026-05-21-ilb-design.md.
+ * Voice + narration audio are real (ElevenLabs). The live avatar is Bucket B (stubbed pending
+ * HeyGen keys). See docs/superpowers/specs/2026-05-21-ilb-design.md.
  */
 
 interface Course {
@@ -23,19 +23,23 @@ const DEFAULT_PERSONA = 'a warm, clear, professional training host'
 export function CreatorPodcastsPage() {
   const navigate = useNavigate()
   const [courses, setCourses] = useState<Course[]>([])
+  const [voices, setVoices] = useState<Voice[]>([])
   const [loading, setLoading] = useState(true)
   const [courseId, setCourseId] = useState<number | null>(null)
 
   const [hostPersona, setHostPersona] = useState(DEFAULT_PERSONA)
   const [targetMinutes, setTargetMinutes] = useState(10)
   const [avatarId, setAvatarId] = useState('demo_avatar')
+  const [voiceId, setVoiceId] = useState('')
 
   const [script, setScript] = useState('')
   const [segmentCount, setSegmentCount] = useState<number | null>(null)
+  const [audioCount, setAudioCount] = useState<number | null>(null)
   const [published, setPublished] = useState(false)
 
   const [generating, setGenerating] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [rendering, setRendering] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -50,6 +54,10 @@ export function CreatorPodcastsPage() {
       }
       setLoading(false)
     })
+    ilbApi.listVoices().then((vs) => {
+      setVoices(vs)
+      setVoiceId((cur) => cur || vs[0]?.voice_id || '')
+    }).catch(() => {})
   }, [])
 
   // Load any existing broadcast config when the selected course changes.
@@ -62,14 +70,16 @@ export function CreatorPodcastsPage() {
       .then((cfg) => {
         setHostPersona(cfg.host_persona ?? DEFAULT_PERSONA)
         setAvatarId(cfg.avatar_id ?? 'demo_avatar')
+        setVoiceId(cfg.voice_id ?? '')
         setScript(cfg.script ?? '')
         setSegmentCount(cfg.segments?.length ?? null)
+        setAudioCount(cfg.segment_audio?.length ?? null)
         setPublished(cfg.published)
       })
       .catch(() => {
-        // No saved config for this course yet — reset to defaults.
         setScript('')
         setSegmentCount(null)
+        setAudioCount(null)
         setPublished(false)
       })
   }, [courseId])
@@ -83,6 +93,7 @@ export function CreatorPodcastsPage() {
       const res = await ilbApi.generatePodcastScript(courseId, hostPersona, targetMinutes)
       setScript(res.script)
       setSegmentCount(res.segments.length)
+      setAudioCount(null)
       setStatus('Script generated — Save to keep it.')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to generate script')
@@ -96,13 +107,29 @@ export function CreatorPodcastsPage() {
     setSaving(true)
     setError(null)
     try {
-      const cfg = await ilbApi.savePodcast(courseId, script, hostPersona, avatarId)
+      const cfg = await ilbApi.savePodcast(courseId, script, hostPersona, avatarId, voiceId)
       setSegmentCount(cfg.segments?.length ?? null)
-      setStatus('Saved.')
+      setAudioCount(cfg.segment_audio?.length ?? null) // cleared on save
+      setStatus('Saved. Render audio to give it a voice.')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to save')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function renderAudio() {
+    if (courseId == null) return
+    setRendering(true)
+    setError(null)
+    try {
+      const res = await ilbApi.renderAudio(courseId)
+      setAudioCount(res.segment_audio.length)
+      setStatus(`Narration rendered — ${res.segment_audio.length} clip(s).`)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to render audio')
+    } finally {
+      setRendering(false)
     }
   }
 
@@ -128,8 +155,8 @@ export function CreatorPodcastsPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Podcasts (Interactive Broadcast)</h1>
       <p className="text-sm text-gray-500 mb-6">
         Turn a course into an avatar-led interactive broadcast: generate a host-persona script
-        grounded in the course content, save it, publish it, then launch the player. (Live avatar
-        &amp; voice are stubbed until API keys are configured.)
+        grounded in the course content, pick a voice, render narration audio, publish, then launch.
+        (Voice &amp; audio are real; the live avatar is stubbed until HeyGen keys are configured.)
       </p>
 
       {loading ? (
@@ -184,15 +211,32 @@ export function CreatorPodcastsPage() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Avatar ID <span className="text-gray-400 font-normal">(HeyGen — stubbed pending keys)</span>
-            </label>
-            <input
-              value={avatarId}
-              onChange={(e) => setAvatarId(e.target.value)}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Voice (ElevenLabs)</label>
+              <select
+                value={voiceId}
+                onChange={(e) => setVoiceId(e.target.value)}
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              >
+                {voices.length === 0 && <option value="">Default</option>}
+                {voices.map((v) => (
+                  <option key={v.voice_id} value={v.voice_id}>
+                    {v.name}{v.description ? ` — ${v.description}` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Avatar ID <span className="text-gray-400 font-normal">(HeyGen — stubbed)</span>
+              </label>
+              <input
+                value={avatarId}
+                onChange={(e) => setAvatarId(e.target.value)}
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
@@ -214,6 +258,13 @@ export function CreatorPodcastsPage() {
               {saving ? 'Saving…' : 'Save'}
             </button>
             <button
+              onClick={() => void renderAudio()}
+              disabled={rendering || segmentCount == null || segmentCount === 0}
+              className="px-4 py-2 rounded bg-purple-600 text-white text-sm font-medium hover:bg-purple-500 disabled:opacity-50"
+            >
+              {rendering ? 'Rendering…' : audioCount ? `Re-render audio (${audioCount})` : 'Render audio'}
+            </button>
+            <button
               onClick={() => void togglePublish()}
               disabled={publishing || (!published && !hasScript)}
               className="px-4 py-2 rounded bg-amber-600 text-white text-sm font-medium hover:bg-amber-500 disabled:opacity-50"
@@ -232,7 +283,7 @@ export function CreatorPodcastsPage() {
           {hasScript && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Script {segmentCount != null && <span className="text-gray-400">· {segmentCount} segment(s)</span>}
+                Script {segmentCount != null && <span className="text-gray-400">· {segmentCount} segment(s){audioCount ? ` · ${audioCount} audio` : ''}</span>}
               </label>
               <textarea
                 value={script}
@@ -241,7 +292,7 @@ export function CreatorPodcastsPage() {
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono"
               />
               <p className="text-xs text-gray-400 mt-1">
-                Edit then Save. Use <code>[SEGMENT BREAK]</code> to mark knowledge-check boundaries.
+                Edit then Save (Save clears stale audio — Render again). Use <code>[SEGMENT BREAK]</code> to mark boundaries.
               </p>
             </div>
           )}
