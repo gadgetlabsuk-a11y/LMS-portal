@@ -134,7 +134,7 @@ class DocumentService:
             Extracted text organized by slide
         """
         try:
-            presentation = Presentation(file_bytes)
+            presentation = Presentation(io.BytesIO(file_bytes))  # BytesIO: python-pptx needs a seekable file-like object
             content_parts = []
 
             for slide_idx, slide in enumerate(presentation.slides, 1):
