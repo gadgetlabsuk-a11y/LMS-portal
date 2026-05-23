@@ -91,7 +91,7 @@ def _load_owned_session(db: Session, session_id: int, user: User) -> BroadcastSe
 # --------------------------------------------------------------------------- schemas
 
 class StartSessionRequest(BaseModel):
-    enrollment_id: int
+    course_id: int
     mode: str = "interrupt"
 
 
@@ -144,15 +144,33 @@ def start_session(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> StartSessionResponse:
-    """Start an ILB broadcast session for one of the learner's enrolments."""
+    """Start an ILB broadcast session for a course.
+
+    Enrolment management isn't a full feature yet, so the ILB demo find-or-creates the
+    learner's enrolment for the course on first broadcast (version-pinned to the course's
+    current version).
+    """
     if body.mode not in VALID_MODES:
         raise HTTPException(status_code=422, detail=f"mode must be one of {sorted(VALID_MODES)}")
 
-    enrollment = db.query(Enrollment).filter(Enrollment.id == body.enrollment_id).first()
+    course = db.query(Course).filter(Course.id == body.course_id).first()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    enrollment = (
+        db.query(Enrollment)
+        .filter(Enrollment.user_id == current_user.id, Enrollment.course_id == body.course_id)
+        .first()
+    )
     if not enrollment:
-        raise HTTPException(status_code=404, detail="Enrollment not found")
-    if enrollment.user_id != current_user.id and current_user.role not in (UserRole.ADMIN, UserRole.CREATOR):
-        raise HTTPException(status_code=403, detail="Not your enrollment")
+        enrollment = Enrollment(
+            user_id=current_user.id,
+            course_id=body.course_id,
+            course_version=course.version or 1,
+        )
+        db.add(enrollment)
+        db.commit()
+        db.refresh(enrollment)
 
     bs = BroadcastSession(
         enrollment_id=enrollment.id,

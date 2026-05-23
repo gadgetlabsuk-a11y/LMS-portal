@@ -25,11 +25,11 @@ def enrollment(db, trainee_user, published_course):
     return e
 
 
-def test_session_lifecycle(client, db, trainee_token, enrollment, monkeypatch):
-    # start
+def test_session_lifecycle(client, db, trainee_token, published_course, enrollment, monkeypatch):
+    # start (enrolment pre-exists via fixture -> find path)
     r = client.post(
         "/api/ilb/sessions",
-        json={"enrollment_id": enrollment.id, "mode": "interrupt"},
+        json={"course_id": published_course.id, "mode": "interrupt"},
         headers=_auth(trainee_token),
     )
     assert r.status_code == 201, r.text
@@ -80,19 +80,37 @@ def test_session_lifecycle(client, db, trainee_token, enrollment, monkeypatch):
     assert "Audit Record" in body["html"]
 
 
-def test_invalid_mode_rejected(client, trainee_token, enrollment):
+def test_invalid_mode_rejected(client, trainee_token, published_course):
     r = client.post(
         "/api/ilb/sessions",
-        json={"enrollment_id": enrollment.id, "mode": "bogus"},
+        json={"course_id": published_course.id, "mode": "bogus"},
         headers=_auth(trainee_token),
     )
     assert r.status_code == 422
 
 
-def test_ownership_enforced(client, db, trainee_token, enrollment):
+def test_start_autocreates_enrollment(client, db, trainee_user, trainee_token, published_course):
+    """Enrolment management isn't built yet — starting a broadcast find-or-creates one."""
+    before = db.query(Enrollment).filter(
+        Enrollment.user_id == trainee_user.id, Enrollment.course_id == published_course.id
+    ).count()
+    assert before == 0
     r = client.post(
         "/api/ilb/sessions",
-        json={"enrollment_id": enrollment.id},
+        json={"course_id": published_course.id},
+        headers=_auth(trainee_token),
+    )
+    assert r.status_code == 201, r.text
+    after = db.query(Enrollment).filter(
+        Enrollment.user_id == trainee_user.id, Enrollment.course_id == published_course.id
+    ).count()
+    assert after == 1
+
+
+def test_ownership_enforced(client, db, trainee_token, published_course):
+    r = client.post(
+        "/api/ilb/sessions",
+        json={"course_id": published_course.id},
         headers=_auth(trainee_token),
     )
     sid = r.json()["session"]["id"]
