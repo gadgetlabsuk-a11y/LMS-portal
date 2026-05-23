@@ -46,6 +46,21 @@ export const api = {
     return res
   },
 
+  postForm: async (path: string, formData: FormData, options: RequestInit = {}): Promise<Response> => {
+    const token = localStorage.getItem('token')
+    const res = await fetch(`${API_BASE}/api${path}`, {
+      method: 'POST',
+      ...options,
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...((options.headers as Record<string, string>) ?? {}),
+      },
+      body: formData,
+    })
+    if (res.status === 401) handle401()
+    return res
+  },
+
   put: async (path: string, body: unknown, options: RequestInit = {}): Promise<Response> => {
     const res = await fetch(`${API_BASE}/api${path}`, {
       method: 'PUT',
