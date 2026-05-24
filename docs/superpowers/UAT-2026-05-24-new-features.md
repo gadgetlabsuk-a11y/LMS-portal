@@ -206,6 +206,29 @@ Layout: `AdminLayout` sidebar. Login as `admin`.
 - **Destructive admin ops** (deactivate/reset-pw/MFA/unlock/bulk-import) — run on a throwaway user.
 - Learner course **player** rendering (slide playback) — confirm what renders.
 
+## Round 2 — exhaustive functional sweep (admin-driven API, 2026-05-24)
+
+Still **zero functional defects.** Additional coverage:
+
+**Admin:** full user lifecycle on throwaway (create→edit role→reset-pw→MFA on/off→unlock→activity→deactivate) ✅; Dev Tools feature flags (list/create/toggle) ✅; White Label config read→update→**restore** ✅.
+
+**Creator:** module2 + **reorder** ✅; update module/video/slide/block ✅; add questions + reorder ✅; **preflight=true → publish=PUBLISHED** (success path) ✅; AI helpers `generate-description`/`generate-objectives` (Claude SSE, real output) ✅ — *note: bodies are `{topic}` / `{course_title}`*; course-podcast script→save→publish ✅; **media upload** (returned URL) ✅; cascade-delete ✅.
+
+**Learner:** catalogue (shows only PUBLISHED) ✅; course detail ✅; enroll **already-enrolled guard** (400) ✅; ILB **defer** mode start→ask(grounded)→complete (seq 1) ✅; **audit-pack** (JSON+HTML) ✅.
+
+**Behavior note (not a bug):** editing a published course → `has_unpublished_changes` → drops from learner catalogue until re-published (re-publish restores it).
+
+**Could not auto-test (harness limits, not defects):**
+- Course **progress-update** `PUT /courses/{id}/progress?progress=N` — query-string fetch is blocked by the Chrome extension guard; verify via the learner UI.
+- **§F course-gen wizard, CSV bulk-import, logo/favicon upload** — browser file-upload sandbox blocks non-shared paths; need a manual file pick.
+
+## Outstanding — needs you / careful manual
+1. **Role-gating** — log in as `creator1` (blocked from /admin?) then `learner1` (blocked from /admin and /creator?).
+2. **Creator + Learner UI** walk-throughs (builder, slide editor, quiz builder, learner player) — APIs all pass; confirm the screens.
+3. **§F AI course-gen wizard** — upload a real .pptx/.docx/.pdf and generate (engine already proven).
+4. **Security mutations** (IP allowlist add/remove, kill session) — **prod-risk** (lockout/logout); do carefully/manually.
+5. **CSV bulk-import**, **logo/favicon upload**, **course progress→completion** via UI.
+
 ---
 
 ## Known stubbed / incomplete / deferred
