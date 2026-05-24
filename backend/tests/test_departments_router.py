@@ -126,6 +126,20 @@ def test_assign_invalid_due_config_400(client, db, admin_token, admin_user):
     assert client.post(f"/api/departments/{dept_id}/content", json={"course_id": course.id, "mandatory": True, "due_mode": "relative", "due_days": 0}, headers=_auth(admin_token)).status_code == 400
 
 
+def test_reminders_endpoint_admin_only_and_returns_overdue(client, db, admin_token, trainee_token, admin_user, trainee_user):
+    # admin-gated
+    assert client.get("/api/departments/reminders", headers=_auth(trainee_token)).status_code == 403
+    dept_id = client.post("/api/departments", json={"name": "RemDept"}, headers=_auth(admin_token)).json()["id"]
+    course = _make_course(db, admin_user.id, "Overdue X")
+    client.post(f"/api/departments/{dept_id}/members", json={"user_ids": [trainee_user.id]}, headers=_auth(admin_token))
+    client.post(f"/api/departments/{dept_id}/content",
+                json={"course_id": course.id, "mandatory": True, "due_mode": "fixed", "due_date": "2020-01-01T00:00:00"},
+                headers=_auth(admin_token))
+    r = client.get("/api/departments/reminders", headers=_auth(admin_token))
+    assert r.status_code == 200, r.text  # 422/404 here would mean the route is shadowed by /{department_id}
+    assert any(it["title"] == "Overdue X" and it["user_id"] == trainee_user.id and it["status"] == "overdue" for it in r.json())
+
+
 def test_compliance_counts_courses_and_broadcasts(client, db, admin_token, admin_user, trainee_user):
     dept_id = client.post("/api/departments", json={"name": "Counts"}, headers=_auth(admin_token)).json()["id"]
     course = _make_course(db, admin_user.id, "C101")

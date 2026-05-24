@@ -114,6 +114,18 @@ class ComplianceResponse(BaseModel):
     items: List[ComplianceItem]
 
 
+class ReminderItem(BaseModel):
+    user_id: int
+    username: str
+    email: str
+    content_type: str
+    course_id: Optional[int]
+    broadcast_id: Optional[int]
+    title: str
+    due_date: Optional[datetime]
+    status: str
+
+
 # --------------------------------------------------------------------------- helpers
 
 def _get_department(db: Session, department_id: int) -> Department:
@@ -176,6 +188,14 @@ def create_department(body: DepartmentCreate, db: Session = Depends(get_db),
     db.add(d); db.commit(); db.refresh(d)
     logger.info("Department created: %s by admin %s", d.name, current_user.id)
     return _summary(d)
+
+
+@router.get("/reminders", response_model=List[ReminderItem])
+def list_training_reminders(within_days: int = 7, db: Session = Depends(get_db),
+                            current_user: User = Depends(require_admin)):
+    """Everyone with overdue or soon-due (within `within_days`) mandatory training, across all
+    departments. The data source for the future email reminder job."""
+    return dept_svc.training_reminders(db, within_days=within_days)
 
 
 @router.get("/{department_id}", response_model=DepartmentDetail)

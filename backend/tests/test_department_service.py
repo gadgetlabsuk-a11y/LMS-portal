@@ -175,3 +175,36 @@ def test_required_training_for_user_dedupes_and_computes_status(db):
 def test_required_training_for_user_empty_when_no_memberships(db):
     u = _user(db, "lonely")
     assert svc.required_training_for_user(db, u.id) == []
+
+
+def test_training_reminders_includes_overdue_and_due_soon_excludes_far(db):
+    creator = _user(db, "cr_rem"); u = _user(db, "learner_rem")
+    c_over = _course(db, creator.id, "Overdue Course")
+    c_soon = _course(db, creator.id, "Soon Course")
+    c_far = _course(db, creator.id, "Far Course")
+    d = _dept(db, "RemD1")
+    db.add(DepartmentMember(department_id=d.id, user_id=u.id, added_at=datetime(2026, 1, 1)))
+    db.add(DepartmentContent(department_id=d.id, course_id=c_over.id, mandatory=True, due_mode="fixed", due_date=datetime(2026, 5, 1)))
+    db.add(DepartmentContent(department_id=d.id, course_id=c_soon.id, mandatory=True, due_mode="fixed", due_date=datetime(2026, 6, 5)))
+    db.add(DepartmentContent(department_id=d.id, course_id=c_far.id, mandatory=True, due_mode="fixed", due_date=datetime(2026, 12, 1)))
+    db.commit()
+
+    rem = svc.training_reminders(db, within_days=7, now=datetime(2026, 6, 1))
+    by_title = {r["title"]: r for r in rem}
+    assert "Overdue Course" in by_title and by_title["Overdue Course"]["status"] == "overdue"
+    assert "Soon Course" in by_title           # due 2026-06-05, within 7 days of 2026-06-01
+    assert "Far Course" not in by_title        # due Dec -> excluded
+    assert by_title["Overdue Course"]["email"] == "learner_rem@example.com"
+    assert by_title["Overdue Course"]["user_id"] == u.id
+
+
+def test_training_reminders_excludes_completed(db):
+    creator = _user(db, "cr_rem2"); u = _user(db, "l_rem2")
+    c = _course(db, creator.id, "Done Course")
+    d = _dept(db, "RemD2")
+    db.add(DepartmentMember(department_id=d.id, user_id=u.id, added_at=datetime(2026, 1, 1)))
+    db.add(DepartmentContent(department_id=d.id, course_id=c.id, mandatory=True, due_mode="fixed", due_date=datetime(2026, 5, 1)))
+    db.add(Enrollment(user_id=u.id, course_id=c.id, progress=100.0, completed=True))
+    db.commit()
+    rem = svc.training_reminders(db, within_days=7, now=datetime(2026, 6, 1))
+    assert all(r["title"] != "Done Course" for r in rem)

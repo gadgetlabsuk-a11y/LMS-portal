@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy.orm import Session
 
-from models import Enrollment, BroadcastSession, DepartmentMember, DepartmentContent, Course
+from models import User, Enrollment, BroadcastSession, DepartmentMember, DepartmentContent, Course
 
 
 def _as_naive_utc(dt: Optional[datetime]) -> Optional[datetime]:
@@ -224,4 +224,40 @@ def required_training_for_user(db: Session, user_id: int, now: Optional[datetime
             "due_date": due,
             "status": status_for(completed, started, due, now),
         })
+    return out
+
+
+def training_reminders(db: Session, within_days: int = 7, now: Optional[datetime] = None) -> List[dict]:
+    """Per-user mandatory items that are OVERDUE or due within `within_days` (and not completed),
+    across all departments. Each row carries the user's contact info. Foundation for the future
+    email reminder job; also serves an admin 'who's behind' report."""
+    now = now or datetime.utcnow()
+    window_end = now + timedelta(days=within_days) if within_days is not None else None
+    member_ids = {m.user_id for m in db.query(DepartmentMember).all()}
+    if not member_ids:
+        return []
+    users = {u.id: u for u in db.query(User).filter(User.id.in_(member_ids)).all()}
+    out: List[dict] = []
+    for uid in member_ids:
+        u = users.get(uid)
+        if u is None:
+            continue
+        for item in required_training_for_user(db, uid, now):
+            if item["status"] == "completed":
+                continue
+            due = item["due_date"]
+            is_overdue = item["status"] == "overdue"
+            is_due_soon = due is not None and window_end is not None and now <= due <= window_end
+            if is_overdue or is_due_soon:
+                out.append({
+                    "user_id": u.id,
+                    "username": u.username,
+                    "email": u.email,
+                    "content_type": item["content_type"],
+                    "course_id": item["course_id"],
+                    "broadcast_id": item["broadcast_id"],
+                    "title": item["title"],
+                    "due_date": item["due_date"],
+                    "status": item["status"],
+                })
     return out
