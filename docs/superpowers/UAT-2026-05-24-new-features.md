@@ -229,6 +229,14 @@ Still **zero functional defects.** Additional coverage:
 4. **Security mutations** (IP allowlist add/remove, kill session) — **prod-risk** (lockout/logout); do carefully/manually.
 5. **CSV bulk-import**, **logo/favicon upload**, **course progress→completion** via UI.
 
+## Round 3 — Creator role, live as `creator1` (2026-05-24)
+
+- **Role-gating ✅** — as `creator1`: admin APIs (`/admin/stats`,`/users`,`/departments`,`/departments/reminders`,`/security/dashboard`,`/dev/health`) all return **403**; creator/learner APIs **200**. Frontend: navigating to `/admin/departments` **redirects to /creator** (blocked).
+- **§F AI Course Generation ✅ (full live run)** — uploaded a real doc → AI outline (grounded, 2 mod × 1 vid × 2 slides) → review tree → Create → **4/4 slides filled** → "Course created. All slides were generated." → landed in **Course Builder** (renders). Verified content: course "SRSUK Absence Management for People Managers", 2 modules / 2 videos / 4 slides / **18 blocks** of real AI content. **No defects.**
+- **Course Builder UI ✅** renders the generated structure with Preview/Publish + "course looks complete".
+
+Creator outstanding (optional, lower value): slide-editor + quiz-builder UI walk-through (APIs already pass); podcast authoring UI.
+
 ---
 
 ## Known stubbed / incomplete / deferred
