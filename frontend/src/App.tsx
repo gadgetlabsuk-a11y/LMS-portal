@@ -22,6 +22,7 @@ import { DevToolsPage } from '@/pages/admin/DevToolsPage'
 import { WhiteLabelPage } from '@/pages/admin/WhiteLabelPage'
 import { DepartmentsPage } from '@/pages/admin/DepartmentsPage'
 import { DepartmentDetailPage } from '@/pages/admin/DepartmentDetailPage'
+import { RemindersPage } from '@/pages/admin/RemindersPage'
 import { CreatorDashboard } from '@/pages/creator/CreatorDashboard'
 import { CreatorCourseListPage } from '@/pages/creator/CreatorCourseListPage'
 import { CourseBuilderPage } from '@/pages/creator/CourseBuilderPage'
@@ -100,6 +101,16 @@ export default function App() {
           <AdminLayout>
             <ProtectedRoute adminOnly>
               <DepartmentDetailPage />
+            </ProtectedRoute>
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/admin/reminders"
+        element={
+          <AdminLayout>
+            <ProtectedRoute adminOnly>
+              <RemindersPage />
             </ProtectedRoute>
           </AdminLayout>
         }

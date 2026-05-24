@@ -16,6 +16,7 @@ const navItems: NavItem[] = [
   { label: 'Users', path: '/admin/users', icon: '👤' },
   { label: 'Courses', path: '/admin/courses', icon: '📚' },
   { label: 'Departments', path: '/admin/departments', icon: '🏢' },
+  { label: 'Reminders', path: '/admin/reminders', icon: '⏰' },
   { label: 'Security', path: '/admin/security', icon: '🛡️' },
   { label: 'Dev Tools', path: '/admin/dev-tools', icon: '🔧' },
   { label: 'White Label', path: '/admin/whitelabel', icon: '🎨' },
