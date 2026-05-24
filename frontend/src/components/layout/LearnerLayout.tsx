@@ -23,6 +23,10 @@ export const LearnerLayout = ({ children }: { children: ReactNode }) => {
               className="h-7 w-auto cursor-pointer"
               onClick={() => navigate('/learn')}
             />
+            <div className="flex items-center gap-6 text-sm">
+              <button onClick={() => navigate('/learn')} className="text-gray-600 hover:text-brand">Catalogue</button>
+              <button onClick={() => navigate('/learn/my-training')} className="text-gray-600 hover:text-brand">My Training</button>
+            </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-500">{user?.username}</span>
               <button

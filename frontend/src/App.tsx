@@ -35,6 +35,7 @@ import { LearnerCatalogue } from '@/pages/learn/LearnerCatalogue'
 import { CourseDetail } from '@/pages/learn/CourseDetail'
 import { ILBPlayerPage } from '@/pages/learn/ILBPlayerPage'
 import { LearnerBroadcasts } from '@/pages/learn/LearnerBroadcasts'
+import { MyTraining } from '@/pages/learn/MyTraining'
 import { CourseViewerPage } from '@/pages/CourseViewerPage'
 import { CoursePreviewPage } from '@/pages/creator/CoursePreviewPage'
 
@@ -281,6 +282,16 @@ export default function App() {
           <LearnerLayout>
             <ProtectedRoute>
               <LearnerBroadcasts />
+            </ProtectedRoute>
+          </LearnerLayout>
+        }
+      />
+      <Route
+        path="/learn/my-training"
+        element={
+          <LearnerLayout>
+            <ProtectedRoute>
+              <MyTraining />
             </ProtectedRoute>
           </LearnerLayout>
         }
