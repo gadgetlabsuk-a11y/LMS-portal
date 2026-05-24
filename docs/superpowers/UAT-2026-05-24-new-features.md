@@ -237,6 +237,25 @@ Still **zero functional defects.** Additional coverage:
 
 Creator outstanding (optional, lower value): slide-editor + quiz-builder UI walk-through (APIs already pass); podcast authoring UI.
 
+## Round 4 — Learner role, live as `learner1` (2026-05-24)
+
+- **Role-gating ✅** — as `learner1`/trainee: admin APIs **and** creator APIs (`/creator/stats`,`/courses`) all return **403**; learner APIs (`/learn/courses`,`/learn/required-training`,`/ilb/broadcasts`) **200**. Frontend: `/admin/departments` **redirects to /learn**.
+- **Catalogue UI ✅** — `/learn` lists the published "UAT Test Course".
+- **My Required Training UI ✅** — shows the mandatory item, **Overdue**, Due 2020-01-01, Start link (`requiredTraining` API n=1, overdue).
+- **Note (correct behaviour):** the item's badge shows **"Podcast"** because a course-attached podcast was published on it (`ilb_published=true` → `is_podcast`). Consistent with design; label could be refined later (D-2, cosmetic).
+
+## FINAL UAT SUMMARY — all three roles tested
+
+| Role | Gating | Features | Result |
+|---|---|---|---|
+| **Admin** | n/a | dashboard, users (full lifecycle), courses, departments(full), reminders, dev-tools flags, white-label config, all reads | ✅ |
+| **Creator** | ✅ 403 admin APIs + UI redirect | content CRUD/reorder/delete, publish (block+success), AI helpers, **§F AI course-gen full live run (18 blocks)**, podcasts, uploads, builder UI | ✅ |
+| **Learner** | ✅ 403 admin+creator APIs + UI redirect | catalogue, course detail, enroll-guard, **ILB interrupt+defer+Q&A+complete+audit**, My Required Training (API+UI) | ✅ |
+
+**Zero functional defects.** Findings: **D-1** (dept-detail page title cosmetic), **D-2** (required-training "Podcast" label for course+podcast, cosmetic). **Config gaps:** ELEVENLABS/DEEPGRAM keys unset (podcast audio/voice degrade cleanly). **Product gaps (pre-existing):** learner quiz-taking, certificates, slide-player.
+
+**Could not auto-test (harness/sandbox):** security IP-allowlist/kill-session (prod-risk), CSV bulk-import + logo/favicon upload (file picker), course progress→completion via UI (slide-player placeholder + query-param block).
+
 ---
 
 ## Known stubbed / incomplete / deferred
