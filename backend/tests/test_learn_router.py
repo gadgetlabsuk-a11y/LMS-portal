@@ -99,3 +99,19 @@ class TestGetLearnCourse:
             headers={"Authorization": f"Bearer {trainee_token}"},
         )
         assert res.status_code == 404
+
+
+def test_my_required_training_endpoint(client, db, trainee_user, trainee_token, admin_user):
+    from datetime import datetime
+    from models import Department, DepartmentMember, DepartmentContent, Course, CourseStatus
+    c = Course(title="Mandatory Course", status=CourseStatus.PUBLISHED, creator_id=admin_user.id)
+    db.add(c); db.commit(); db.refresh(c)
+    d = Department(name="RTDept"); db.add(d); db.commit(); db.refresh(d)
+    db.add(DepartmentMember(department_id=d.id, user_id=trainee_user.id))
+    db.add(DepartmentContent(department_id=d.id, course_id=c.id, mandatory=True, due_mode="fixed", due_date=datetime(2020, 1, 1)))
+    db.commit()
+
+    r = client.get("/api/learn/required-training", headers={"Authorization": f"Bearer {trainee_token}"})
+    assert r.status_code == 200, r.text
+    items = r.json()
+    assert any(it["title"] == "Mandatory Course" and it["content_type"] == "course" and it["status"] == "overdue" for it in items)

@@ -137,3 +137,41 @@ def test_effective_due_for_user_relative_uses_per_department_join_date(db):
     db.commit()
     # d1: Jan 1 + 10d = Jan 11; d2: Mar 1 + 10d = Mar 11 -> earliest = Jan 11
     assert svc.effective_due_for_user(db, u.id, course_id=c.id) == datetime(2026, 1, 11)
+
+
+def test_required_training_for_user_dedupes_and_computes_status(db):
+    creator = _user(db, "creator_rt"); u = _user(db, "learner_rt")
+    c = _course(db, creator.id, "Fire Safety")
+    b = _broadcast(db, creator.id, "Policy Update")
+    d1 = _dept(db, "RT1"); d2 = _dept(db, "RT2")
+    # user is in both depts
+    db.add(DepartmentMember(department_id=d1.id, user_id=u.id, added_at=datetime(2026, 1, 1)))
+    db.add(DepartmentMember(department_id=d2.id, user_id=u.id, added_at=datetime(2026, 1, 1)))
+    # same course mandatory in BOTH depts, different fixed dates -> must dedupe to ONE item, earliest due
+    db.add(DepartmentContent(department_id=d1.id, course_id=c.id, mandatory=True, due_mode="fixed", due_date=datetime(2026, 9, 1)))
+    db.add(DepartmentContent(department_id=d2.id, course_id=c.id, mandatory=True, due_mode="fixed", due_date=datetime(2020, 1, 1)))
+    # a mandatory broadcast in d1, no deadline
+    db.add(DepartmentContent(department_id=d1.id, broadcast_id=b.id, mandatory=True))
+    # a NON-mandatory course assignment must be excluded
+    c2 = _course(db, creator.id, "Optional")
+    db.add(DepartmentContent(department_id=d1.id, course_id=c2.id, mandatory=False))
+    db.commit()
+
+    items = svc.required_training_for_user(db, u.id, now=datetime(2026, 5, 1))
+    # exactly 2 unique mandatory targets (the course once + the broadcast)
+    assert len(items) == 2
+    by_title = {it["title"]: it for it in items}
+    # course deduped to earliest due (2020) -> overdue
+    assert by_title["Fire Safety"]["content_type"] == "course"
+    assert by_title["Fire Safety"]["due_date"] == datetime(2020, 1, 1)
+    assert by_title["Fire Safety"]["status"] == "overdue"
+    # broadcast: mandatory, no deadline, not started -> not_started, is_podcast True
+    assert by_title["Policy Update"]["content_type"] == "broadcast"
+    assert by_title["Policy Update"]["due_date"] is None
+    assert by_title["Policy Update"]["is_podcast"] is True
+    assert by_title["Policy Update"]["status"] == "not_started"
+
+
+def test_required_training_for_user_empty_when_no_memberships(db):
+    u = _user(db, "lonely")
+    assert svc.required_training_for_user(db, u.id) == []

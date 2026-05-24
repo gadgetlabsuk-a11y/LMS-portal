@@ -14,6 +14,7 @@ from database import get_db
 from models import User, Course, CourseStatus, Enrollment
 from models.models import CourseVersion
 from middleware.auth_middleware import get_current_active_user
+from services import department_service as dept_svc
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,26 @@ def list_learn_courses(
 
     logger.info(f"Learner catalogue: user={current_user.id}, total={total}")
     return {"total": total, "page": page, "page_size": page_size, "items": items}
+
+
+class RequiredTrainingItem(BaseModel):
+    content_type: str
+    course_id: Optional[int]
+    broadcast_id: Optional[int]
+    title: str
+    is_podcast: bool
+    due_date: Optional[datetime]
+    status: str
+
+
+@router.get("/required-training", response_model=List[RequiredTrainingItem])
+def my_required_training(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """The current learner's mandatory training (courses + standalone broadcasts) across
+    their departments, with effective due dates and status."""
+    return dept_svc.required_training_for_user(db, current_user.id)
 
 
 @router.get("/courses/{course_id}", response_model=LearnCourseDetailResponse)

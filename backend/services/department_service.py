@@ -190,3 +190,38 @@ def effective_due_for_user(db: Session, user_id: int, *, course_id: Optional[int
     ]
     dues = [d for d in dues if d is not None]
     return min(dues) if dues else None
+
+
+def required_training_for_user(db: Session, user_id: int, now: Optional[datetime] = None) -> List[dict]:
+    """The user's mandatory assignments across all their departments, deduped by target
+    (course/broadcast), each with the earliest effective deadline and a computed status."""
+    pairs = mandatory_assignments_for_user(db, user_id)
+    by_target: dict = {}
+    for content, anchor in pairs:
+        key = ("broadcast", content.broadcast_id) if content.broadcast_id is not None else ("course", content.course_id)
+        due = effective_due_date(content, anchor)
+        entry = by_target.setdefault(key, {"content": content, "dues": []})
+        if due is not None:
+            entry["dues"].append(due)
+    out: List[dict] = []
+    for (kind, _tid), e in by_target.items():
+        content = e["content"]
+        due = min(e["dues"]) if e["dues"] else None
+        completed = content_completed(db, user_id, content)
+        started = content_started(db, user_id, content)
+        if kind == "broadcast":
+            title = content.broadcast.title if content.broadcast else ""
+            is_podcast = True
+        else:
+            title = content.course.title if content.course else ""
+            is_podcast = bool(content.course.ilb_published) if content.course else False
+        out.append({
+            "content_type": kind,
+            "course_id": content.course_id,
+            "broadcast_id": content.broadcast_id,
+            "title": title,
+            "is_podcast": is_podcast,
+            "due_date": due,
+            "status": status_for(completed, started, due, now),
+        })
+    return out
