@@ -27,6 +27,7 @@ const publishedConfig = {
   voice_id: null,
   segments: ['Intro segment.'],
   segment_audio: null,
+  segment_video: null,
   published: true,
 }
 
@@ -98,5 +99,27 @@ describe('ILBPlayerPage', () => {
 
     expect(await screen.findByText('Flagged for a human.')).toBeInTheDocument()
     expect(screen.getByText(/escalated/i)).toBeInTheDocument()
+  })
+
+  it('plays an avatar video and auto-advances on ended', async () => {
+    window.HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined)
+    window.HTMLMediaElement.prototype.pause = vi.fn()
+    mockedIlb.getPodcast.mockResolvedValue({
+      ...publishedConfig,
+      segments: ['Seg one.', 'Seg two.'],
+      segment_audio: null,
+      segment_video: ['/api/media/video/a.mp4', '/api/media/video/b.mp4'],
+    })
+    mockedIlb.startSession.mockResolvedValue({
+      session: { id: 1, enrollment_id: 1, mode: 'interrupt', completion_status: 'in_progress', started_at: '', completed_at: null, final_score: null },
+      live: { provider: 'stub', avatar_id: 'demo', livekit_url: '', token: '', session_id: 's1' },
+    })
+    renderPlayer()
+    await userEvent.click(await screen.findByText('Start broadcast'))
+    const video = document.querySelector('video') as HTMLVideoElement
+    expect(video).toBeTruthy()
+    expect(video.getAttribute('src')).toContain('/api/media/video/a.mp4')
+    video.dispatchEvent(new Event('ended'))
+    expect(await screen.findByText(/Segment 2\/2/)).toBeInTheDocument()
   })
 })

@@ -595,6 +595,8 @@ class Broadcast(Base):
     script = Column(Text, nullable=True)
     segments = Column(JSON, nullable=True)
     segment_audio = Column(JSON, nullable=True)
+    segment_video = Column(JSON, nullable=True)        # parallel to segment_audio; MP4 URLs (or None per seg)
+    video_render_jobs = Column(JSON, nullable=True)    # [{"seg_index": int, "heygen_video_id": str, "status": str}]
     published = Column(Boolean, nullable=False, server_default="0")
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)

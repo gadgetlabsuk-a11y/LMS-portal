@@ -62,6 +62,7 @@ export interface PodcastConfig {
   voice_id: string | null
   segments: string[] | null
   segment_audio: string[] | null
+  segment_video: string[] | null
   published: boolean
 }
 
@@ -89,6 +90,7 @@ export interface BroadcastDetail {
   script: string | null
   segments: string[] | null
   segment_audio: string[] | null
+  segment_video: string[] | null
   published: boolean
 }
 
@@ -191,6 +193,12 @@ export const ilbApi = {
 
   renderBroadcastAudio: (id: number): Promise<{ segment_audio: string[] }> =>
     api.post(`/ilb/broadcasts/${id}/render-audio`, {}).then((r) => unwrap<{ segment_audio: string[] }>(r)),
+
+  renderBroadcastAvatar: (id: number): Promise<{ jobs: { seg_index: number; status: string }[] }> =>
+    api.post(`/ilb/broadcasts/${id}/render-avatar`, {}).then((r) => unwrap<{ jobs: { seg_index: number; status: string }[] }>(r)),
+
+  broadcastAvatarStatus: (id: number): Promise<{ overall: string; segments: { seg_index: number; status: string }[]; segment_video: (string | null)[] }> =>
+    api.get(`/ilb/broadcasts/${id}/avatar-status`).then((r) => unwrap<{ overall: string; segments: { seg_index: number; status: string }[]; segment_video: (string | null)[] }>(r)),
 
   publishBroadcast: (id: number, published = true): Promise<BroadcastDetail> =>
     api.post(`/ilb/broadcasts/${id}/publish`, { published }).then((r) => unwrap<BroadcastDetail>(r)),

@@ -37,7 +37,9 @@ from services.audit_service import AuditService
 from services.claude_service import ClaudeService
 from services.tts_service import TTSService
 from services.document_service import DocumentService
-from services.integrations import get_avatar_provider, get_stt_provider
+from services.integrations import get_avatar_provider, get_stt_provider, DEFAULT_HEYGEN_AVATAR_ID
+from config import settings
+import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -649,6 +651,7 @@ class BroadcastOut(BaseModel):
     script: Optional[str] = None
     segments: Optional[List[str]] = None
     segment_audio: Optional[List[str]] = None
+    segment_video: Optional[List[str]] = None
     published: bool = False
 
     class Config:
@@ -672,6 +675,13 @@ def _get_broadcast(db: Session, broadcast_id: int) -> Broadcast:
     if not b:
         raise HTTPException(status_code=404, detail="Broadcast not found")
     return b
+
+
+async def _download_bytes(url: str) -> bytes:
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(url, timeout=120.0)
+    resp.raise_for_status()
+    return resp.content
 
 
 @router.post("/broadcasts", response_model=BroadcastOut, status_code=201)
@@ -833,3 +843,105 @@ def publish_broadcast(
     db.commit()
     db.refresh(b)
     return BroadcastOut.model_validate(b)
+
+
+@router.post("/broadcasts/{broadcast_id}/render-avatar")
+async def render_broadcast_avatar(
+    broadcast_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Dict[str, Any]:
+    """Submit one HeyGen avatar-video job per segment (lip-synced to its narration audio)."""
+    _require_creator(current_user)
+    b = _get_broadcast(db, broadcast_id)
+    if not settings.HEYGEN_API_KEY:
+        raise HTTPException(status_code=503, detail="Avatar video not configured (HEYGEN_API_KEY)")
+    segs = b.segments or []
+    audio = b.segment_audio or []
+    if not segs or not audio:
+        raise HTTPException(status_code=422, detail="Render the narration audio first")
+
+    from pathlib import Path
+    avatar_id = b.avatar_id or DEFAULT_HEYGEN_AVATAR_ID
+    provider = get_avatar_provider()
+    jobs: List[Dict[str, Any]] = []
+    seg_video: List[Optional[str]] = list(b.segment_video or [])
+    while len(seg_video) < len(segs):
+        seg_video.append(None)
+    for i, _seg in enumerate(segs):
+        url = audio[i] if i < len(audio) else None
+        if not url:
+            jobs.append({"seg_index": i, "heygen_video_id": None, "status": "failed"})
+            continue
+        fname = url.rsplit("/", 1)[-1]
+        path = Path(settings.UPLOAD_DIR) / "audio" / fname
+        if not path.exists():
+            jobs.append({"seg_index": i, "heygen_video_id": None, "status": "failed"})
+            continue
+        try:
+            vid = await provider.submit_segment(path.read_bytes(), "audio/mpeg", avatar_id)
+            jobs.append({"seg_index": i, "heygen_video_id": vid, "status": "processing"})
+        except Exception as e:
+            logger.error(f"HeyGen submit failed seg {i}: {e}")
+            jobs.append({"seg_index": i, "heygen_video_id": None, "status": "failed"})
+
+    b.video_render_jobs = jobs
+    b.segment_video = seg_video
+    db.commit()
+    return {"jobs": jobs}
+
+
+@router.get("/broadcasts/{broadcast_id}/avatar-status")
+async def broadcast_avatar_status(
+    broadcast_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Dict[str, Any]:
+    """Poll HeyGen for each processing job; download completed MP4s and store the URL."""
+    _require_creator(current_user)
+    b = _get_broadcast(db, broadcast_id)
+    jobs = list(b.video_render_jobs or [])
+    seg_video = list(b.segment_video or [None] * len(b.segments or []))
+    provider = get_avatar_provider()
+
+    from pathlib import Path
+    video_dir = Path(settings.UPLOAD_DIR) / "video"
+    video_dir.mkdir(parents=True, exist_ok=True)
+
+    changed = False
+    for job in jobs:
+        if job.get("status") != "processing":
+            continue
+        vid = job.get("heygen_video_id")
+        i = job["seg_index"]
+        try:
+            status, url = await provider.poll(vid)
+        except Exception as e:
+            logger.error(f"HeyGen poll failed seg {i}: {e}")
+            continue
+        if status == "completed" and url:
+            try:
+                data = await _download_bytes(url)
+                fname = f"ilb_bcast_{broadcast_id}_seg_{i}.mp4"
+                (video_dir / fname).write_bytes(data)
+                while len(seg_video) <= i:
+                    seg_video.append(None)
+                seg_video[i] = f"/api/media/video/{fname}"
+                job["status"] = "completed"
+                changed = True
+            except Exception as e:
+                logger.error(f"Avatar MP4 download failed seg {i}: {e}")
+                job["status"] = "failed"
+                changed = True
+        elif status == "failed":
+            job["status"] = "failed"
+            changed = True
+
+    if changed:
+        b.video_render_jobs = jobs
+        b.segment_video = seg_video
+        db.commit()
+
+    statuses = [j.get("status") for j in jobs]
+    overall = "complete" if all(s in ("completed", "failed") for s in statuses) else "processing"
+    return {"overall": overall, "segments": jobs, "segment_video": seg_video}

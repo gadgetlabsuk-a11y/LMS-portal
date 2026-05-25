@@ -27,6 +27,7 @@ export function CreatorStandaloneBroadcasts() {
   const [script, setScript] = useState('')
   const [segmentCount, setSegmentCount] = useState<number | null>(null)
   const [audioCount, setAudioCount] = useState<number | null>(null)
+  const [videoCount, setVideoCount] = useState<number | null>(null)
   const [published, setPublished] = useState(false)
 
   const [busy, setBusy] = useState<string | null>(null)
@@ -57,6 +58,7 @@ export function CreatorStandaloneBroadcasts() {
       setScript(b.script ?? '')
       setSegmentCount(b.segments?.length ?? null)
       setAudioCount(b.segment_audio?.length ?? null)
+      setVideoCount(b.segment_video?.filter(Boolean).length ?? null)
       setPublished(b.published)
     }).catch(() => setError('Could not load broadcast'))
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -127,6 +129,26 @@ export function CreatorStandaloneBroadcasts() {
       const res = await ilbApi.renderBroadcastAudio(selectedId)
       setAudioCount(res.segment_audio.length)
       setStatus(`Narration rendered — ${res.segment_audio.length} clip(s).`)
+    })
+  }
+
+  async function renderAvatar() {
+    if (selectedId == null) return
+    await run('avatar', async () => {
+      await ilbApi.renderBroadcastAvatar(selectedId)
+      setStatus('Avatar render started…')
+      for (let i = 0; i < 60; i++) {
+        await new Promise((r) => setTimeout(r, 5000))
+        const s = await ilbApi.broadcastAvatarStatus(selectedId)
+        const done = s.segments.filter((j) => j.status === 'completed').length
+        setStatus(`Rendering avatar… ${done}/${s.segments.length}`)
+        if (s.overall === 'complete') {
+          setVideoCount(s.segment_video.filter(Boolean).length)
+          setStatus(`Avatar video ready — ${s.segment_video.filter(Boolean).length} clip(s).`)
+          return
+        }
+      }
+      setStatus('Avatar render still processing — check back shortly.')
     })
   }
 
@@ -262,6 +284,9 @@ export function CreatorStandaloneBroadcasts() {
             </button>
             <button onClick={() => void renderAudio()} disabled={busy != null || segmentCount == null || segmentCount === 0} className="px-4 py-2 rounded bg-purple-600 text-white text-sm font-medium hover:bg-purple-500 disabled:opacity-50">
               {busy === 'render' ? 'Rendering…' : audioCount ? `Re-render audio (${audioCount})` : 'Render audio'}
+            </button>
+            <button onClick={() => void renderAvatar()} disabled={busy != null || !audioCount} className="px-4 py-2 rounded bg-fuchsia-700 text-white text-sm font-medium hover:bg-fuchsia-600 disabled:opacity-50">
+              {busy === 'avatar' ? 'Rendering…' : videoCount ? `Re-render avatar (${videoCount})` : 'Render avatar'}
             </button>
             <button onClick={() => void togglePublish()} disabled={busy != null || (!published && !hasScript)} className="px-4 py-2 rounded bg-amber-600 text-white text-sm font-medium hover:bg-amber-500 disabled:opacity-50">
               {busy === 'publish' ? '…' : published ? 'Unpublish' : 'Publish'}
