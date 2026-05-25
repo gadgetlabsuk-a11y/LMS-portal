@@ -28,6 +28,7 @@ class IntegrationUpdate(BaseModel):
     elevenlabs_api_key: Optional[str] = None
     deepgram_api_key: Optional[str] = None
     claude_api_key: Optional[str] = None
+    heygen_api_key: Optional[str] = None
 
 
 @router.get("/integrations")
@@ -51,6 +52,7 @@ async def put_integrations(
         elevenlabs_api_key=body.elevenlabs_api_key,
         deepgram_api_key=body.deepgram_api_key,
         claude_api_key=body.claude_api_key,
+        heygen_api_key=body.heygen_api_key,
         updated_by=current_user.id,
     )
     return {"providers": integration_status(db)}

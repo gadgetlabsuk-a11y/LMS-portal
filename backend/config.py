@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     CLAUDE_API_KEY: str = os.getenv("CLAUDE_API_KEY", "sk-default-key")
     ELEVENLABS_API_KEY: str = os.getenv("ELEVENLABS_API_KEY", "")
     DEEPGRAM_API_KEY: str = os.getenv("DEEPGRAM_API_KEY", "")
+    # HeyGen avatar video (C-3). Stored/captured but not yet consumed — the avatar
+    # provider is still stubbed until the integration is built.
+    HEYGEN_API_KEY: str = os.getenv("HEYGEN_API_KEY", "")
 
     # Database
     DB_URL: str = "sqlite:///./lms.db"

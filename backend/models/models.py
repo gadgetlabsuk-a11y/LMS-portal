@@ -696,5 +696,6 @@ class IntegrationSettings(Base):
     elevenlabs_api_key = Column(String(255), nullable=True)
     deepgram_api_key = Column(String(255), nullable=True)
     claude_api_key = Column(String(255), nullable=True)
+    heygen_api_key = Column(String(255), nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     updated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)

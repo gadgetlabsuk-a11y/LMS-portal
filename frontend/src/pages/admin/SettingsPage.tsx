@@ -5,7 +5,7 @@ import { Card } from '@/components/common/Card'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 
-type ProviderKey = 'elevenlabs' | 'deepgram' | 'claude'
+type ProviderKey = 'elevenlabs' | 'deepgram' | 'claude' | 'heygen'
 
 interface ProviderStatus {
   configured: boolean
@@ -20,18 +20,25 @@ const FIELD: Record<ProviderKey, string> = {
   elevenlabs: 'elevenlabs_api_key',
   deepgram: 'deepgram_api_key',
   claude: 'claude_api_key',
+  heygen: 'heygen_api_key',
 }
 
-const PROVIDERS: { key: ProviderKey; name: string; desc: string }[] = [
+const PROVIDERS: { key: ProviderKey; name: string; desc: string; note?: string }[] = [
   { key: 'elevenlabs', name: 'ElevenLabs', desc: 'Podcast / broadcast narration audio (text-to-speech).' },
   { key: 'deepgram', name: 'Deepgram', desc: 'Voice questions in the broadcast player (speech-to-text).' },
   { key: 'claude', name: 'Claude (Anthropic)', desc: 'AI course generation and the grounded Q&A assistant.' },
+  {
+    key: 'heygen',
+    name: 'HeyGen',
+    desc: 'Live avatar video for broadcasts.',
+    note: 'Not active yet — the avatar integration is still in development. Your key is stored and will be used once it ships.',
+  },
 ]
 
 export const SettingsPage = () => {
   const [status, setStatus] = useState<StatusMap | null>(null)
   const [loading, setLoading] = useState(true)
-  const [inputs, setInputs] = useState<Record<ProviderKey, string>>({ elevenlabs: '', deepgram: '', claude: '' })
+  const [inputs, setInputs] = useState<Record<ProviderKey, string>>({ elevenlabs: '', deepgram: '', claude: '', heygen: '' })
   const [savingKey, setSavingKey] = useState<ProviderKey | null>(null)
   const { showToast } = useToast()
 
@@ -85,7 +92,7 @@ export const SettingsPage = () => {
         <p className="text-gray-500">Loading…</p>
       ) : (
         <div className="space-y-4 max-w-2xl">
-          {PROVIDERS.map(({ key, name, desc }) => {
+          {PROVIDERS.map(({ key, name, desc, note }) => {
             const s = status?.[key]
             const configured = !!s?.configured
             return (
@@ -99,8 +106,10 @@ export const SettingsPage = () => {
                       ) : (
                         <Badge variant="warning">Not configured</Badge>
                       )}
+                      {note && <Badge variant="info">Coming soon</Badge>}
                     </div>
                     <p className="text-sm text-gray-500 mt-1">{desc}</p>
+                    {note && <p className="text-xs text-amber-600 mt-1">{note}</p>}
                     {configured && (
                       <p className="text-xs text-gray-400 mt-1">
                         Current: <span className="font-mono">{s?.masked}</span>

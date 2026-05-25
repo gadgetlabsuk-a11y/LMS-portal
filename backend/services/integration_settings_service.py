@@ -31,6 +31,8 @@ _PROVIDERS = (
     ("elevenlabs", "elevenlabs_api_key", "ELEVENLABS_API_KEY", "ELEVENLABS_API_KEY", ""),
     ("deepgram", "deepgram_api_key", "DEEPGRAM_API_KEY", "DEEPGRAM_API_KEY", ""),
     ("claude", "claude_api_key", "CLAUDE_API_KEY", "CLAUDE_API_KEY", _CLAUDE_PLACEHOLDER),
+    # HeyGen is stored/captured but not yet consumed (avatar integration C-3 is stubbed).
+    ("heygen", "heygen_api_key", "HEYGEN_API_KEY", "HEYGEN_API_KEY", ""),
 )
 
 
@@ -66,13 +68,13 @@ def update_settings(
     elevenlabs_api_key: Optional[str] = None,
     deepgram_api_key: Optional[str] = None,
     claude_api_key: Optional[str] = None,
+    heygen_api_key: Optional[str] = None,
     updated_by: Optional[int] = None,
 ) -> IntegrationSettings:
     """Persist provided keys then apply them to the live settings.
 
     Only non-None fields are written, so callers can update one key at a time.
-    An empty string clears a key (reverting that provider to its env default on the
-    next process start; the live `settings` value is not lowered here).
+    An empty string clears a key (reverting that provider to its env value).
     """
     row = get_or_create_settings(db)
     if elevenlabs_api_key is not None:
@@ -81,6 +83,8 @@ def update_settings(
         row.deepgram_api_key = deepgram_api_key.strip() or None
     if claude_api_key is not None:
         row.claude_api_key = claude_api_key.strip() or None
+    if heygen_api_key is not None:
+        row.heygen_api_key = heygen_api_key.strip() or None
     if updated_by is not None:
         row.updated_by = updated_by
     db.commit()

@@ -42,7 +42,7 @@ def test_get_integrations_reports_unconfigured(client, admin_token, db, restore_
     res = client.get("/api/admin/integrations", headers=_auth(admin_token))
     assert res.status_code == 200
     providers = res.json()["providers"]
-    assert set(providers) == {"elevenlabs", "deepgram", "claude"}
+    assert set(providers) == {"elevenlabs", "deepgram", "claude", "heygen"}
     assert providers["elevenlabs"]["configured"] is False
     assert providers["claude"]["configured"] is False
     # Never leak the raw key.
