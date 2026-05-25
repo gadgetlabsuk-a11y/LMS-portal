@@ -13,13 +13,24 @@ from typing import Any, Dict, Optional
 
 import httpx
 
+from config import settings
+
+DEFAULT_HEYGEN_AVATAR_ID = "Kristin_public_3_20240108"
+HEYGEN_API_BASE = "https://api.heygen.com"
+HEYGEN_UPLOAD_BASE = "https://upload.heygen.com"
+
 
 # --- Avatar (HeyGen): hybrid pre-render + live --------------------------------------
 
 class AvatarProvider(ABC):
     @abstractmethod
-    def prerender(self, script: str, avatar_id: str) -> str:
-        """Render the scripted podcast to an avatar video; return a stored video URL."""
+    async def submit_segment(self, audio: bytes, content_type: str, avatar_id: str) -> str:
+        """Submit a lip-synced avatar-video render job; return a provider job/video id."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def poll(self, video_id: str) -> tuple[str, Optional[str]]:
+        """Return (status, mp4_url|None). status in {processing, completed, failed}."""
         raise NotImplementedError
 
     @abstractmethod
@@ -29,11 +40,14 @@ class AvatarProvider(ABC):
 
 
 class StubAvatarProvider(AvatarProvider):
-    """Demo stub. Real impl: HeyGen video-generation API (prerender) + interactive-streaming
+    """Demo stub. Real impl: HeyGen video-generation API (submit_segment/poll) + interactive-streaming
     API over LiveKit (live). The same avatar_id must exist in both — the feasibility spike."""
 
-    def prerender(self, script: str, avatar_id: str) -> str:
-        return f"avatar-stub://prerendered/{avatar_id}?words={len(script.split())}"
+    async def submit_segment(self, audio: bytes, content_type: str, avatar_id: str) -> str:
+        return f"stub-video-{avatar_id}-{len(audio)}"
+
+    async def poll(self, video_id: str) -> tuple[str, Optional[str]]:
+        return ("completed", "/api/media/video/stub.mp4")
 
     def create_live_session(self, avatar_id: str) -> Dict[str, Any]:
         return {
@@ -43,6 +57,76 @@ class StubAvatarProvider(AvatarProvider):
             "token": "STUB-LIVEKIT-TOKEN",
             "session_id": f"stub-live-{avatar_id}",
         }
+
+
+class HeyGenAvatarProvider(AvatarProvider):
+    """HeyGen Video-Generation: upload audio asset -> generate lip-synced avatar video -> poll."""
+
+    def __init__(self, api_key: Optional[str] = None):
+        self._api_key = api_key
+
+    @property
+    def api_key(self) -> str:
+        return self._api_key if self._api_key is not None else (settings.HEYGEN_API_KEY or "")
+
+    async def _upload_audio(self, audio: bytes, content_type: str) -> str:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{HEYGEN_UPLOAD_BASE}/v1/asset",
+                content=audio,
+                headers={"X-Api-Key": self.api_key, "Content-Type": content_type or "audio/mpeg"},
+                timeout=60.0,
+            )
+        if resp.status_code != 200:
+            raise Exception(f"HeyGen asset upload failed: {resp.status_code} {resp.text[:200]}")
+        return resp.json()["data"]["id"]
+
+    async def submit_segment(self, audio: bytes, content_type: str, avatar_id: str) -> str:
+        asset_id = await self._upload_audio(audio, content_type)
+        body = {
+            "test": False,
+            "dimension": {"width": 1280, "height": 720},
+            "video_inputs": [{
+                "character": {"type": "avatar", "avatar_id": avatar_id, "avatar_style": "normal"},
+                "voice": {"type": "audio", "audio_asset_id": asset_id},
+                "background": {"type": "color", "value": "#1F2937"},
+            }],
+        }
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{HEYGEN_API_BASE}/v2/video/generate",
+                json=body,
+                headers={"X-Api-Key": self.api_key, "Content-Type": "application/json"},
+                timeout=60.0,
+            )
+        if resp.status_code != 200:
+            raise Exception(f"HeyGen generate failed: {resp.status_code} {resp.text[:200]}")
+        data = resp.json().get("data") or {}
+        video_id = data.get("video_id")
+        if not video_id:
+            raise Exception(f"HeyGen generate: no video_id ({resp.text[:200]})")
+        return video_id
+
+    async def poll(self, video_id: str) -> tuple[str, Optional[str]]:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{HEYGEN_API_BASE}/v1/video_status.get",
+                params={"video_id": video_id},
+                headers={"X-Api-Key": self.api_key},
+                timeout=30.0,
+            )
+        if resp.status_code != 200:
+            return ("processing", None)
+        data = resp.json().get("data") or {}
+        status = data.get("status", "processing")
+        if status == "completed":
+            return ("completed", data.get("video_url"))
+        if status == "failed":
+            return ("failed", None)
+        return ("processing", None)
+
+    def create_live_session(self, avatar_id: str) -> Dict[str, Any]:
+        return StubAvatarProvider().create_live_session(avatar_id)
 
 
 # --- Speech-to-text (Deepgram) ------------------------------------------------------
@@ -107,13 +191,16 @@ class StubLiveTTSProvider(LiveTTSProvider):
 # --- factories (swap stubs for real providers when keys are configured) -------------
 
 def get_avatar_provider(real: Optional[AvatarProvider] = None) -> AvatarProvider:
-    return real or StubAvatarProvider()
+    if real:
+        return real
+    if settings.HEYGEN_API_KEY:
+        return HeyGenAvatarProvider()
+    return StubAvatarProvider()
 
 
 def get_stt_provider(real: Optional[STTProvider] = None) -> STTProvider:
     if real:
         return real
-    from config import settings
     if settings.DEEPGRAM_API_KEY:
         return DeepgramSTTProvider(settings.DEEPGRAM_API_KEY)
     return StubSTTProvider()
