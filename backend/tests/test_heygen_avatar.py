@@ -131,3 +131,15 @@ def test_avatar_status_completes_and_downloads(creator_token, db, monkeypatch):
     assert body["overall"] == "complete"
     db.refresh(b)
     assert b.segment_video[0] == f"/api/media/video/ilb_bcast_{bid}_seg_0.mp4"
+
+
+def test_get_broadcast_serializes_partial_segment_video(creator_token, db):
+    """A partially-rendered broadcast (segment_video has a None) must serialize, not 500."""
+    bid, h = _make_broadcast(creator_token, db)
+    from models import Broadcast
+    b = db.query(Broadcast).get(bid)
+    b.segment_video = [None, f"/api/media/video/ilb_bcast_{bid}_seg_1.mp4"]
+    db.commit()
+    r = client.get(f"/api/ilb/broadcasts/{bid}", headers=h)
+    assert r.status_code == 200
+    assert r.json()["segment_video"] == [None, f"/api/media/video/ilb_bcast_{bid}_seg_1.mp4"]

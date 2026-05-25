@@ -651,7 +651,7 @@ class BroadcastOut(BaseModel):
     script: Optional[str] = None
     segments: Optional[List[str]] = None
     segment_audio: Optional[List[str]] = None
-    segment_video: Optional[List[str]] = None
+    segment_video: Optional[List[Optional[str]]] = None  # per-segment MP4 URL or None (un-rendered)
     published: bool = False
 
     class Config:

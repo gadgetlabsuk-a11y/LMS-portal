@@ -35,7 +35,7 @@ export const ILBPlayerPage = ({ kind = 'course' }: { kind?: 'course' | 'broadcas
   const [available, setAvailable] = useState(false)
   const [segments, setSegments] = useState<string[]>([])
   const [segmentAudio, setSegmentAudio] = useState<string[]>([])
-  const [segmentVideo, setSegmentVideo] = useState<string[]>([])
+  const [segmentVideo, setSegmentVideo] = useState<(string | null)[]>([])
   const [segIdx, setSegIdx] = useState(0)
   const [avatarId, setAvatarId] = useState<string | null>(null)
   const [draftPreview, setDraftPreview] = useState(false)

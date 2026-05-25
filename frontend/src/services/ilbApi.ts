@@ -62,7 +62,7 @@ export interface PodcastConfig {
   voice_id: string | null
   segments: string[] | null
   segment_audio: string[] | null
-  segment_video: string[] | null
+  segment_video: (string | null)[] | null
   published: boolean
 }
 
@@ -90,7 +90,7 @@ export interface BroadcastDetail {
   script: string | null
   segments: string[] | null
   segment_audio: string[] | null
-  segment_video: string[] | null
+  segment_video: (string | null)[] | null
   published: boolean
 }
 
