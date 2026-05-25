@@ -35,6 +35,7 @@ export const ILBPlayerPage = ({ kind = 'course' }: { kind?: 'course' | 'broadcas
   const [available, setAvailable] = useState(false)
   const [segments, setSegments] = useState<string[]>([])
   const [segmentAudio, setSegmentAudio] = useState<string[]>([])
+  const [segmentVideo, setSegmentVideo] = useState<string[]>([])
   const [segIdx, setSegIdx] = useState(0)
   const [avatarId, setAvatarId] = useState<string | null>(null)
   const [draftPreview, setDraftPreview] = useState(false)
@@ -56,7 +57,7 @@ export const ILBPlayerPage = ({ kind = 'course' }: { kind?: 'course' | 'broadcas
   const [answerAudioUrl, setAnswerAudioUrl] = useState<string | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const mediaRef = useRef<HTMLMediaElement | null>(null)
   const [nudgedFinish, setNudgedFinish] = useState(false)
 
   const liveAvatar = state === 'listening' || state === 'answering'
@@ -73,6 +74,7 @@ export const ILBPlayerPage = ({ kind = 'course' }: { kind?: 'course' | 'broadcas
         setAvailable(true)
         setSegments(cfg.segments ?? [])
         setSegmentAudio(cfg.segment_audio ?? [])
+        setSegmentVideo(cfg.segment_video ?? [])
         setAvatarId(cfg.avatar_id)
         setDraftPreview(!cfg.published)
         setTranscript([{ role: 'system', text: 'Choose a mode and start the broadcast.' }])
@@ -211,6 +213,7 @@ export const ILBPlayerPage = ({ kind = 'course' }: { kind?: 'course' | 'broadcas
   const hasSegments = segments.length > 0
   const currentSegment = hasSegments ? segments[Math.min(segIdx, segments.length - 1)] : null
   const currentAudio = segmentAudio.length > 0 ? segmentAudio[Math.min(segIdx, segmentAudio.length - 1)] : null
+  const currentVideo = segmentVideo.length > 0 ? segmentVideo[Math.min(segIdx, segmentVideo.length - 1)] : null
 
   // --- Autoplay / auto-advance (E-1) ---------------------------------------
   // Move to the next segment, flushing any deferred questions at the break.
@@ -223,25 +226,25 @@ export const ILBPlayerPage = ({ kind = 'course' }: { kind?: 'course' | 'broadcas
   // uncontrolled, so drive play/pause from `state`: play only while 'playing',
   // pause for 'paused'/'answering'/'listening' (e.g. an interrupt Q&A).
   useEffect(() => {
-    const el = audioRef.current
+    const el = mediaRef.current
     if (!el) return
     if (state === 'playing') void el.play().catch(() => {})
     else el.pause()
-  }, [state, segIdx, currentAudio])
+  }, [state, segIdx, currentAudio, currentVideo])
 
   // Timer fallback: when a segment has no narration audio, auto-advance after a
   // word-count-scaled delay (~150 wpm, clamped 6–20s). When audio IS present the
   // <audio onEnded> handler drives the advance instead.
   useEffect(() => {
     if (!started || state !== 'playing' || !hasSegments) return
-    if (currentAudio) return
+    if (currentAudio || currentVideo) return
     if (segIdx >= segments.length - 1) return
     const words = (currentSegment ?? '').trim().split(/\s+/).filter(Boolean).length
     const seconds = Math.min(20, Math.max(6, words / 2.5))
     const timer = setTimeout(advanceSegment, seconds * 1000)
     return () => clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [started, state, hasSegments, currentAudio, currentSegment, segIdx, segments.length, mode])
+  }, [started, state, hasSegments, currentAudio, currentVideo, currentSegment, segIdx, segments.length, mode])
 
   // Reaching the last segment (manual or auto) nudges the learner to Finish.
   useEffect(() => {
@@ -312,16 +315,29 @@ export const ILBPlayerPage = ({ kind = 'course' }: { kind?: 'course' | 'broadcas
               <span className="text-gray-400 text-sm text-center">● LIVE avatar (HeyGen) — answering · stubbed pending keys</span>
             ) : started && currentSegment ? (
               <div className="w-full h-full flex flex-col gap-2 overflow-y-auto">
-                <p className="text-gray-200 text-sm leading-relaxed">{currentSegment}</p>
-                {currentAudio && (
-                  <audio
-                    key={segIdx}
-                    ref={audioRef}
+                {currentVideo ? (
+                  <video
+                    key={`v-${segIdx}`}
+                    ref={mediaRef as unknown as React.RefObject<HTMLVideoElement>}
                     controls
                     onEnded={handleSegmentEnded}
-                    src={`${API_BASE}${currentAudio}`}
-                    className="w-full mt-auto"
+                    src={`${API_BASE}${currentVideo}`}
+                    className="w-full h-full object-contain"
                   />
+                ) : (
+                  <>
+                    <p className="text-gray-200 text-sm leading-relaxed">{currentSegment}</p>
+                    {currentAudio && (
+                      <audio
+                        key={`a-${segIdx}`}
+                        ref={mediaRef as unknown as React.RefObject<HTMLAudioElement>}
+                        controls
+                        onEnded={handleSegmentEnded}
+                        src={`${API_BASE}${currentAudio}`}
+                        className="w-full mt-auto"
+                      />
+                    )}
+                  </>
                 )}
               </div>
             ) : (
