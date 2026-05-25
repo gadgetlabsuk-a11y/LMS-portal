@@ -15,6 +15,7 @@ const navItems: NavItem[] = [
   { label: 'Dashboard', path: '/admin', icon: '📊' },
   { label: 'Users', path: '/admin/users', icon: '👤' },
   { label: 'Courses', path: '/admin/courses', icon: '📚' },
+  { label: 'Podcasts', path: '/admin/podcasts', icon: '🎙️' },
   { label: 'Departments', path: '/admin/departments', icon: '🏢' },
   { label: 'Reminders', path: '/admin/reminders', icon: '⏰' },
   { label: 'Security', path: '/admin/security', icon: '🛡️' },

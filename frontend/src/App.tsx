@@ -156,6 +156,16 @@ export default function App() {
           </AdminLayout>
         }
       />
+      <Route
+        path="/admin/podcasts"
+        element={
+          <AdminLayout>
+            <ProtectedRoute adminOnly>
+              <CreatorPodcastsPage />
+            </ProtectedRoute>
+          </AdminLayout>
+        }
+      />
 
       {/* Creator routes */}
       <Route
