@@ -223,10 +223,15 @@ app.include_router(departments.router)
 app.include_router(admin_integrations.router)
 
 
-# Mount static files for uploads
+# Mount static files for uploads.
+# Also expose them under /api/media: in production only /lms/api/* is routed to the
+# backend (other /lms/* paths hit the frontend SPA), so files referenced by the SPA
+# (e.g. ILB narration audio) must sit under /api to be reachable. The bare /uploads
+# mount is kept for dev and direct/back-compat access.
 static_dir = Path("uploads")
 if static_dir.exists():
     app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+    app.mount("/api/media", StaticFiles(directory="uploads"), name="media")
 
 # Mount self-hosted JS dependencies (React, Babel, etc.)
 js_static_dir = Path("static")

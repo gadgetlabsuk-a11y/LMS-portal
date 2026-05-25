@@ -70,7 +70,7 @@ class TTSService:
         audio_bytes = await self._call_elevenlabs(script, voice_id)
         filepath.write_bytes(audio_bytes)
 
-        audio_url = f"/uploads/audio/{filename}"
+        audio_url = f"/api/media/audio/{filename}"
         slide.narration_audio_url = audio_url
         slide.narration_script_hash = script_hash
         db.commit()

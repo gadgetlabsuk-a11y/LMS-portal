@@ -129,7 +129,7 @@ async def _maybe_voice_answer(answer_text: str, voice_id: Optional[str], interac
         audio_dir.mkdir(parents=True, exist_ok=True)
         filename = f"ilb_answer_{interaction_id}.mp3"
         (audio_dir / filename).write_bytes(audio)
-        return f"/uploads/audio/{filename}"
+        return f"/api/media/audio/{filename}"
     except Exception:
         logger.warning("Answer TTS failed for interaction %s", interaction_id, exc_info=True)
         return None
@@ -595,7 +595,7 @@ async def render_podcast_audio(
         audio = await _tts.synthesize(segment, voice_id)
         filename = f"ilb_course_{course_id}_seg_{i}.mp3"
         (audio_dir / filename).write_bytes(audio)
-        urls.append(f"/uploads/audio/{filename}")
+        urls.append(f"/api/media/audio/{filename}")
 
     course.ilb_segment_audio = urls
     db.commit()
@@ -811,7 +811,7 @@ async def broadcast_render_audio(
         audio = await _tts.synthesize(segment, voice_id)
         filename = f"ilb_bcast_{broadcast_id}_seg_{i}.mp3"
         (audio_dir / filename).write_bytes(audio)
-        urls.append(f"/uploads/audio/{filename}")
+        urls.append(f"/api/media/audio/{filename}")
     b.segment_audio = urls
     db.commit()
     db.refresh(b)
