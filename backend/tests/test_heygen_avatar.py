@@ -143,3 +143,40 @@ def test_get_broadcast_serializes_partial_segment_video(creator_token, db):
     r = client.get(f"/api/ilb/broadcasts/{bid}", headers=h)
     assert r.status_code == 200
     assert r.json()["segment_video"] == [None, f"/api/media/video/ilb_bcast_{bid}_seg_1.mp4"]
+
+
+def test_update_broadcast_preserves_media_when_script_unchanged(creator_token, db):
+    """A title/voice edit (script unchanged) must NOT wipe rendered audio/avatar."""
+    bid, h = _make_broadcast(creator_token, db)  # script="Seg one.[SEGMENT BREAK]Seg two.", segment_audio set
+    from models import Broadcast
+    b = db.query(Broadcast).get(bid)
+    b.segment_video = [f"/api/media/video/ilb_bcast_{bid}_seg_0.mp4", f"/api/media/video/ilb_bcast_{bid}_seg_1.mp4"]
+    db.commit()
+    r = client.put(
+        f"/api/ilb/broadcasts/{bid}",
+        json={"title": "Renamed", "script": "Seg one.[SEGMENT BREAK]Seg two."},  # same script
+        headers=h,
+    )
+    assert r.status_code == 200
+    db.refresh(b)
+    assert b.title == "Renamed"
+    assert b.segment_audio is not None      # preserved
+    assert b.segment_video is not None       # preserved
+
+
+def test_update_broadcast_clears_media_when_script_changes(creator_token, db):
+    """Editing the script invalidates the (now-stale) rendered audio + avatar."""
+    bid, h = _make_broadcast(creator_token, db)
+    from models import Broadcast
+    b = db.query(Broadcast).get(bid)
+    b.segment_video = [f"/api/media/video/ilb_bcast_{bid}_seg_0.mp4", f"/api/media/video/ilb_bcast_{bid}_seg_1.mp4"]
+    db.commit()
+    r = client.put(
+        f"/api/ilb/broadcasts/{bid}",
+        json={"script": "A brand new opening.[SEGMENT BREAK]A different second part."},
+        headers=h,
+    )
+    assert r.status_code == 200
+    db.refresh(b)
+    assert b.segment_audio is None
+    assert b.segment_video is None

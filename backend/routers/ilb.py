@@ -740,10 +740,14 @@ def update_broadcast(
     for field in ("title", "description", "source_text", "host_persona", "voice_id", "avatar_id"):
         if field in data:
             setattr(b, field, data[field])
-    if "script" in data:
+    # Only re-derive segments and invalidate rendered media when the script actually
+    # changes — a title/voice/source edit must NOT wipe already-rendered audio/avatar.
+    if "script" in data and (data["script"] or "") != (b.script or ""):
         b.script = data["script"]
         b.segments = _segments_from_script(data["script"] or "")
-        b.segment_audio = None  # invalidate stale audio
+        b.segment_audio = None       # narration no longer matches the new wording
+        b.segment_video = None        # avatar video is lip-synced to that audio
+        b.video_render_jobs = None
     db.commit()
     db.refresh(b)
     return BroadcastOut.model_validate(b)
