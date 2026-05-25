@@ -679,3 +679,22 @@ class DepartmentContent(Base):
         Index("idx_department_content_course", "course_id"),
         Index("idx_department_content_broadcast", "broadcast_id"),
     )
+
+
+class IntegrationSettings(Base):
+    """Single-row store for third-party API keys set via the admin Settings page.
+
+    Always exactly one row (id == 1). A non-empty value overrides the corresponding
+    environment variable at runtime (see services/integration_settings_service.py).
+    NOTE: prod SQLite has no persistent volume, so these are wiped on redeploy —
+    set the matching env vars in Coolify for permanence.
+    """
+
+    __tablename__ = "integration_settings"
+
+    id = Column(Integer, primary_key=True)
+    elevenlabs_api_key = Column(String(255), nullable=True)
+    deepgram_api_key = Column(String(255), nullable=True)
+    claude_api_key = Column(String(255), nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)

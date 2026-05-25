@@ -22,7 +22,23 @@ class ScriptService:
     """Generates presenter scripts from course content."""
 
     def __init__(self):
-        self.api_key = settings.CLAUDE_API_KEY
+        # `api_key` resolves from `settings` at point-of-use so admin Settings-page
+        # updates apply without a restart (see integration_settings_service).
+        self._api_key_override = None
+
+    @property
+    def api_key(self) -> str:
+        if self._api_key_override is not None:
+            return self._api_key_override
+        return settings.CLAUDE_API_KEY
+
+    @api_key.setter
+    def api_key(self, value) -> None:
+        self._api_key_override = value
+
+    @api_key.deleter
+    def api_key(self) -> None:
+        self._api_key_override = None
 
     async def generate_script(self, course_content: Dict[str, Any]) -> bytes:
         """

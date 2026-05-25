@@ -20,6 +20,7 @@ const navItems: NavItem[] = [
   { label: 'Security', path: '/admin/security', icon: '🛡️' },
   { label: 'Dev Tools', path: '/admin/dev-tools', icon: '🔧' },
   { label: 'White Label', path: '/admin/whitelabel', icon: '🎨' },
+  { label: 'Settings', path: '/admin/settings', icon: '⚙️' },
 ]
 
 export const AdminLayout = ({ children }: { children: ReactNode }) => {
@@ -47,8 +48,17 @@ export const AdminLayout = ({ children }: { children: ReactNode }) => {
   }, [])
 
   const getPageTitle = () => {
-    const item = navItems.find(n => n.path === location.pathname)
-    return item ? item.label : 'Dashboard'
+    const path = location.pathname
+    // Exact match wins (e.g. '/admin' -> Dashboard).
+    const exact = navItems.find(n => n.path === path)
+    if (exact) return exact.label
+    // Otherwise resolve detail routes (e.g. '/admin/departments/1') to their
+    // section via the longest matching prefix, ignoring the '/admin' root so it
+    // doesn't swallow every path.
+    const prefix = navItems
+      .filter(n => n.path !== '/admin' && path.startsWith(n.path + '/'))
+      .sort((a, b) => b.path.length - a.path.length)[0]
+    return prefix ? prefix.label : 'Dashboard'
   }
 
   return (

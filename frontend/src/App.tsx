@@ -20,6 +20,7 @@ import { CourseManagementPage } from '@/pages/admin/CourseManagementPage'
 import { SecurityPage } from '@/pages/admin/SecurityPage'
 import { DevToolsPage } from '@/pages/admin/DevToolsPage'
 import { WhiteLabelPage } from '@/pages/admin/WhiteLabelPage'
+import { SettingsPage } from '@/pages/admin/SettingsPage'
 import { DepartmentsPage } from '@/pages/admin/DepartmentsPage'
 import { DepartmentDetailPage } from '@/pages/admin/DepartmentDetailPage'
 import { RemindersPage } from '@/pages/admin/RemindersPage'
@@ -141,6 +142,16 @@ export default function App() {
           <AdminLayout>
             <ProtectedRoute adminOnly>
               <WhiteLabelPage />
+            </ProtectedRoute>
+          </AdminLayout>
+        }
+      />
+      <Route
+        path="/admin/settings"
+        element={
+          <AdminLayout>
+            <ProtectedRoute adminOnly>
+              <SettingsPage />
             </ProtectedRoute>
           </AdminLayout>
         }

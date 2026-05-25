@@ -23,7 +23,7 @@ from models import User, UserRole, WhiteLabelConfig, FeatureFlag, ErrorLog
 from services.auth_service import AuthService
 
 # Import routers
-from routers import admin, auth, users, courses, security, dev_tools, whitelabel, learn, creator, uploads, modules, videos, slides, blocks, quizzes, tts as tts_router_module, content_generation, ilb, departments
+from routers import admin, auth, users, courses, security, dev_tools, whitelabel, learn, creator, uploads, modules, videos, slides, blocks, quizzes, tts as tts_router_module, content_generation, ilb, departments, admin_integrations
 
 # Configure logging
 logging.basicConfig(
@@ -100,6 +100,12 @@ async def lifespan(app: FastAPI):
 
         db.commit()
         logger.info("Default feature flags created")
+
+        # Load any admin-entered API keys from the DB onto the live settings,
+        # overriding env vars. No-op if the table/row is absent.
+        from services.integration_settings_service import apply_integration_settings
+        apply_integration_settings(db)
+        logger.info("Integration settings loaded")
 
     except Exception as e:
         logger.error(f"Startup error: {str(e)}", exc_info=True)
@@ -214,6 +220,7 @@ app.include_router(tts_router_module.router)
 app.include_router(content_generation.router)
 app.include_router(ilb.router)
 app.include_router(departments.router)
+app.include_router(admin_integrations.router)
 
 
 # Mount static files for uploads

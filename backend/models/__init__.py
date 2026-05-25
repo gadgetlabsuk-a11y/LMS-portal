@@ -34,6 +34,7 @@ from .models import (
     Department,
     DepartmentMember,
     DepartmentContent,
+    IntegrationSettings,
 )
 
 __all__ = [
@@ -68,4 +69,5 @@ __all__ = [
     "Department",
     "DepartmentMember",
     "DepartmentContent",
+    "IntegrationSettings",
 ]

@@ -173,7 +173,7 @@ export const DepartmentDetailPage = () => {
                   <div className="flex justify-between items-start">
                     <div>
                       <span className="font-medium">{c.title}</span>
-                      <span className="ml-2 text-xs rounded px-2 py-0.5 bg-gray-100 text-gray-600">{c.is_podcast ? 'Podcast' : 'Course'}</span>
+                      <span className="ml-2 text-xs rounded px-2 py-0.5 bg-gray-100 text-gray-600">{c.content_type === 'broadcast' ? 'Podcast' : 'Course'}</span>
                       {c.mandatory && <span className="ml-2 text-xs rounded px-2 py-0.5 bg-amber-100 text-amber-700">Mandatory</span>}
                       <div className="text-sm text-gray-500 mt-1">
                         {c.mandatory && c.due_mode === 'fixed' && c.due_date && <>Due {c.due_date.slice(0, 10)}</>}

@@ -71,7 +71,7 @@ export const MyTraining = () => {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-medium truncate">{item.title}</span>
-                    <span className="text-xs rounded px-2 py-0.5 bg-gray-100 text-gray-600">{item.is_podcast ? 'Podcast' : 'Course'}</span>
+                    <span className="text-xs rounded px-2 py-0.5 bg-gray-100 text-gray-600">{item.content_type === 'broadcast' ? 'Podcast' : 'Course'}</span>
                     <Badge variant={STATUS_VARIANT[item.status]}>{STATUS_LABEL[item.status]}</Badge>
                   </div>
                   <div className="text-sm text-gray-500 mt-1">

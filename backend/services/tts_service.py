@@ -29,7 +29,25 @@ class TTSService:
     def __init__(self):
         # Do NOT raise here — key absence is checked lazily in generate_for_slide()
         # This prevents startup crash when ELEVENLABS_API_KEY is not set (research pitfall #3)
-        self.api_key = settings.ELEVENLABS_API_KEY or ""
+        # `api_key` is a property resolved from `settings` at point-of-use, so keys
+        # entered via the admin Settings page take effect without a restart.
+        self._api_key_override = None
+
+    @property
+    def api_key(self) -> str:
+        if self._api_key_override is not None:
+            return self._api_key_override
+        return settings.ELEVENLABS_API_KEY or ""
+
+    @api_key.setter
+    def api_key(self, value) -> None:
+        # Instance-level override (used by tests / explicit configuration).
+        self._api_key_override = value
+
+    @api_key.deleter
+    def api_key(self) -> None:
+        # Clear the override (e.g. unittest.mock.patch teardown delattrs the attr).
+        self._api_key_override = None
 
     async def generate_for_slide(self, slide, voice_id: str, db) -> str:
         """
