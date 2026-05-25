@@ -66,3 +66,68 @@ def test_factory_picks_heygen_when_key_set():
         assert isinstance(get_avatar_provider(), HeyGenAvatarProvider)
         s.HEYGEN_API_KEY = ""
         assert isinstance(get_avatar_provider(), StubAvatarProvider)
+
+
+from fastapi.testclient import TestClient
+from unittest.mock import AsyncMock
+from main import app
+import routers.ilb as ilb_router
+
+client = TestClient(app)
+
+
+def _make_broadcast(creator_token, db):
+    h = {"Authorization": f"Bearer {creator_token}"}
+    bid = client.post("/api/ilb/broadcasts", json={"title": "AV"}, headers=h).json()["id"]
+    client.put(f"/api/ilb/broadcasts/{bid}",
+               json={"script": "Seg one.[SEGMENT BREAK]Seg two."}, headers=h)
+    from models import Broadcast
+    b = db.query(Broadcast).get(bid)
+    b.segment_audio = [f"/api/media/audio/ilb_bcast_{bid}_seg_0.mp3",
+                       f"/api/media/audio/ilb_bcast_{bid}_seg_1.mp3"]
+    db.commit()
+    return bid, h
+
+
+def test_render_avatar_503_without_key(creator_token, db, monkeypatch):
+    monkeypatch.setattr(ilb_router.settings, "HEYGEN_API_KEY", "")
+    bid, h = _make_broadcast(creator_token, db)
+    r = client.post(f"/api/ilb/broadcasts/{bid}/render-avatar", headers=h)
+    assert r.status_code == 503
+
+
+def test_render_avatar_submits_jobs(creator_token, db, monkeypatch):
+    monkeypatch.setattr(ilb_router.settings, "HEYGEN_API_KEY", "k")
+    bid, h = _make_broadcast(creator_token, db)
+    fake = AsyncMock()
+    fake.submit_segment = AsyncMock(side_effect=["v0", "v1"])
+    monkeypatch.setattr(ilb_router, "get_avatar_provider", lambda: fake)
+    import os
+    os.makedirs("uploads/audio", exist_ok=True)
+    for i in range(2):
+        open(f"uploads/audio/ilb_bcast_{bid}_seg_{i}.mp3", "wb").write(b"ID3test")
+    r = client.post(f"/api/ilb/broadcasts/{bid}/render-avatar", headers=h)
+    assert r.status_code == 200
+    jobs = r.json()["jobs"]
+    assert [j["heygen_video_id"] for j in jobs] == ["v0", "v1"]
+    assert all(j["status"] == "processing" for j in jobs)
+
+
+def test_avatar_status_completes_and_downloads(creator_token, db, monkeypatch):
+    monkeypatch.setattr(ilb_router.settings, "HEYGEN_API_KEY", "k")
+    bid, h = _make_broadcast(creator_token, db)
+    from models import Broadcast
+    b = db.query(Broadcast).get(bid)
+    b.video_render_jobs = [{"seg_index": 0, "heygen_video_id": "v0", "status": "processing"}]
+    b.segment_video = [None, None]
+    db.commit()
+    fake = AsyncMock()
+    fake.poll = AsyncMock(return_value=("completed", "https://h/v0.mp4?Expires=1"))
+    monkeypatch.setattr(ilb_router, "get_avatar_provider", lambda: fake)
+    monkeypatch.setattr(ilb_router, "_download_bytes", AsyncMock(return_value=b"MP4DATA"))
+    r = client.get(f"/api/ilb/broadcasts/{bid}/avatar-status", headers=h)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["overall"] == "complete"
+    db.refresh(b)
+    assert b.segment_video[0] == f"/api/media/video/ilb_bcast_{bid}_seg_0.mp4"
