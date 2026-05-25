@@ -865,7 +865,9 @@ async def render_broadcast_avatar(
     avatar_id = b.avatar_id or DEFAULT_HEYGEN_AVATAR_ID
     provider = get_avatar_provider()
     jobs: List[Dict[str, Any]] = []
-    seg_video: List[Optional[str]] = [None] * len(segs)
+    seg_video: List[Optional[str]] = list(b.segment_video or [])
+    while len(seg_video) < len(segs):
+        seg_video.append(None)
     for i, _seg in enumerate(segs):
         url = audio[i] if i < len(audio) else None
         if not url:
@@ -941,5 +943,5 @@ async def broadcast_avatar_status(
         db.commit()
 
     statuses = [j.get("status") for j in jobs]
-    overall = "complete" if statuses and all(s in ("completed", "failed") for s in statuses) else "processing"
+    overall = "complete" if all(s in ("completed", "failed") for s in statuses) else "processing"
     return {"overall": overall, "segments": jobs, "segment_video": seg_video}
