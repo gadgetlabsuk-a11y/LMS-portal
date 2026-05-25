@@ -76,7 +76,8 @@ def test_put_requires_admin(client, creator_token):
     assert res.status_code == 403
 
 
-def test_clearing_key_removes_db_value(client, admin_token, db, restore_settings):
+def test_clearing_key_removes_db_value_and_reverts_live(client, admin_token, db, restore_settings):
+    settings.DEEPGRAM_API_KEY = ""  # no env value in the test environment
     client.put(
         "/api/admin/integrations",
         json={"deepgram_api_key": "dg-key-9999"},
@@ -84,11 +85,14 @@ def test_clearing_key_removes_db_value(client, admin_token, db, restore_settings
     )
     row = svc.get_or_create_settings(db)
     assert row.deepgram_api_key == "dg-key-9999"
-    # Empty string clears it.
-    client.put(
+    assert settings.DEEPGRAM_API_KEY == "dg-key-9999"  # applied live
+    # Empty string clears it: DB row cleared AND the live value reverts to env ("").
+    res = client.put(
         "/api/admin/integrations",
         json={"deepgram_api_key": ""},
         headers=_auth(admin_token),
     )
     db.refresh(row)
     assert row.deepgram_api_key is None
+    assert settings.DEEPGRAM_API_KEY == ""  # stale override does not linger
+    assert res.json()["providers"]["deepgram"]["configured"] is False

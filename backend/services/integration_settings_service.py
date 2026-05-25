@@ -1,16 +1,17 @@
 """Integration (third-party API key) settings.
 
 A single-row `integration_settings` table holds keys entered via the admin Settings
-page. `apply_integration_settings()` copies any non-empty key onto the live `settings`
-object, overriding the corresponding environment variable. Because every service reads
-its key from `settings` at point-of-use (see the `api_key` properties on TTSService /
-QAService / ClaudeService / ScriptService, and `get_stt_provider()`), updates take
-effect immediately — no restart required.
+page. `apply_integration_settings()` reconciles each provider's live `settings` value
+to its DB key when set, otherwise to the original environment value. Because every
+service reads its key from `settings` at point-of-use (see the `api_key` properties on
+TTSService / QAService / ClaudeService / ScriptService, and `get_stt_provider()`),
+updates — including clears — take effect immediately, no restart required.
 
 NOTE: prod SQLite has no persistent volume, so DB-stored keys are wiped on redeploy.
 Set the matching env vars in Coolify for permanence; DB keys act as an in-app override.
 """
 import logging
+import os
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -23,11 +24,13 @@ logger = logging.getLogger(__name__)
 # Placeholder Claude key shipped as the env default — treated as "not configured".
 _CLAUDE_PLACEHOLDER = "sk-default-key"
 
-# (provider key, IntegrationSettings attr, settings attr)
+# (provider key, IntegrationSettings attr, settings attr, env var name, env default)
+# The env name/default mirror config.Settings so clearing a DB key reverts the live
+# value to exactly what the environment provided.
 _PROVIDERS = (
-    ("elevenlabs", "elevenlabs_api_key", "ELEVENLABS_API_KEY"),
-    ("deepgram", "deepgram_api_key", "DEEPGRAM_API_KEY"),
-    ("claude", "claude_api_key", "CLAUDE_API_KEY"),
+    ("elevenlabs", "elevenlabs_api_key", "ELEVENLABS_API_KEY", "ELEVENLABS_API_KEY", ""),
+    ("deepgram", "deepgram_api_key", "DEEPGRAM_API_KEY", "DEEPGRAM_API_KEY", ""),
+    ("claude", "claude_api_key", "CLAUDE_API_KEY", "CLAUDE_API_KEY", _CLAUDE_PLACEHOLDER),
 )
 
 
@@ -43,15 +46,18 @@ def get_or_create_settings(db: Session) -> IntegrationSettings:
 
 
 def apply_integration_settings(db: Session) -> None:
-    """Copy any non-empty DB key onto the live `settings` object (DB overrides env)."""
+    """Reconcile each provider's live `settings` value to its DB key, else the env value.
+
+    Setting AND clearing both take effect here: a non-empty DB key overrides the
+    environment; an empty/absent DB key reverts the live value to the original env var
+    (re-read from os.environ, so a prior in-memory override does not linger).
+    """
     row = db.query(IntegrationSettings).first()
-    if row is None:
-        return
-    for _provider, db_attr, settings_attr in _PROVIDERS:
-        value = (getattr(row, db_attr) or "").strip()
-        if value:
-            setattr(settings, settings_attr, value)
-    logger.info("Integration settings applied from database")
+    for _provider, db_attr, settings_attr, env_name, env_default in _PROVIDERS:
+        db_value = ((getattr(row, db_attr) if row else None) or "").strip()
+        effective = db_value or os.getenv(env_name, env_default)
+        setattr(settings, settings_attr, effective)
+    logger.info("Integration settings reconciled (database over environment)")
 
 
 def update_settings(
@@ -98,7 +104,7 @@ def integration_status(db: Session) -> dict:
     """
     row = db.query(IntegrationSettings).first()
     out: dict = {}
-    for provider, db_attr, settings_attr in _PROVIDERS:
+    for provider, db_attr, settings_attr, _env_name, _env_default in _PROVIDERS:
         db_value = ((getattr(row, db_attr) if row else None) or "").strip()
         effective = (getattr(settings, settings_attr) or "").strip()
         if provider == "claude" and effective == _CLAUDE_PLACEHOLDER:
