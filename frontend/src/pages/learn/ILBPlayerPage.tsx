@@ -311,9 +311,10 @@ export const ILBPlayerPage = ({ kind = 'course' }: { kind?: 'course' | 'broadcas
         {/* Avatar stage */}
         <div className="flex-1 flex flex-col items-center justify-center p-6 gap-4">
           <div className="relative w-full max-w-2xl aspect-video rounded-lg overflow-hidden bg-black flex items-center justify-center p-6">
-            {liveAvatar ? (
-              <span className="text-gray-400 text-sm text-center">● LIVE avatar (HeyGen) — answering · stubbed pending keys</span>
-            ) : started && currentSegment ? (
+            {started && currentSegment ? (
+              // Keep the broadcast media MOUNTED during a Q&A so the play/pause effect
+              // can pause it (and resume from the same position). Unmounting it here
+              // meant it couldn't be paused and played under the spoken answer.
               <div className="w-full h-full flex flex-col gap-2 overflow-y-auto">
                 {currentVideo ? (
                   <video
@@ -344,6 +345,13 @@ export const ILBPlayerPage = ({ kind = 'course' }: { kind?: 'course' | 'broadcas
               <span className="text-gray-500 text-sm text-center">
                 {hasSegments ? 'Press play to begin the broadcast.' : 'No script saved for this course yet — text Q&A still works.'}
               </span>
+            )}
+            {liveAvatar && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/70 pointer-events-none">
+                <span className="text-gray-200 text-sm text-center px-4">
+                  ● {state === 'listening' ? 'Listening…' : 'Answering your question'} — broadcast paused
+                </span>
+              </div>
             )}
             <span className={`absolute top-3 left-3 text-[10px] px-2 py-0.5 rounded-full ${liveAvatar ? 'bg-red-600' : 'bg-gray-700'}`}>
               {liveAvatar ? 'LIVE' : 'PRE-RENDERED'}
