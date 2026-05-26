@@ -7,7 +7,7 @@ import { QuizRunner } from './QuizRunner'
 
 type Step = { kind: 'slide'; slide: PlayerSlide } | { kind: 'quiz'; quiz: PlayerQuiz }
 
-export function CoursePlayer({ courseId, mode }: { courseId: number; mode: 'learner' | 'preview' }) {
+export function CoursePlayer({ courseId, mode, onExit }: { courseId: number; mode: 'learner' | 'preview'; onExit?: () => void }) {
   const [course, setCourse] = useState<PlayerCourse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [idx, setIdx] = useState(0)
@@ -68,9 +68,14 @@ export function CoursePlayer({ courseId, mode }: { courseId: number; mode: 'lear
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-900 text-gray-100">
-      <div className="bg-gray-800 px-6 py-2 text-xs text-gray-400 flex justify-between">
+      <div className="bg-gray-800 px-6 py-2 text-xs text-gray-400 flex justify-between items-center">
         <span>{course.title}{mode === 'preview' && ' · preview'}</span>
-        <span>Step {idx + 1} / {steps.length}</span>
+        <div className="flex items-center gap-3">
+          <span>Step {idx + 1} / {steps.length}</span>
+          {mode === 'learner' && onExit && (
+            <button onClick={onExit} className="px-2 py-1 rounded bg-gray-700 hover:bg-gray-600 text-gray-100">Exit ✕</button>
+          )}
+        </div>
       </div>
       <div className="flex-1 flex flex-col items-center justify-center p-6 gap-4">
         {step.kind === 'slide' ? (
@@ -95,7 +100,9 @@ export function CoursePlayer({ courseId, mode }: { courseId: number; mode: 'lear
         )}
         <button onClick={advance} disabled={isLast || quizLocked}
                 className="px-4 py-2 rounded bg-indigo-600 disabled:opacity-40 text-sm">Next ▶</button>
-        {isLast && <span className="text-emerald-400 text-sm ml-2">End of course</span>}
+        {isLast && (mode === 'learner' && onExit
+          ? <button onClick={onExit} className="px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-sm ml-2">Finish ✓</button>
+          : <span className="text-emerald-400 text-sm ml-2">End of course</span>)}
       </div>
     </div>
   )

@@ -82,6 +82,24 @@ describe('CoursePlayer', () => {
     await userEvent.click(screen.getByRole('button', { name: /next/i }))
     expect(await screen.findByText('Module Gate')).toBeInTheDocument()
   })
+  it('learner mode shows an Exit button that calls onExit', async () => {
+    mocked.getLearnerPlayer.mockResolvedValue(course)
+    const onExit = vi.fn()
+    render(<CoursePlayer courseId={1} mode="learner" onExit={onExit} />)
+    await screen.findByText('Slide A')
+    await userEvent.click(screen.getByRole('button', { name: /exit/i }))
+    expect(onExit).toHaveBeenCalled()
+  })
+  it('shows a Finish button at end of course that calls onExit', async () => {
+    mocked.getLearnerPlayer.mockResolvedValue(course)
+    const onExit = vi.fn()
+    render(<CoursePlayer courseId={1} mode="learner" onExit={onExit} />)
+    await screen.findByText('Slide A')
+    await userEvent.click(screen.getByRole('button', { name: /next/i }))  // to last slide
+    await screen.findByText('Slide B')
+    await userEvent.click(screen.getByRole('button', { name: /finish/i }))
+    expect(onExit).toHaveBeenCalled()
+  })
   it('preview mode lets Next through a quiz step', async () => {
     mocked.getPreviewTree.mockResolvedValue(courseWithQuiz)
     render(<CoursePlayer courseId={2} mode="preview" />)
