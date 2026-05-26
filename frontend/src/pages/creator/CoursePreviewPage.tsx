@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { API_BASE } from '@/services/api'
+import { CoursePlayer } from '@/components/player/CoursePlayer'
 
 export function CoursePreviewPage() {
   const { id } = useParams<{ id: string }>()
@@ -48,16 +48,9 @@ export function CoursePreviewPage() {
         </button>
       </div>
 
-      {/* Learner player iframe — reuses the same backend player as CourseViewerPage.
-          This gives full block rendering, answerable quizzes, and narration scripts
-          without any new renderer implementation (PREVIEW-02). */}
+      {/* React CoursePlayer — replaces the backend iframe (PREVIEW-02). */}
       <div style={{ paddingTop: '48px', height: '100vh', boxSizing: 'border-box' }}>
-        <iframe
-          src={`${API_BASE}/api/courses/${id}/player`}
-          style={{ width: '100%', height: '100%', border: 0 }}
-          title="Course Preview"
-          allowFullScreen
-        />
+        <CoursePlayer courseId={Number(id)} mode="preview" />
       </div>
     </div>
   )
