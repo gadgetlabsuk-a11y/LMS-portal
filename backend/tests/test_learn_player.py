@@ -49,3 +49,27 @@ def test_progress_updates_and_completes(db, trainee_user, trainee_token):
     assert r.status_code == 200
     body = r.json()
     assert body["progress"] == 100 and body["completed"] is True  # only 1 slide -> done
+
+
+def test_quiz_get_hides_answers(db, trainee_user, trainee_token):
+    c, v, quiz = _published_course_with_content(db, trainee_user.id)
+    db.add(Enrollment(user_id=trainee_user.id, course_id=c.id)); db.commit()
+    r = client.get(f"/api/learn/quizzes/{quiz.id}", headers={"Authorization": f"Bearer {trainee_token}"})
+    assert r.status_code == 200
+    assert "correct_answer" not in r.json()["questions"][0]
+    assert r.json()["attempts_remaining"] == 2
+
+
+def test_quiz_submit_scores_and_limits(db, trainee_user, trainee_token):
+    c, v, quiz = _published_course_with_content(db, trainee_user.id)
+    db.add(Enrollment(user_id=trainee_user.id, course_id=c.id)); db.commit()
+    h = {"Authorization": f"Bearer {trainee_token}"}
+    qid = quiz.questions[0].id
+    r = client.post(f"/api/learn/quizzes/{quiz.id}/attempt", json={"answers": {str(qid): 1}}, headers=h)
+    assert r.status_code == 200
+    assert r.json()["score"] == 100 and r.json()["passed"] is True
+    # second wrong attempt
+    client.post(f"/api/learn/quizzes/{quiz.id}/attempt", json={"answers": {str(qid): 0}}, headers=h)
+    # third should 409 (attempts_allowed=2)
+    r3 = client.post(f"/api/learn/quizzes/{quiz.id}/attempt", json={"answers": {str(qid): 1}}, headers=h)
+    assert r3.status_code == 409

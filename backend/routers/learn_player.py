@@ -79,6 +79,51 @@ def get_course_player(course_id: int, db: Session = Depends(get_db),
             "completed": bool(enr.completed), "modules": modules}
 
 
+def _quiz_or_404(db: Session, quiz_id: int) -> Quiz:
+    quiz = (db.query(Quiz).options(selectinload(Quiz.questions))
+            .filter(Quiz.id == quiz_id).first())
+    if not quiz:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+    return quiz
+
+
+@router.get("/quizzes/{quiz_id}")
+def get_learner_quiz(quiz_id: int, db: Session = Depends(get_db),
+                     current_user: User = Depends(get_current_active_user)) -> Dict[str, Any]:
+    quiz = _quiz_or_404(db, quiz_id)
+    return _quiz_json(quiz, db, current_user.id)
+
+
+class AttemptBody(BaseModel):
+    answers: Dict[str, Any]
+
+
+@router.post("/quizzes/{quiz_id}/attempt")
+def submit_attempt(quiz_id: int, body: AttemptBody, db: Session = Depends(get_db),
+                   current_user: User = Depends(get_current_active_user)) -> Dict[str, Any]:
+    quiz = _quiz_or_404(db, quiz_id)
+    used = (db.query(QuizAttempt)
+            .filter(QuizAttempt.user_id == current_user.id, QuizAttempt.quiz_id == quiz_id).count())
+    if used >= quiz.attempts_allowed:
+        raise HTTPException(status_code=409, detail="No attempts remaining")
+
+    score, per = score_quiz(quiz.questions, body.answers)
+    passed = score >= quiz.pass_rate
+    db.add(QuizAttempt(quiz_id=quiz_id, user_id=current_user.id, attempt_number=used + 1,
+                       score=score, passed=passed, answers=body.answers,
+                       started_at=datetime.now(timezone.utc), submitted_at=datetime.now(timezone.utc)))
+    db.commit()
+
+    reveal = quiz.show_feedback in ("immediate", "on_submit") or (quiz.show_feedback == "on_pass" and passed)
+    feedback = None
+    if reveal:
+        feedback = [{"question_id": q.id, "correct": bool(per.get(q.id)),
+                     "explanation": q.explanation} for q in quiz.questions]
+    return {"score": score, "passed": passed,
+            "attempts_remaining": max(0, quiz.attempts_allowed - (used + 1)),
+            "feedback": feedback}
+
+
 class ProgressBody(BaseModel):
     slide_id: int
 
