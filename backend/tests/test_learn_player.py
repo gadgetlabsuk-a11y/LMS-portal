@@ -38,3 +38,14 @@ def test_player_tree_strips_answers(db, trainee_user, trainee_token):
     assert "correct_answer" not in q and "explanation" not in q
     assert q["options"] == ["3", "4"]
     assert body["progress"] == 0
+
+
+def test_progress_updates_and_completes(db, trainee_user, trainee_token):
+    c, v, quiz = _published_course_with_content(db, trainee_user.id)
+    db.add(Enrollment(user_id=trainee_user.id, course_id=c.id)); db.commit()
+    h = {"Authorization": f"Bearer {trainee_token}"}
+    s_id = v.slides[0].id
+    r = client.post(f"/api/learn/courses/{c.id}/progress", json={"slide_id": s_id}, headers=h)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["progress"] == 100 and body["completed"] is True  # only 1 slide -> done

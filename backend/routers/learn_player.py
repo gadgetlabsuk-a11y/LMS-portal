@@ -77,3 +77,35 @@ def get_course_player(course_id: int, db: Session = Depends(get_db),
 
     return {"id": course.id, "title": course.title, "progress": int(enr.progress or 0),
             "completed": bool(enr.completed), "modules": modules}
+
+
+class ProgressBody(BaseModel):
+    slide_id: int
+
+
+@router.post("/courses/{course_id}/progress")
+def post_progress(course_id: int, body: ProgressBody, db: Session = Depends(get_db),
+                  current_user: User = Depends(get_current_active_user)) -> Dict[str, Any]:
+    course = (db.query(Course)
+              .options(selectinload(Course.modules).selectinload(Module.videos).selectinload(Video.slides))
+              .filter(Course.id == course_id).first())
+    if not course or course.status != CourseStatus.PUBLISHED:
+        raise HTTPException(status_code=404, detail="Course not found")
+    enr = _enrollment(db, current_user.id, course_id)
+    if not enr:
+        raise HTTPException(status_code=403, detail="Not enrolled in this course")
+
+    ordered = [s.id for m in sorted(course.modules, key=lambda x: x.order_index)
+               for v in sorted(m.videos, key=lambda x: x.order_index)
+               for s in sorted(v.slides, key=lambda x: x.order_index)]
+    total = len(ordered) or 1
+    if body.slide_id not in ordered:
+        raise HTTPException(status_code=404, detail="Slide not in course")
+    reached_idx = ordered.index(body.slide_id) + 1            # 1-based furthest reached
+    pct = int(reached_idx / total * 100)
+    enr.progress = max(float(enr.progress or 0), float(pct))  # monotonic
+    if enr.progress >= 100 and not enr.completed:
+        enr.completed = True
+        enr.completed_at = datetime.now(timezone.utc)
+    db.commit(); db.refresh(enr)
+    return {"progress": int(enr.progress), "completed": bool(enr.completed)}
