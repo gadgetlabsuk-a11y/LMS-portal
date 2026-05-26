@@ -447,6 +447,24 @@ class Question(Base):
     __table_args__ = (Index("idx_question_quiz_order", "quiz_id", "order_index"),)
 
 
+class QuizAttempt(Base):
+    """A learner's graded attempt at a quiz."""
+
+    __tablename__ = "quiz_attempts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    quiz_id = Column(Integer, ForeignKey("quizzes.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    attempt_number = Column(Integer, nullable=False, server_default="1")
+    score = Column(Integer, nullable=False, server_default="0")   # percentage 0-100
+    passed = Column(Boolean, nullable=False, server_default="0")
+    answers = Column(JSON, nullable=True)                          # {question_id: submitted}
+    started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    submitted_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    __table_args__ = (Index("idx_quiz_attempt_user_quiz", "user_id", "quiz_id"),)
+
+
 class Resource(Base):
     """Downloadable resource attached to a module."""
     __tablename__ = "resources"
