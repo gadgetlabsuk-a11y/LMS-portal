@@ -20,6 +20,41 @@ def _published_course_with_content(db, owner_id):
     return c, v, quiz
 
 
+def _published_course_with_module_quiz(db, owner_id):
+    """Course whose quiz is attached to the MODULE (module_id set, video_id null)."""
+    c = Course(title="Module Quiz Course", creator_id=owner_id, status=CourseStatus.PUBLISHED)
+    db.add(c); db.flush()
+    m = Module(course_id=c.id, title="M1", order_index=0); db.add(m); db.flush()
+    v = Video(module_id=m.id, title="V1", order_index=0); db.add(v); db.flush()
+    s = Slide(video_id=v.id, order_index=0); db.add(s); db.flush()
+    db.add(Block(slide_id=s.id, order_index=0, type="heading", content={"html": "<h1>Hi</h1>"}))
+    quiz = Quiz(module_id=m.id, title="Module Quiz", pass_rate=50, attempts_allowed=2, order_index=0)
+    db.add(quiz); db.flush()
+    db.add(Question(quiz_id=quiz.id, order_index=0, type="mcq_single", prompt="2+2?",
+                    options=["3", "4"], correct_answer=1, points=1, explanation="Because maths."))
+    db.commit()
+    return c, m, quiz
+
+
+def test_player_surfaces_module_level_quiz_without_answers(db, trainee_user, trainee_token):
+    c, m, quiz = _published_course_with_module_quiz(db, trainee_user.id)
+    db.add(Enrollment(user_id=trainee_user.id, course_id=c.id)); db.commit()
+    r = client.get(f"/api/learn/courses/{c.id}/player",
+                   headers={"Authorization": f"Bearer {trainee_token}"})
+    assert r.status_code == 200
+    module = r.json()["modules"][0]
+    # module-level quizzes surfaced under modules[].quizzes
+    assert "quizzes" in module
+    assert len(module["quizzes"]) == 1
+    mq = module["quizzes"][0]
+    assert mq["title"] == "Module Quiz"
+    assert mq["attempts_remaining"] == 2
+    assert mq["passed"] is False
+    q = mq["questions"][0]
+    assert "correct_answer" not in q and "explanation" not in q
+    assert q["options"] == ["3", "4"]
+
+
 def test_player_requires_enrollment(db, trainee_user, trainee_token):
     c, v, quiz = _published_course_with_content(db, trainee_user.id)
     r = client.get(f"/api/learn/courses/{c.id}/player",

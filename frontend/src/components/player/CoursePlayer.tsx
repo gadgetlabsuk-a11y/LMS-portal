@@ -22,11 +22,13 @@ export function CoursePlayer({ courseId, mode }: { courseId: number; mode: 'lear
   const steps: Step[] = useMemo(() => {
     if (!course) return []
     const out: Step[] = []
-    for (const m of course.modules)
+    for (const m of course.modules) {
       for (const v of m.videos) {
         for (const s of v.slides) out.push({ kind: 'slide', slide: s })
         for (const q of v.quizzes || []) out.push({ kind: 'quiz', quiz: q })
       }
+      for (const q of m.quizzes || []) out.push({ kind: 'quiz', quiz: q })
+    }
     return out
   }, [course])
 

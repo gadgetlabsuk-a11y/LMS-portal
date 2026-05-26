@@ -152,6 +152,80 @@ def test_preview_includes_video_level_quizzes_without_answers(db, creator_token,
 
 
 # ---------------------------------------------------------------------------
+# PREVIEW-04: Preview tree includes MODULE-level quizzes in player shape,
+# without leaking correct_answer (preview now passes for_player=True).
+# ---------------------------------------------------------------------------
+
+def test_preview_includes_module_level_quizzes_without_answers(db, creator_token, draft_creator_course):
+    """Preview must serialize module.quizzes in the learner player shape and
+    must NOT leak correct_answer/explanation."""
+    course_id = draft_creator_course.id
+    headers = {"Authorization": f"Bearer {creator_token}"}
+
+    mod_r = client.post(f"/api/courses/{course_id}/modules", json={"title": "M"}, headers=headers)
+    assert mod_r.status_code == 201
+    module_id = mod_r.json()["id"]
+
+    # Attach a MODULE-level quiz + a question directly (no video_id).
+    quiz = Quiz(module_id=module_id, title="Module Assessment", pass_rate=80, attempts_allowed=3, order_index=0)
+    db.add(quiz)
+    db.flush()
+    db.add(Question(
+        quiz_id=quiz.id, type="mcq_single", prompt="2+2?",
+        options=["3", "4"], correct_answer=1, points=1, order_index=0, explanation="maths",
+    ))
+    db.commit()
+
+    resp = client.get(f"/api/courses/{course_id}/preview", headers=headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    module = data["modules"][0]
+    assert "quizzes" in module
+    assert len(module["quizzes"]) == 1
+    mq = module["quizzes"][0]
+    # Player shape fields present
+    assert mq["title"] == "Module Assessment"
+    assert mq["attempts_used"] == 0
+    assert mq["attempts_remaining"] == 3
+    assert mq["passed"] is False
+    assert mq["last_score"] is None
+    assert len(mq["questions"]) == 1
+    q = mq["questions"][0]
+    assert q["prompt"] == "2+2?"
+    assert q["options"] == ["3", "4"]
+    # correct_answer / explanation must NOT leak in preview
+    assert "correct_answer" not in q
+    assert "explanation" not in q
+
+
+def test_publish_snapshot_keeps_module_quiz_answers(db, creator_token, draft_creator_course):
+    """The publish snapshot (for_player=False default) must still embed
+    correct_answer for module-level quiz questions."""
+    from routers.courses import _serialize_course_tree
+
+    course_id = draft_creator_course.id
+    headers = {"Authorization": f"Bearer {creator_token}"}
+
+    mod_r = client.post(f"/api/courses/{course_id}/modules", json={"title": "M"}, headers=headers)
+    assert mod_r.status_code == 201
+    module_id = mod_r.json()["id"]
+
+    quiz = Quiz(module_id=module_id, title="Module Assessment", pass_rate=80, attempts_allowed=3, order_index=0)
+    db.add(quiz)
+    db.flush()
+    db.add(Question(
+        quiz_id=quiz.id, type="mcq_single", prompt="2+2?",
+        options=["3", "4"], correct_answer=1, points=1, order_index=0,
+    ))
+    db.commit()
+
+    # Default (for_player=False) — the publish snapshot path — keeps answers.
+    tree = _serialize_course_tree(course_id, db)
+    mq = tree["modules"][0]["quizzes"][0]
+    assert mq["questions"][0]["correct_answer"] == 1
+
+
+# ---------------------------------------------------------------------------
 # PUBLISH-02: GET /api/courses/{id}/preflight returns structured results
 # ---------------------------------------------------------------------------
 

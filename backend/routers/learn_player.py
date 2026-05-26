@@ -48,7 +48,9 @@ def get_course_player(course_id: int, db: Session = Depends(get_db),
               .options(selectinload(Course.modules).selectinload(Module.videos)
                        .selectinload(Video.slides).selectinload(Slide.blocks),
                        selectinload(Course.modules).selectinload(Module.videos)
-                       .selectinload(Video.quizzes).selectinload(Quiz.questions))
+                       .selectinload(Video.quizzes).selectinload(Quiz.questions),
+                       selectinload(Course.modules).selectinload(Module.quizzes)
+                       .selectinload(Quiz.questions))
               .filter(Course.id == course_id).first())
     if not course or course.status != CourseStatus.PUBLISHED:
         raise HTTPException(status_code=404, detail="Course not found")
@@ -73,7 +75,9 @@ def get_course_player(course_id: int, db: Session = Depends(get_db),
                            "slides": slides,
                            "quizzes": [_quiz_json(q, db, current_user.id)
                                        for q in sorted(v.quizzes, key=lambda x: x.order_index)]})
-        modules.append({"id": m.id, "title": m.title, "order_index": m.order_index, "videos": videos})
+        modules.append({"id": m.id, "title": m.title, "order_index": m.order_index, "videos": videos,
+                        "quizzes": [_quiz_json(q, db, current_user.id)
+                                    for q in sorted(m.quizzes, key=lambda x: x.order_index)]})
 
     return {"id": course.id, "title": course.title, "progress": int(enr.progress or 0),
             "completed": bool(enr.completed), "modules": modules}
