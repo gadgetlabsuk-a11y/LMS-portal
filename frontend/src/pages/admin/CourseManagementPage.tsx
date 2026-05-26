@@ -141,7 +141,9 @@ export const CourseManagementPage = () => {
   }
 
   const handleViewPlayer = (courseId: string) => {
-    window.open(`${API_BASE}/api/courses/${courseId}/player`, '_blank')
+    // Open the React course player (read-only preview), not the deprecated
+    // backend HTML player which only returns a "no playable preview" placeholder.
+    navigate(`/creator/courses/${courseId}/preview`)
   }
 
   return (
