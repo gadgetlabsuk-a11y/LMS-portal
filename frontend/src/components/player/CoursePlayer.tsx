@@ -62,12 +62,12 @@ export function CoursePlayer({ courseId, mode, onExit }: { courseId: number; mod
     void coursePlayerApi.postProgress(courseId, slideStep.id).catch(() => {})
   }, [mode, courseId, slideStep?.id])
 
-  if (error) return <div className="min-h-screen flex items-center justify-center bg-gray-900 text-gray-300">{error}</div>
-  if (!course) return <div className="min-h-screen flex items-center justify-center bg-gray-900 text-gray-400">Loading…</div>
-  if (steps.length === 0) return <div className="min-h-screen flex items-center justify-center bg-gray-900 text-gray-300">This course has no content yet.</div>
+  if (error) return <div className="h-full flex items-center justify-center bg-gray-900 text-gray-300">{error}</div>
+  if (!course) return <div className="h-full flex items-center justify-center bg-gray-900 text-gray-400">Loading…</div>
+  if (steps.length === 0) return <div className="h-full flex items-center justify-center bg-gray-900 text-gray-300">This course has no content yet.</div>
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-900 text-gray-100">
+    <div className="h-full flex flex-col bg-gray-900 text-gray-100">
       <div className="bg-gray-800 px-6 py-2 text-xs text-gray-400 flex justify-between items-center">
         <span>{course.title}{mode === 'preview' && ' · preview'}</span>
         <div className="flex items-center gap-3">

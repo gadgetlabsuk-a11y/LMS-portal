@@ -4,5 +4,9 @@ import { CoursePlayer } from '@/components/player/CoursePlayer'
 export const CourseViewerPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  return <CoursePlayer courseId={Number(id)} mode="learner" onExit={() => navigate('/')} />
+  return (
+    <div className="h-screen">
+      <CoursePlayer courseId={Number(id)} mode="learner" onExit={() => navigate('/')} />
+    </div>
+  )
 }

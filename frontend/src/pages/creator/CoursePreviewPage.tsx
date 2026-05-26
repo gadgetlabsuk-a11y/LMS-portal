@@ -10,16 +10,12 @@ export function CoursePreviewPage() {
   )
 
   return (
-    <div style={{ position: 'relative', minHeight: '100vh' }}>
-      {/* Fixed watermark banner — sits above iframe */}
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Watermark banner — in flow at the top so the player fills the rest. */}
       <div
         data-testid="preview-watermark"
         style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1000,
+          flexShrink: 0,
           background: '#fef3c7',
           borderBottom: '2px solid #f59e0b',
           padding: '8px 16px',
@@ -48,8 +44,9 @@ export function CoursePreviewPage() {
         </button>
       </div>
 
-      {/* React CoursePlayer — replaces the backend iframe (PREVIEW-02). */}
-      <div style={{ paddingTop: '48px', height: '100vh', boxSizing: 'border-box' }}>
+      {/* React CoursePlayer fills the remaining height so its footer controls
+          (Prev/Pause/Next) are always visible without scrolling. */}
+      <div style={{ flex: 1, minHeight: 0 }}>
         <CoursePlayer courseId={Number(id)} mode="preview" />
       </div>
     </div>
