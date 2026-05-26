@@ -35,6 +35,9 @@ export function CoursePlayer({ courseId, mode, onExit }: { courseId: number; mod
   const step = steps[Math.min(idx, steps.length - 1)]
   const slideStep = step && step.kind === 'slide' ? step.slide : null
   const isLast = idx >= steps.length - 1
+  // A slide that embeds a video must not auto-advance — hold until the learner
+  // clicks Next, so the video is never skipped before it's finished.
+  const slideHasVideo = !!slideStep?.blocks?.some((b) => b.type === 'video')
 
   // A quiz step is locked (blocks Next) only for a learner with attempts still
   // available who hasn't yet passed/resolved it. Already-passed or already-
@@ -54,7 +57,7 @@ export function CoursePlayer({ courseId, mode, onExit }: { courseId: number; mod
   }
   const { ref: mediaRef, onEnded } = useSegmentAutoplay({
     playing, index: idx, mediaUrl: slideStep?.narration_audio_url ?? null,
-    text: null, isLast, onAdvance: advance, enableTimer: false,
+    text: null, isLast, onAdvance: slideHasVideo ? () => {} : advance, enableTimer: false,
   })
 
   useEffect(() => {
