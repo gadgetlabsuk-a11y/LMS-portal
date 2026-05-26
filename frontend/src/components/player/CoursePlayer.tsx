@@ -81,15 +81,17 @@ export function CoursePlayer({ courseId, mode, onExit }: { courseId: number; mod
         {step.kind === 'slide' ? (
           <div className="w-full max-w-3xl space-y-3">
             {step.slide.blocks.map((b) => <SlideBlockView key={b.id} block={b} />)}
-            {step.slide.narration_audio_url && (
-              <audio key={`a-${idx}`} ref={mediaRef as React.RefObject<HTMLAudioElement>} controls onEnded={onEnded}
-                     src={`${API_BASE}${step.slide.narration_audio_url}`} className="w-full mt-2" />
-            )}
           </div>
         ) : (
           <QuizRunner quiz={step.quiz} mode={mode} onResolved={onQuizResolved} />
         )}
       </div>
+      {slideStep?.narration_audio_url && (
+        <div className="bg-gray-800 px-6 pt-3">
+          <audio key={`a-${idx}`} ref={mediaRef as React.RefObject<HTMLAudioElement>} controls onEnded={onEnded}
+                 src={`${API_BASE}${slideStep.narration_audio_url}`} className="block w-full max-w-3xl mx-auto" />
+        </div>
+      )}
       <div className="bg-gray-800 px-6 py-3 flex items-center justify-center gap-3">
         <button onClick={() => setIdx((i) => Math.max(0, i - 1))} disabled={idx === 0}
                 className="px-3 py-2 rounded bg-gray-700 disabled:opacity-40 text-sm">◀ Prev</button>
