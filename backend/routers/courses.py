@@ -240,6 +240,9 @@ def _serialize_course_tree(course_id: int, db: Session) -> dict:
             selectinload(Course.modules).selectinload(Module.quizzes).selectinload(
                 Quiz.questions
             ),
+            selectinload(Course.modules).selectinload(Module.videos).selectinload(
+                Video.quizzes
+            ).selectinload(Quiz.questions),
         )
         .filter(Course.id == course_id)
         .first()
@@ -270,11 +273,38 @@ def _serialize_course_tree(course_id: int, db: Session) -> dict:
                     "layout_id": slide.layout_id,
                     "blocks": blocks_data,
                 })
+            # Video-level quizzes in the LEARNER player shape (mirrors
+            # _quiz_json in learn_player.py) — read-only, NO correct_answer /
+            # explanation leaked. The React player reads quizzes here.
+            video_quizzes = []
+            for quiz in sorted(vid.quizzes, key=lambda q: q.order_index):
+                video_quizzes.append({
+                    "id": quiz.id,
+                    "title": quiz.title,
+                    "pass_rate": quiz.pass_rate,
+                    "attempts_allowed": quiz.attempts_allowed,
+                    "attempts_used": 0,
+                    "attempts_remaining": quiz.attempts_allowed,
+                    "passed": False,
+                    "last_score": None,
+                    "questions": [
+                        {
+                            "id": q.id,
+                            "type": q.type,
+                            "prompt": q.prompt,
+                            "options": q.options,
+                            "points": q.points,
+                            "order_index": q.order_index,
+                        }
+                        for q in sorted(quiz.questions, key=lambda x: x.order_index)
+                    ],
+                })
             videos_data.append({
                 "id": vid.id,
                 "title": vid.title,
                 "order_index": vid.order_index,
                 "slides": slides_data,
+                "quizzes": video_quizzes,
             })
         quizzes_data = []
         for quiz in mod.quizzes:

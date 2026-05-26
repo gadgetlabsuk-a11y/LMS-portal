@@ -104,6 +104,54 @@ def test_preview_includes_slides_and_blocks(db, creator_token, draft_creator_cou
 
 
 # ---------------------------------------------------------------------------
+# PREVIEW-03: Preview tree includes VIDEO-level quizzes in player shape,
+# without leaking correct_answer.
+# ---------------------------------------------------------------------------
+
+def test_preview_includes_video_level_quizzes_without_answers(db, creator_token, draft_creator_course):
+    """Preview must serialize video.quizzes (the player reads quizzes there),
+    in the learner player shape, and must NOT leak correct_answer."""
+    course_id = draft_creator_course.id
+    headers = {"Authorization": f"Bearer {creator_token}"}
+
+    # module → video
+    mod_r = client.post(f"/api/courses/{course_id}/modules", json={"title": "M"}, headers=headers)
+    assert mod_r.status_code == 201
+    module_id = mod_r.json()["id"]
+    vid_r = client.post(f"/api/modules/{module_id}/videos", json={"title": "V"}, headers=headers)
+    assert vid_r.status_code == 201
+    video_id = vid_r.json()["id"]
+
+    # Attach a VIDEO-level quiz + a question directly (no module_id).
+    quiz = Quiz(video_id=video_id, title="Knowledge Check", pass_rate=80, attempts_allowed=3, order_index=0)
+    db.add(quiz)
+    db.flush()
+    db.add(Question(
+        quiz_id=quiz.id, type="mcq_single", prompt="2+2?",
+        options=["3", "4"], correct_answer=1, points=1, order_index=0,
+    ))
+    db.commit()
+
+    resp = client.get(f"/api/courses/{course_id}/preview", headers=headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    video = data["modules"][0]["videos"][0]
+    assert "quizzes" in video
+    assert len(video["quizzes"]) == 1
+    q = video["quizzes"][0]
+    # Player shape fields present
+    assert q["title"] == "Knowledge Check"
+    assert q["attempts_used"] == 0
+    assert q["attempts_remaining"] == 3
+    assert q["passed"] is False
+    assert q["last_score"] is None
+    assert len(q["questions"]) == 1
+    # correct_answer / explanation must NOT leak in preview
+    assert "correct_answer" not in q["questions"][0]
+    assert "explanation" not in q["questions"][0]
+
+
+# ---------------------------------------------------------------------------
 # PUBLISH-02: GET /api/courses/{id}/preflight returns structured results
 # ---------------------------------------------------------------------------
 
