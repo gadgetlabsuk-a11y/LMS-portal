@@ -23,8 +23,26 @@ export function SlideBlockView({ block }: { block: PlayerBlock }) {
       const items = Array.isArray(c.items) ? (c.items as unknown[]) : String(c.text ?? '').split('\n').filter(Boolean)
       return <ul className="list-disc pl-6 text-gray-100">{items.map((it, i) => <li key={i}>{String(it)}</li>)}</ul>
     }
-    case 'video':
-      return c.url ? <video controls src={String(c.url)} className="max-w-full rounded" /> : null
+    case 'video': {
+      if (!c.url) return null
+      const url = String(c.url)
+      // YouTube links need an iframe embed (a native <video> tag can't play them).
+      const yt = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([\w-]{11})/)
+      if (yt) {
+        return (
+          <div className="relative w-full max-w-3xl mx-auto overflow-hidden rounded" style={{ aspectRatio: '16 / 9' }}>
+            <iframe
+              className="absolute inset-0 h-full w-full border-0"
+              src={`https://www.youtube.com/embed/${yt[1]}`}
+              title="Video"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+          </div>
+        )
+      }
+      return <video controls src={url} className="max-w-full rounded" />
+    }
     case 'divider':
       return <hr className="border-gray-600 my-4" />
     default:
