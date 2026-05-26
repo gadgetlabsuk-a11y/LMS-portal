@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { API_BASE } from '@/services/api'
 import { ilbApi, type LiveTransport } from '@/services/ilbApi'
+import { useSegmentAutoplay } from '@/hooks/useSegmentAutoplay'
 
 /**
  * ILB (Interactive Learning Broadcast) player.
@@ -57,7 +58,6 @@ export const ILBPlayerPage = ({ kind = 'course' }: { kind?: 'course' | 'broadcas
   const [answerAudioUrl, setAnswerAudioUrl] = useState<string | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
-  const mediaRef = useRef<HTMLMediaElement | null>(null)
   const [nudgedFinish, setNudgedFinish] = useState(false)
 
   const liveAvatar = state === 'listening' || state === 'answering'
@@ -222,29 +222,14 @@ export const ILBPlayerPage = ({ kind = 'course' }: { kind?: 'course' | 'broadcas
     if (mode === 'defer') void flushQueue()
   }
 
-  // Honour Play/Pause for the narration audio. The <audio> is otherwise
-  // uncontrolled, so drive play/pause from `state`: play only while 'playing',
-  // pause for 'paused'/'answering'/'listening' (e.g. an interrupt Q&A).
-  useEffect(() => {
-    const el = mediaRef.current
-    if (!el) return
-    if (state === 'playing') void el.play().catch(() => {})
-    else el.pause()
-  }, [state, segIdx, currentAudio, currentVideo])
-
-  // Timer fallback: when a segment has no narration audio, auto-advance after a
-  // word-count-scaled delay (~150 wpm, clamped 6–20s). When audio IS present the
-  // <audio onEnded> handler drives the advance instead.
-  useEffect(() => {
-    if (!started || state !== 'playing' || !hasSegments) return
-    if (currentAudio || currentVideo) return
-    if (segIdx >= segments.length - 1) return
-    const words = (currentSegment ?? '').trim().split(/\s+/).filter(Boolean).length
-    const seconds = Math.min(20, Math.max(6, words / 2.5))
-    const timer = setTimeout(advanceSegment, seconds * 1000)
-    return () => clearTimeout(timer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [started, state, hasSegments, currentAudio, currentVideo, currentSegment, segIdx, segments.length, mode])
+  const { ref: mediaRef, onEnded: handleSegmentEnded } = useSegmentAutoplay({
+    playing: state === 'playing',
+    index: segIdx,
+    mediaUrl: currentVideo || currentAudio,
+    text: currentSegment,
+    isLast: segIdx >= segments.length - 1,
+    onAdvance: advanceSegment,
+  })
 
   // Reaching the last segment (manual or auto) nudges the learner to Finish.
   useEffect(() => {
@@ -254,13 +239,6 @@ export const ILBPlayerPage = ({ kind = 'course' }: { kind?: 'course' | 'broadcas
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [started, hasSegments, completed, segIdx, segments.length, nudgedFinish])
-
-  // Auto-advance when a segment's narration audio finishes playing.
-  function handleSegmentEnded() {
-    if (state !== 'playing') return
-    if (segIdx >= segments.length - 1) return
-    advanceSegment()
-  }
 
   if (configLoading) {
     return (
