@@ -12,6 +12,7 @@ export function CoursePlayer({ courseId, mode }: { courseId: number; mode: 'lear
   const [error, setError] = useState<string | null>(null)
   const [idx, setIdx] = useState(0)
   const [playing, setPlaying] = useState(true)
+  const [unlocked, setUnlocked] = useState<Set<number>>(new Set())
 
   useEffect(() => {
     const load = mode === 'learner' ? coursePlayerApi.getLearnerPlayer(courseId) : coursePlayerApi.getPreviewTree(courseId)
@@ -33,7 +34,22 @@ export function CoursePlayer({ courseId, mode }: { courseId: number; mode: 'lear
   const slideStep = step && step.kind === 'slide' ? step.slide : null
   const isLast = idx >= steps.length - 1
 
+  // A quiz step is locked (blocks Next) only for a learner with attempts still
+  // available who hasn't yet passed/resolved it. Already-passed or already-
+  // exhausted quizzes (from the server load) are NOT locked. Preview never gates.
+  const quizLocked = !!(
+    mode === 'learner' &&
+    step && step.kind === 'quiz' &&
+    !unlocked.has(idx) &&
+    !step.quiz.passed &&
+    step.quiz.attempts_remaining > 0
+  )
+
   const advance = () => setIdx((i) => Math.min(steps.length - 1, i + 1))
+  const onQuizResolved = (passed: boolean) => {
+    setUnlocked((s) => new Set(s).add(idx))
+    if (passed) advance()
+  }
   const { ref: mediaRef, onEnded } = useSegmentAutoplay({
     playing, index: idx, mediaUrl: slideStep?.narration_audio_url ?? null,
     text: null, isLast, onAdvance: advance, enableTimer: false,
@@ -64,7 +80,7 @@ export function CoursePlayer({ courseId, mode }: { courseId: number; mode: 'lear
             )}
           </div>
         ) : (
-          <QuizRunner quiz={step.quiz} onPassed={advance} />
+          <QuizRunner quiz={step.quiz} mode={mode} onResolved={onQuizResolved} />
         )}
       </div>
       <div className="bg-gray-800 px-6 py-3 flex items-center justify-center gap-3">
@@ -75,7 +91,7 @@ export function CoursePlayer({ courseId, mode }: { courseId: number; mode: 'lear
             {playing ? 'Pause' : 'Play'}
           </button>
         )}
-        <button onClick={advance} disabled={isLast || step.kind === 'quiz'}
+        <button onClick={advance} disabled={isLast || quizLocked}
                 className="px-4 py-2 rounded bg-indigo-600 disabled:opacity-40 text-sm">Next ▶</button>
         {isLast && <span className="text-emerald-400 text-sm ml-2">End of course</span>}
       </div>
