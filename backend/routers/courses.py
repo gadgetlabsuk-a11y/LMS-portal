@@ -228,8 +228,15 @@ def _run_preflight(course: Course, db: Session) -> List[PreflightResult]:
     return results
 
 
-def _serialize_course_tree(course_id: int, db: Session) -> dict:
-    """Eager-load full course tree and return as serialisable dict."""
+def _serialize_course_tree(course_id: int, db: Session, for_player: bool = False) -> dict:
+    """Eager-load full course tree and return as serialisable dict.
+
+    for_player=False (default, used by the publish snapshot): module-level
+    quizzes are serialized WITH correct_answer so the snapshot can grade.
+    for_player=True (used by the creator preview that feeds the React player):
+    module-level quizzes are serialized in the learner player shape (mirrors
+    _quiz_json in learn_player.py) — NO correct_answer / explanation leaked.
+    """
     from models import Video, Slide, Block
     course = (
         db.query(Course)
@@ -307,23 +314,51 @@ def _serialize_course_tree(course_id: int, db: Session) -> dict:
                 "quizzes": video_quizzes,
             })
         quizzes_data = []
-        for quiz in mod.quizzes:
-            questions_data = [
-                {
-                    "id": q.id,
-                    "type": q.type,
-                    "prompt": q.prompt,
-                    "options": q.options,
-                    "correct_answer": q.correct_answer,
-                    "order_index": q.order_index,
-                }
-                for q in quiz.questions
-            ]
-            quizzes_data.append({
-                "id": quiz.id,
-                "title": quiz.title,
-                "questions": questions_data,
-            })
+        if for_player:
+            # Module-level quizzes in the LEARNER player shape (mirrors
+            # _quiz_json in learn_player.py) — read-only, NO correct_answer /
+            # explanation leaked. The React player reads quizzes here.
+            for quiz in sorted(mod.quizzes, key=lambda q: q.order_index):
+                quizzes_data.append({
+                    "id": quiz.id,
+                    "title": quiz.title,
+                    "pass_rate": quiz.pass_rate,
+                    "attempts_allowed": quiz.attempts_allowed,
+                    "attempts_used": 0,
+                    "attempts_remaining": quiz.attempts_allowed,
+                    "passed": False,
+                    "last_score": None,
+                    "questions": [
+                        {
+                            "id": q.id,
+                            "type": q.type,
+                            "prompt": q.prompt,
+                            "options": q.options,
+                            "points": q.points,
+                            "order_index": q.order_index,
+                        }
+                        for q in sorted(quiz.questions, key=lambda x: x.order_index)
+                    ],
+                })
+        else:
+            # Publish-snapshot shape: keep correct_answer for grading.
+            for quiz in mod.quizzes:
+                questions_data = [
+                    {
+                        "id": q.id,
+                        "type": q.type,
+                        "prompt": q.prompt,
+                        "options": q.options,
+                        "correct_answer": q.correct_answer,
+                        "order_index": q.order_index,
+                    }
+                    for q in quiz.questions
+                ]
+                quizzes_data.append({
+                    "id": quiz.id,
+                    "title": quiz.title,
+                    "questions": questions_data,
+                })
         modules_data.append({
             "id": mod.id,
             "title": mod.title,
@@ -514,7 +549,7 @@ def preview_course(
 ) -> dict:
     """Return full course tree for creator preview — bypasses PUBLISHED filter (PREVIEW-01, PREVIEW-02)."""
     _get_owned_course_or_404(course_id, current_user, db)
-    tree = _serialize_course_tree(course_id, db)
+    tree = _serialize_course_tree(course_id, db, for_player=True)
     return tree
 
 

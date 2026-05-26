@@ -31,6 +31,18 @@ const courseWithQuiz = { id: 2, title: 'CQ', progress: 0, completed: false, modu
   ] },
 ] }
 
+// A course whose quiz is attached to the MODULE (not a video). It must render
+// after the module's last video, at the end of the module.
+const moduleQuiz = { id: 9, title: 'Module Gate', pass_rate: 80, attempts_allowed: 3, attempts_remaining: 0, attempts_used: 3, passed: false, last_score: 50,
+  questions: [{ id: 90, type: 'mcq_single', prompt: 'mq?', options: ['a', 'b'], points: 1, order_index: 0 }] }
+const courseWithModuleQuiz = { id: 3, title: 'CMQ', progress: 0, completed: false, modules: [
+  { id: 1, title: 'M', order_index: 0, quizzes: [moduleQuiz], videos: [
+    { id: 1, title: 'V', order_index: 0, quizzes: [], slides: [
+      { id: 30, order_index: 0, narration_audio_url: null, duration_seconds: null, blocks: [{ id: 1, type: 'heading', content: { html: '<h2>Module Slide</h2>' }, order_index: 0 }] },
+    ] },
+  ] },
+] }
+
 describe('CoursePlayer', () => {
   beforeEach(() => vi.clearAllMocks())
   it('renders first slide and advances on Next', async () => {
@@ -60,6 +72,15 @@ describe('CoursePlayer', () => {
     expect(next).not.toBeDisabled()
     await userEvent.click(next)
     expect(await screen.findByText('After Quiz')).toBeInTheDocument()
+  })
+  it('renders a module-level quiz after the module\'s last video', async () => {
+    mocked.getLearnerPlayer.mockResolvedValue(courseWithModuleQuiz)
+    render(<CoursePlayer courseId={3} mode="learner" />)
+    // First step is the module's slide.
+    await screen.findByText('Module Slide')
+    // Advancing reaches the module-level quiz (placed at the end of the module).
+    await userEvent.click(screen.getByRole('button', { name: /next/i }))
+    expect(await screen.findByText('Module Gate')).toBeInTheDocument()
   })
   it('preview mode lets Next through a quiz step', async () => {
     mocked.getPreviewTree.mockResolvedValue(courseWithQuiz)

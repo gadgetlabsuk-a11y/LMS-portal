@@ -9,7 +9,7 @@ export interface PlayerQuestion { id: number; type: string; prompt: string; opti
 export interface PlayerQuiz { id: number; title: string; pass_rate: number; attempts_allowed: number; attempts_remaining: number; attempts_used: number; passed: boolean; last_score: number | null; questions: PlayerQuestion[] }
 export interface PlayerSlide { id: number; order_index: number; narration_audio_url: string | null; duration_seconds: number | null; blocks: { id: number; type: string; content: Record<string, unknown> | null; order_index: number }[] }
 export interface PlayerVideo { id: number; title: string; order_index: number; slides: PlayerSlide[]; quizzes: PlayerQuiz[] }
-export interface PlayerModule { id: number; title: string; order_index: number; videos: PlayerVideo[] }
+export interface PlayerModule { id: number; title: string; order_index: number; videos: PlayerVideo[]; quizzes?: PlayerQuiz[] }
 export interface PlayerCourse { id: number; title: string; progress: number; completed: boolean; modules: PlayerModule[] }
 export interface AttemptResult { score: number; passed: boolean; attempts_remaining: number; feedback: { question_id: number; correct: boolean; explanation: string | null }[] | null }
 
