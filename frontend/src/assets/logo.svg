@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 48" fill="none">
+  <g fill="#1E293B">
+    <!-- mortarboard cap -->
+    <path d="M24 9 L45 18 L24 27 L3 18 Z"/>
+    <path d="M11 22 L11 30 C11 33 17 36 24 36 C31 36 37 33 37 30 L37 22 L24 27.5 Z"/>
+    <rect x="44.2" y="18" width="1.6" height="12"/>
+    <circle cx="45" cy="32" r="2.4"/>
+  </g>
+  <text x="58" y="31" font-family="system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="21" font-weight="700" fill="#1E293B" letter-spacing="0.2">Learning Portal</text>
+</svg>

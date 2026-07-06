@@ -70,14 +70,14 @@ async def lifespan(app: FastAPI):
         config = db.query(WhiteLabelConfig).first()
         if not config:
             config = WhiteLabelConfig(
-                brand_name="LMS Course Builder",
-                primary_color="#1F2937",
-                secondary_color="#6366F1",
+                brand_name="Learning Portal",
+                primary_color="#2563EB",
+                secondary_color="#1E3A8A",
                 accent_color="#F59E0B",
-                bg_color="#FFFFFF",
-                text_color="#1F2937",
-                font_family="Inter, system-ui, sans-serif",
-                heading_font="Poppins, system-ui, sans-serif",
+                bg_color="#F8FAFC",
+                text_color="#1E293B",
+                font_family="system-ui, sans-serif",
+                heading_font="system-ui, sans-serif",
                 border_radius="0.5rem",
                 button_style="rounded",
             )

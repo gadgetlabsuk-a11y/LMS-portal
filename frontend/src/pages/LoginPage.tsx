@@ -5,7 +5,7 @@ import { useToast } from '@/context/ToastContext'
 import { Button } from '@/components/common/Button'
 import { Input } from '@/components/common/Input'
 import { Card } from '@/components/common/Card'
-import stadlerLogo from '@/assets/stadler-logo.png'
+import brandLogo from '@/assets/logo.svg'
 
 const API_BASE = import.meta.env.PROD ? '/lms' : ''
 
@@ -29,7 +29,7 @@ export const LoginPage = () => {
   const [requiresMfa, setRequiresMfa] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  const [brandConfig, setBrandConfig] = useState<BrandConfig>({ brand_name: 'SRSUK Learning Portal' })
+  const [brandConfig, setBrandConfig] = useState<BrandConfig>({ brand_name: 'Learning Portal' })
   const navigate = useNavigate()
   const { login } = useAuth()
   const { showToast } = useToast()
@@ -89,7 +89,7 @@ export const LoginPage = () => {
       {/* Brand panel */}
       <div className="bg-brand-gradient text-white md:w-1/2 flex flex-col justify-center items-start p-10 md:p-16">
         <img
-          src={brandConfig.logo_url || stadlerLogo}
+          src={brandConfig.logo_url || brandLogo}
           alt={brandConfig.brand_name}
           className="h-10 w-auto mb-8"
           style={brandConfig.logo_url ? undefined : { filter: 'brightness(0) invert(1)' }}
@@ -99,7 +99,7 @@ export const LoginPage = () => {
         </h1>
         <div className="w-16 h-1 bg-brand-accent my-5" />
         <p className="text-white/80 max-w-sm">
-          People Manager training and learning, aligned to the Stadler corporate standard.
+          Training and learning for your whole organisation, all in one place.
         </p>
       </div>
 

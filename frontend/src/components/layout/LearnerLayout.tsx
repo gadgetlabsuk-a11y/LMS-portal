@@ -1,7 +1,7 @@
 import { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import stadlerLogo from '@/assets/stadler-logo.png'
+import brandLogo from '@/assets/logo.svg'
 
 export const LearnerLayout = ({ children }: { children: ReactNode }) => {
   const { user, logout } = useAuth()
@@ -18,8 +18,8 @@ export const LearnerLayout = ({ children }: { children: ReactNode }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             <img
-              src={stadlerLogo}
-              alt="SRSUK Learning Portal"
+              src={brandLogo}
+              alt="Learning Portal"
               className="h-7 w-auto cursor-pointer"
               onClick={() => navigate('/learn')}
             />

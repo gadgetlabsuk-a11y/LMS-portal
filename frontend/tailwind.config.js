@@ -7,34 +7,34 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Remap Tailwind's blue scale to the Stadler palette so existing
-        // hardcoded blue-* usages rebrand automatically.
+        // Neutral blue scale (standard). Existing hardcoded blue-* usages
+        // pick this up automatically.
         blue: {
-          50: '#F0F7FE',
-          100: '#D6E6F5',
-          200: '#AECCEB',
-          300: '#7FAEDC',
-          400: '#4B8BCB',
-          500: '#007BC0', // Stadler Light Blue — focus rings
-          600: '#1E5A9A', // Stadler Blue — primary
-          700: '#0B3F75', // Stadler Dark Blue — hover / dark
-          800: '#093059',
-          900: '#07223F',
+          50: '#EFF6FF',
+          100: '#DBEAFE',
+          200: '#BFDBFE',
+          300: '#93C5FD',
+          400: '#60A5FA',
+          500: '#3B82F6', // focus rings
+          600: '#2563EB', // primary
+          700: '#1D4ED8', // hover / dark
+          800: '#1E40AF',
+          900: '#1E3A8A',
         },
-        // Semantic aliases for new on-brand styling.
+        // Semantic aliases for on-brand styling.
         brand: {
-          DEFAULT: '#1E5A9A',
-          dark: '#0B3F75',
-          light: '#007BC0',
-          accent: '#FFBD00',
-          surface: '#F0F7FE',
+          DEFAULT: '#2563EB',
+          dark: '#1E3A8A',
+          light: '#3B82F6',
+          accent: '#F59E0B',
+          surface: '#EFF6FF',
         },
       },
       fontFamily: {
-        sans: ['Arial', 'Helvetica', 'sans-serif'],
+        sans: ['system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
       },
       backgroundImage: {
-        'brand-gradient': 'linear-gradient(-45deg, #007BC0, #0B3F75)',
+        'brand-gradient': 'linear-gradient(-45deg, #3B82F6, #1E3A8A)',
       },
     },
   },

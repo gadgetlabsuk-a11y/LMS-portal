@@ -1,7 +1,7 @@
 import { ReactNode, useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import stadlerLogo from '@/assets/stadler-logo.png'
+import brandLogo from '@/assets/logo.svg'
 
 const API_BASE = import.meta.env.PROD ? '/lms' : ''
 
@@ -23,7 +23,7 @@ export const CreatorLayout = ({ children }: { children: ReactNode }) => {
   const location = useLocation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [brandName, setBrandName] = useState('Stadler')
+  const [brandName, setBrandName] = useState('Learning Portal')
   const [logoUrl, setLogoUrl] = useState('')
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export const CreatorLayout = ({ children }: { children: ReactNode }) => {
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (d) {
-          setBrandName(d.brand_name || 'Stadler')
+          setBrandName(d.brand_name || 'Learning Portal')
           setLogoUrl(d.logo_url || '')
         }
       })
@@ -49,7 +49,7 @@ export const CreatorLayout = ({ children }: { children: ReactNode }) => {
       <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-brand-dark text-white transition-all duration-200 flex flex-col`}>
         <div className="p-4 border-b border-white/15 flex items-center justify-center h-16">
           <img
-            src={logoUrl || stadlerLogo}
+            src={logoUrl || brandLogo}
             alt={brandName}
             className={`${sidebarOpen ? 'h-7' : 'h-6 w-6 object-left'} w-auto max-w-full object-contain`}
             style={logoUrl ? undefined : { filter: 'brightness(0) invert(1)' }}

@@ -23,14 +23,14 @@ interface WhiteLabelConfig {
 }
 
 const DEFAULT_CONFIG: WhiteLabelConfig = {
-  brand_name: 'SRSUK Learning Portal',
-  primary_color: '#1E5A9A',
-  secondary_color: '#0B3F75',
-  accent_color: '#FFBD00',
-  bg_color: '#F0F7FE',
-  text_color: '#0B3F75',
-  font_family: 'Arial',
-  heading_font: 'Arial',
+  brand_name: 'Learning Portal',
+  primary_color: '#2563EB',
+  secondary_color: '#1E3A8A',
+  accent_color: '#F59E0B',
+  bg_color: '#F8FAFC',
+  text_color: '#1E293B',
+  font_family: 'system-ui',
+  heading_font: 'system-ui',
   border_radius: 8,
   custom_css: '',
   logo_url: '',
@@ -234,7 +234,7 @@ export const WhiteLabelPage = () => {
             value={config.font_family}
             onChange={(e) => setConfig({ ...config, font_family: e.target.value })}
             options={[
-              { value: 'Arial', label: 'Arial (Stadler)' },
+              { value: 'Arial', label: 'Arial' },
               { value: 'Inter', label: 'Inter' },
               { value: 'Roboto', label: 'Roboto' },
               { value: 'Open Sans', label: 'Open Sans' },
@@ -249,7 +249,7 @@ export const WhiteLabelPage = () => {
             value={config.heading_font}
             onChange={(e) => setConfig({ ...config, heading_font: e.target.value })}
             options={[
-              { value: 'Arial', label: 'Arial (Stadler)' },
+              { value: 'Arial', label: 'Arial' },
               { value: 'Inter', label: 'Inter' },
               { value: 'Roboto', label: 'Roboto' },
               { value: 'Open Sans', label: 'Open Sans' },
